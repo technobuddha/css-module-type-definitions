@@ -1,0 +1,56 @@
+{
+  "name": "css-module-type-definitions",
+  "version": "0.0.0",
+  "description": "Generate Type Definitions for CSS Modules",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prebuild": "rm dist/*",
+    "build": "tsc",
+    "prepublishOnly": "npm version prerelease -m 'Publish Release %s'",
+    "version": "npm run build",
+    "postversion": "git push && git push --tags"
+  },
+  "author": "Phil Hill <phil@technobuddha.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/technobuddha/css-module-type-definitions"
+  },
+  "keywords": [
+    "css",
+    "module",
+    "typescript",
+    "webpack",
+    "postcss",
+    "pcss"
+  ],
+  "dependencies": {
+    "chalk": "^4.0.0",
+    "cosmiconfig": "^6.0.0",
+    "fs-extra": "^9.0.1",
+    "glob": "^7.1.6",
+    "lodash": "^4.17.15",
+    "postcss": "^7.0.32",
+    "postcss-comment": "^2.0.0",
+    "postcss-import": "^12.0.1",
+    "postcss-modules-local-by-default": "^3.0.2",
+    "postcss-modules-scope": "^2.2.0",
+    "sane": "^4.1.0",
+    "webpack": "^4.43.0"
+  },
+  "bugs": {
+    "url": "https://github.com/technobuddha/css-module-type-definitions/issues"
+  },
+  "homepage": "https://github.com/technobuddha/css-module-type-definitions#readme",
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.1",
+    "@types/glob": "^7.1.2",
+    "@types/lodash": "^4.14.155",
+    "@types/node": "^14.0.13",
+    "@types/sane": "^2.0.0",
+    "@types/webpack": "^4.41.17",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^3.9.5"
+  }
+}
