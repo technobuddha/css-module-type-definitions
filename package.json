@@ -1,13 +1,13 @@
 {
   "name": "css-module-type-definitions",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Generate Type Definitions for CSS Modules",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "prebuild": "rm dist/*",
     "build": "tsc",
-    "prepublishOnly": "npm version prerelease -m 'Publish Release %s'",
+    "prepublishOnly": "npm version patch -m 'Publish Release %s'",
     "version": "npm run build",
     "postversion": "git push && git push --tags"
   },
