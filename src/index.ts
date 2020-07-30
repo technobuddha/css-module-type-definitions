@@ -109,7 +109,7 @@ export class CMTD {
                         } else {
                             fileContent = fileContent.concat([
                                 'export type Keys = never;',
-                                'export type css = { };',
+                                'export type css = never;',
                             ]);
                         }
 
