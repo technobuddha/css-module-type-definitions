@@ -31,7 +31,7 @@
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
     "lodash": "^4.17.20",
-    "postcss": "^8.1.7",
+    "postcss": "^8.2.1",
     "postcss-comment": "^2.0.0",
     "postcss-import": "^13.0.0",
     "postcss-modules-local-by-default": "^4.0.0",
@@ -44,13 +44,13 @@
   },
   "homepage": "https://github.com/technobuddha/css-module-type-definitions#readme",
   "devDependencies": {
-    "@types/fs-extra": "^9.0.4",
+    "@types/fs-extra": "^9.0.5",
     "@types/glob": "^7.1.3",
     "@types/lodash": "^4.14.165",
-    "@types/node": "^14.14.7",
+    "@types/node": "^14.14.13",
     "@types/sane": "^2.0.0",
     "@types/webpack": "^4.41.25",
     "npm-run-all": "^4.1.5",
-    "typescript": "^4.0.5"
+    "typescript": "^4.1.3"
   }
 }
