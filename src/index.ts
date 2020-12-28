@@ -17,6 +17,7 @@ export type CMTDOptions = {
     dropExtensions?:        boolean;
     camelCase?:             boolean;
     logger?:                Logger;
+    config?:                any;
 };
 
 export interface Logger {
@@ -33,6 +34,7 @@ export class CMTD {
     private dropExtensions:         boolean;
     private camelCase:              boolean;
     private logger:                 Logger;
+    private config:                 any;
 
     constructor (
         {
@@ -43,6 +45,7 @@ export class CMTD {
             dropExtensions,
             camelCase,
             logger,
+            config
         }:  CMTDOptions
     )
     {
@@ -53,12 +56,13 @@ export class CMTD {
         this.dropExtensions         = defaultTo(dropExtensions,         false);
         this.camelCase              = defaultTo(camelCase,              false);
         this.logger                 = defaultTo(logger,                 console);
+        this.config                 = defaultTo(config,                 undefined);
     }
 
     private async generateTypes(filePath: string) {
         return new Promise<void> (
             (resolve, _reject) => {
-                parser(filePath)
+                parser(filePath, this.config)
                 .then(
                     tokens => {
                         const fileName              = path.isAbsolute(filePath) ? path.relative(this.inputDirectoryName, filePath) : filePath;
