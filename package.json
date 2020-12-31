@@ -5,9 +5,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "clean": "npm-run-all *:clean",
     "build": "npm-run-all build:clean build:compile",
     "build:clean": "rm -rf dist && mkdir dist",
     "build:compile": "tsc",
+    "pub": "npm-run-all clean build:compile pub:version pub:publish",
+    "pub:version": "npm --no-tag-git-version version prerelease",
+    "pub:publish": "npm publish",
     "x-prepublishOnly": "npm version patch -m 'Publish Release %s'",
     "x-version": "npm run build",
     "x-postversion": "git push && git push --tags"
