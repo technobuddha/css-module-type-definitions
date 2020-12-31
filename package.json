@@ -5,11 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prebuild": "rm dist/*",
-    "build": "tsc",
-    "prepublishOnly": "npm version patch -m 'Publish Release %s'",
-    "version": "npm run build",
-    "postversion": "git push && git push --tags"
+    "build": "npm-run-all build:clean build:compile",
+    "build:clean": "rm -rf dist && mkdir dist",
+    "build:compile": "tsc",
+    "x-prepublishOnly": "npm version patch -m 'Publish Release %s'",
+    "x-version": "npm run build",
+    "x-postversion": "git push && git push --tags"
   },
   "author": "Phil Hill <phil@technobuddha.com>",
   "license": "MIT",
