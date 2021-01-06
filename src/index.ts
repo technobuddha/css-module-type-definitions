@@ -161,7 +161,7 @@ export class CMTD {
                         else {
                             Promise.all(files.map(f => this.generateTypes(f)))
                             .then(resolve)
-                            .catch(x => { this.logger.error(x); reject(x); });
+                            .catch(err => { this.logger.error(`{CMTD2} ${JSON.stringify(err)}`); reject(err); });
                         }
                     }
                 );
