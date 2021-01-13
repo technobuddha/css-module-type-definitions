@@ -13,7 +13,6 @@ export async function parser(
     if(config === undefined) {
         config = cosmiconfigSync('postcss').search()?.config ?? {};
     }
-    console.log(config);
 
     const importer       = require('postcss-import')(config.plugins['postcss-import'])   as AcceptedPlugin;
     const localByDefault = require('postcss-modules-local-by-default')                   as AcceptedPlugin;
