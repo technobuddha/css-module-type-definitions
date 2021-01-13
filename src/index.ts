@@ -145,7 +145,7 @@ export class CMTD {
                         }
                     }
                 )
-                .catch(err => this.logger.error(`{CMTD!} ${err} ${JSON.stringify(err)}`));
+                .catch(err => { this.logger.error(`{CMTD!} ${err} ${JSON.stringify(err)}`); this.logger.info(err.stack); });
             }
         );
     }
