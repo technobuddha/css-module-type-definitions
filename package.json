@@ -1,6 +1,6 @@
 {
   "name": "css-module-type-definitions",
-  "version": "1.0.1-6",
+  "version": "1.0.1-7",
   "description": "Generate Type Definitions for CSS Modules",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
