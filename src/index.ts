@@ -108,18 +108,18 @@ export class CMTD {
                         if(declarations.length) {
                             fileContent = fileContent.concat([
                                 `export type Keys = ${declarations.join(` | `)};`,
-                                'export type css = { [key in Keys]: string };',
+                                'export type Css = { [key in Keys]: string };',
                             ]);
                         } else {
                             fileContent = fileContent.concat([
                                 'export type Keys = never;',
-                                'export type css = never;',
+                                'export type Css = never;',
                             ]);
                         }
 
                         fileContent = fileContent.concat([
                             '',
-                            'declare const css: css;',
+                            'declare const css: Css;',
                             'export default css;',
                         ]);
 
