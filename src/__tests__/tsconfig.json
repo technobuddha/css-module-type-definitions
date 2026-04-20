@@ -3,15 +3,14 @@
 // 🚨
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "./tsconfig.base.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
     "composite": true,
     "lib": ["esnext"],
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["*.config.js", "*.config.ts", "*.setup.ts"],
-  "exclude": ["eslint.config.js"]
+  "include": ["*.test.ts", "../@types/*.d.ts"],
+  "exclude": ["eslint.config.js"],
+  "references": [{ "path": ".." }]
 }
