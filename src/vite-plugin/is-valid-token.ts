@@ -10,7 +10,6 @@
  */
 const RESERVED_WORDS = new Set([
   // ECMAScript reserved words
-  'await',
   'break',
   'case',
   'catch',
@@ -22,7 +21,6 @@ const RESERVED_WORDS = new Set([
   'delete',
   'do',
   'else',
-  'enum',
   'export',
   'extends',
   'false',
@@ -47,19 +45,48 @@ const RESERVED_WORDS = new Set([
   'void',
   'while',
   'with',
+
+  // struct mode
+  'let',
+  'static',
   'yield',
-  // TypeScript-specific reserved words
-  'as',
+
+  // module or async function bodies
+  'await',
+
+  // future: always
+  'enum',
+
+  // future: strict mode
   'implements',
   'interface',
-  'let',
   'package',
   'private',
   'protected',
   'public',
-  'static',
+
+  // TypeScript-specific reserved words
+  'as',
   'type',
+
+  // contextual
+  // 'any',
+  // 'boolean',
+  // 'constructor',
+  // 'declare',
+  // 'get',
+  // 'module',
+  // 'require',
+  // 'number',
+  // 'set',
+  // 'string',
+  // 'symbol',
+  // 'type',
+  // 'from',
+  // 'of',
 ]);
+
+const VALID_TOKEN = /^[a-zA-Z$_][0-9a-zA-Z$_]*$/v;
 
 /**
  * Validates whether a string is a valid JavaScript/TypeScript identifier that can be used
@@ -88,7 +115,7 @@ const RESERVED_WORDS = new Set([
  * @category Validation
  */
 export function isValidToken(token: string): boolean {
-  if (!/^[a-zA-Z$_][0-9a-zA-Z$_]*$/v.test(token)) {
+  if (!VALID_TOKEN.test(token)) {
     return false;
   }
 

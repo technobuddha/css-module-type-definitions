@@ -1,0 +1,13 @@
+diff --git a/index.d.ts b/index.d.ts
+index f723ef1d49a76929a0ff88af6d4847708ecbf896..de1f1fd6e500afdfb81232de1432720f5e00ac9e 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -17,7 +17,7 @@ declare class Loader {
+ }
+ 
+ declare interface Options {
+-	getJSON?(cssFilename: string, json: { [name: string]: string }, outputFilename?: string): void;
++	getJSON?(cssFilename: string, json: { [name: string]: string }, outputFilename?: string): void | Promise<void>;
+ 
+ 	localsConvention?:
+ 		| "camelCase"

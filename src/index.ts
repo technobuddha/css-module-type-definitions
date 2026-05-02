@@ -1,1 +1,1 @@
-export { pluginCssModuleTypeDefinitions } from './vite-plugin.ts';
+export { pluginCssModuleTypeDefinitions } from './vite-plugin/vite-plugin.ts';

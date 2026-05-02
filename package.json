@@ -6,9 +6,12 @@
   "stableVersion": "1.99.6",
   "license": "MIT",
   "type": "module",
-  "types": "dist/index.d.ts",
   "main": "dist/index.js",
-  "author": "Phil Hill <phil@technobuddha.com>",
+  "types": "dist/index.d.ts",
+  "author": {
+    "name": "Phil Hill",
+    "email": "phil@technobuddha.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/technobuddha/css-module-type-definitions"
@@ -20,37 +23,57 @@
   "scripts": {
     "dev": "build dev",
     "build": "build default",
-    "preinstall": "git config core.hooksPath git-hooks",
     "start": "build dev",
     "publish": "build publish",
     "test": "npx vitest --typecheck run",
     "test:watch": "npx vitest --typecheck --no-coverage watch",
     "test:full": "npx vitest --typecheck --mode=full run",
     "lint": "npx eslint src",
-    "spell": "npx cspell lint src"
+    "spell": "npx cspell lint src",
+    "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-111",
+    "@technobuddha/library": "2.1.0-116",
+    "css-what": "8.0.0",
+    "dotenv": "17.4.2",
+    "icss-utils": "5.1.0",
+    "less": "4.6.4",
     "postcss": "^8.5.10",
-    "postcss-comment": "^2.0.0",
+    "postcss-comment": "2.0.0",
     "postcss-import": "^16.1.1",
+    "postcss-load-config": "6.0.1",
+    "postcss-modules": "patch:postcss-modules@npm%3A6.0.1#~/.yarn/patches/postcss-modules-npm-6.0.1-41d5592a7a.patch",
+    "postcss-modules-extract-imports": "3.1.0",
     "postcss-modules-local-by-default": "^4.2.0",
     "postcss-modules-scope": "^3.2.1",
     "prettier": "3.8.3",
-    "vite": "8.0.8"
+    "sass": "1.99.0",
+    "source-map-js": "1.2.1",
+    "stylus": "0.64.0",
+    "tsconfig-paths": "4.2.0",
+    "typescript": "6.0.3",
+    "vite": "8.0.10"
   },
   "devDependencies": {
-    "@technobuddha/project": "1.0.0-8",
+    "@technobuddha/project": "1.0.0-36",
+    "@types/icss-utils": "^5",
+    "@types/less": "3.0.8",
     "@types/node": "25.6.0",
     "@types/postcss-import": "^14.0.3",
+    "@types/postcss-modules-extract-imports": "^3.0.5",
     "@types/postcss-modules-local-by-default": "^4.0.2",
     "@types/postcss-modules-scope": "^3.0.4",
-    "@vitest/coverage-v8": "4.1.4",
+    "@types/stylus": "^0",
+    "@vitest/coverage-v8": "4.1.5",
     "cspell": "10.0.0",
+    "husky": "9.1.7",
     "jsdom": "29.0.2",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.4"
+    "vitest": "4.1.5"
+  },
+  "resolutions": {
+    "postcss": "^8.5.10"
   },
   "engines": {
     "node": ">=25.0.0"
