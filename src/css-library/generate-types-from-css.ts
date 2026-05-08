@@ -6,6 +6,7 @@ import {
   defaultBanner,
   empty,
   isValidJsVariable,
+  pascalCase,
   quote,
   space,
 } from '@technobuddha/library';
@@ -14,9 +15,10 @@ import postcssModules from 'postcss-modules';
 import { type RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
-import { defaultLogger } from '../common/logger.ts';
 import { type Options } from '../common/options.ts';
 
+import { dashes } from './dashes.ts';
+import { type Logger } from './logger.ts';
 import { transformer } from './transformers/transformer.ts';
 
 export type CSSTypes = {
@@ -24,23 +26,20 @@ export type CSSTypes = {
   map: RawSourceMap;
 };
 
-export async function generateTypesFromCss(filename: string): Promise<CSSTypes> {
+export async function generateTypesFromCss(
+  filename: string,
+  logger: Logger,
+  options: Options = {},
+): Promise<CSSTypes> {
   const directory = path.dirname(filename);
-  const options: Options = {};
   const compilerOptions: CompilerOptions = {};
-  const logger = defaultLogger;
 
-  const {
-    additionalData = empty,
-    allowUnknownClassnames = false,
-    namedExports = false,
-    cssModules = {},
-  } = options;
+  const { cssModules: cssOptions = { localsConvention: 'camelCase' } } = options;
 
   return fs
     .readFile(filename, 'utf-8')
     .then(async (css) =>
-      transformer(`${additionalData}${css}`, {
+      transformer(css, {
         filename,
         directory,
         options,
@@ -51,10 +50,10 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
 
         return postcss([
           postcssModules({
-            ...cssModules,
+            ...cssOptions,
             getJSON: (cssFilename, json, outputFilename) => {
               classScope = json;
-              cssModules.getJSON?.(cssFilename, json, outputFilename);
+              return cssOptions.getJSON?.(cssFilename, json, outputFilename ?? empty);
             },
           }),
         ])
@@ -63,8 +62,10 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
             const sourceMap = map?.toJSON();
 
             let variable = camelCase(path.parse(filename).name.replace(/\.module$/v, empty));
+            let classname = pascalCase(variable);
             if (!isValidJsVariable(variable)) {
-              variable = `__classes__`;
+              variable = camelCase(path.parse(filename).ext.replace(/^\./v, empty));
+              classname = pascalCase(variable);
             }
 
             const dts: string[] = [
@@ -72,11 +73,10 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
               '/* eslint-disable @typescript-eslint/naming-convention */',
               '// cspell:disable',
               empty,
-              `declare const ${variable}:  {`,
+              `type ${classname} = {`,
             ];
 
             const dtsFile = `${path.basename(filename)}.d.ts`;
-            const mapFile = `${path.basename(filename)}.map`;
             const source = path.parse(filename).base;
             const generator = new SourceMapGenerator({
               file: dtsFile,
@@ -86,7 +86,26 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
             const smc = sourceMap ? new SourceMapConsumer(sourceMap) : null;
 
             for (const [name, scoped] of Object.entries(classScope)) {
-              const offset = classOffsets.get(name);
+              let offset = classOffsets.get(name);
+
+              // TODO look for camelCaseOnly and dashCaseOnly if offset is not found with the original name
+              if (!offset && cssOptions.localsConvention !== 'camelCaseOnly') {
+                for (const [n, o] of classOffsets.entries()) {
+                  if (camelCase(n) === name) {
+                    offset = o;
+                    break;
+                  }
+                }
+              }
+              if (!offset && cssOptions.localsConvention !== 'dashesOnly') {
+                for (const [n, o] of classOffsets.entries()) {
+                  if (dashes(n) === name) {
+                    offset = o;
+                    break;
+                  }
+                }
+              }
+
               if (offset) {
                 let { line, column } = offset;
 
@@ -102,11 +121,10 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
                   }
                 }
 
-                dts.push(`${space}${space}readonly${space}${quote(name)}: ${quote(scoped)};`);
                 generator.addMapping({
                   source,
                   generated: {
-                    line: dts.length,
+                    line: dts.length + 1, // account for the line we're about to add
                     column: 12, // length of {space}{space}readonly{space}{quote},
                   },
                   original: {
@@ -115,25 +133,16 @@ export async function generateTypesFromCss(filename: string): Promise<CSSTypes> 
                   },
                 });
               }
-            }
 
-            if (allowUnknownClassnames) {
-              dts.push('  [key: string]: string;');
-            }
-            dts.push('};', empty);
-
-            if (namedExports) {
-              dts.push(
-                ...Object.entries(classScope)
-                  .filter(([name]) => isValidJsVariable(name))
-                  .map(([name, scope]) => `declare export const ${name}: ${quote(scope)}`),
-              );
+              dts.push(`${space}${space}readonly${space}${quote(name)}: ${quote(scoped)};`);
             }
 
             dts.push(
-              `export default ${variable};`,
+              '};',
               empty,
-              `//# sourceMappingURL=${mapFile}`,
+              `declare const ${variable}: ${classname};`,
+              empty,
+              `export default ${variable};`,
               empty,
             );
 

@@ -6,7 +6,7 @@ import { lint } from '@technobuddha/project';
 
 export default lint({
   files: ['**/*.ts'],
-  ignores: ['__tests__/**/*', '@types/**/*', 'css-library/__tests__/**/*'],
+  ignores: ['__tests__/**/*', '@types/**/*', 'vite-plugin/@types/**/*'],
   platform: 'node',
   typescript: true,
 });

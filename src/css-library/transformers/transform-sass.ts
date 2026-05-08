@@ -1,11 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { compileString, type FileImporter, type Importer, type Options } from 'sass';
+import { compileStringAsync, type FileImporter, type Importer } from 'sass';
 import { createMatchPath } from 'tsconfig-paths';
 import { type CompilerOptions } from 'typescript';
+import { type Logger } from 'vite';
+
+import { type Options } from '../../common/index.ts';
 
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
+import { getSource } from './get-source.ts';
 import { type TransformerReturn } from './transformer-return.ts';
 
 const DEFAULT_EXTS = ['scss', 'sass', 'css'];
@@ -69,7 +73,7 @@ export const sassTildeImporter: FileImporter<'sync'> = {
 function sassImporters(
   directory: string,
   paths?: Record<string, string[]>,
-): (Importer<'sync'> | FileImporter<'sync'>)[] {
+): (Importer<'async'> | FileImporter<'async'>)[] {
   const matchPath = paths ? createMatchPath(path.resolve(directory), paths) : null;
 
   return [
@@ -119,30 +123,32 @@ function sassImporters(
 type TransformSassArguments = {
   filename: string;
   directory: string;
-  options?: Partial<Options<'sync'>>;
+  options?: NonNullable<Options['preprocessor']>['sass'];
   compilerOptions: CompilerOptions;
+  logger?: Logger;
 };
 
-export function transformSass(
-  css: string,
+export async function transformSass(
+  source: string,
   { filename, directory, options = {}, compilerOptions }: TransformSassArguments,
-): TransformerReturn {
+): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
-  const { loadPaths = [], ...sassOptions } = options ?? {};
+  const { loadPaths = [], additionalData, ...sassOptions } = options;
   const { paths } = compilerOptions;
 
-  const compiled = compileString(css, {
-    importers: sassImporters(directory, paths),
-    loadPaths: [path.dirname(filename), 'node_modules', ...loadPaths],
-    sourceMap: true,
-    syntax: ext === '.sass' ? 'indented' : 'scss',
-    url: new URL(`file://${filename}`),
-    ...sassOptions,
-  });
-
-  return {
-    css: compiled.css,
-    sourceMap: compiled.sourceMap,
-    classOffsets: extractClassOffsetsFromCss(compiled.css, { filename }),
-  };
+  // TODO sourceMap with additionalData
+  return getSource({ source, filename, additionalData }).then(async ({ content }) =>
+    compileStringAsync(content, {
+      importers: sassImporters(directory, paths),
+      loadPaths: [path.dirname(filename), 'node_modules', ...loadPaths],
+      sourceMap: true,
+      syntax: ext === '.sass' ? 'indented' : 'scss',
+      url: new URL(`file://${filename}`),
+      ...sassOptions,
+    }).then((compiled) => ({
+      css: compiled.css,
+      sourceMap: compiled.sourceMap,
+      classOffsets: extractClassOffsetsFromCss(compiled.css, { filename }),
+    })),
+  );
 }

@@ -6,7 +6,7 @@ import { format, resolveConfig } from 'prettier';
 
 import { type CMTDOptions } from './cmtd-options.ts';
 import { extractClassnames } from './extract-classnames.ts';
-import { isValidToken } from '../is-valid-token.ts';
+import { isValidToken } from './is-valid-token.ts';
 
 /**
  * Converts dashes to camelCase by capitalizing the letter following each dash sequence.

@@ -5,11 +5,11 @@ const config = {
   default: {
     steps: [
       {
-        name: 'Clean',
+        display: 'Clean',
         command: 'rm -rf ./dist',
       },
       {
-        name: 'Library',
+        display: 'Library',
         command: 'npx tsc -p ./src',
       },
     ],
@@ -18,11 +18,11 @@ const config = {
     steps: [
       { build: 'default' },
       {
-        name: 'Version',
+        display: 'Version',
         command: 'yarn version prerelease',
       },
       {
-        name: 'Publish',
+        display: 'Publish',
         command: 'yarn npm publish --access=public',
       },
     ],

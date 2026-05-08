@@ -2,11 +2,7 @@ import { camelCase } from '@technobuddha/library';
 
 import { type Options } from '../common/options.ts';
 
-function dashCase(word: string): string {
-  return word.replaceAll(/-+(\w)/gv, (_match: string, firstLetter: string) =>
-    firstLetter.toUpperCase(),
-  );
-}
+import { dashes } from './dashes.ts';
 
 export function localizeClassname(classname: string, options: Options): string[] {
   const entries: string[] = [];
@@ -26,14 +22,14 @@ export function localizeClassname(classname: string, options: Options): string[]
     }
     case 'dashes': {
       entries.push(classname);
-      const transformedClass = dashCase(classname);
+      const transformedClass = dashes(classname);
       if (transformedClass !== classname) {
         entries.push(transformedClass);
       }
       break;
     }
     case 'dashesOnly': {
-      entries.push(dashCase(classname));
+      entries.push(dashes(classname));
       break;
     }
 

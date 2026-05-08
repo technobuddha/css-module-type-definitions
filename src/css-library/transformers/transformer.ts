@@ -2,11 +2,11 @@ import path from 'node:path';
 
 import { type CompilerOptions } from 'typescript';
 
-import { type Logger } from '../../common/logger.ts';
 import { type Options } from '../../common/options.ts';
 
+import { type Logger } from '../logger.ts';
+
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
-import { transformCustom } from './transform-custom.ts';
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
 import { transformStylus } from './transform-stylus.ts';
@@ -25,16 +25,40 @@ export async function transformer(
   { filename, directory, options = {}, compilerOptions, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
-  const { customRenderer, rendererOptions } = options;
+  const { preprocessor } = options;
 
   const result =
-    customRenderer ?
-      await transformCustom(css, { customRenderer, filename, compilerOptions, logger })
-    : ext === '.less' ?
-      await transformLess(css, { filename, directory, options: rendererOptions?.less })
-    : ext === '.scss' || ext === '.sass' ?
-      transformSass(css, { filename, directory, options: rendererOptions?.sass, compilerOptions })
-    : ext === '.styl' ? transformStylus(css, { filename, options: rendererOptions?.stylus })
+    ext === '.less' ?
+      transformLess(css, {
+        filename,
+        directory,
+        options: preprocessor?.less,
+        logger,
+      })
+    : ext === '.sass' ?
+      transformSass(css, {
+        filename,
+        directory,
+        options: preprocessor?.sass,
+        compilerOptions,
+      })
+    : ext === '.scss' ?
+      transformSass(css, {
+        filename,
+        directory,
+        options: preprocessor?.scss,
+        compilerOptions,
+      })
+    : ext === '.styl' ?
+      transformStylus(css, {
+        filename,
+        options: preprocessor?.styl ?? preprocessor?.stylus,
+      })
+    : ext === '.stylus' ?
+      transformStylus(css, {
+        filename,
+        options: preprocessor?.stylus ?? preprocessor?.styl,
+      })
     : { css, classOffsets: extractClassOffsetsFromCss(css, { filename }) };
 
   return result;
