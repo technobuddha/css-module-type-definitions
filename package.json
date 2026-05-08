@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.0",
-    "@technobuddha/project": "1.0.0-62",
+    "@technobuddha/project": "1.0.0-63",
     "@types/less": "3.0.8",
     "@types/node": "25.6.2",
     "@types/postcss-import": "^14.0.3",
@@ -70,7 +70,8 @@
     "vitest": "4.1.5"
   },
   "resolutions": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "ip-address": "^10.1.1"
   },
   "engines": {
     "node": ">=25.0.0"
@@ -89,5 +90,5 @@
     "vite",
     "postcss"
   ],
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.14.1"
 }

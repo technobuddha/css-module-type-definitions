@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 9
   cacheKey: 10c0
 
 "@adobe/css-tools@npm:~4.3.3":
@@ -2057,9 +2057,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/project@npm:1.0.0-62":
-  version: 1.0.0-62
-  resolution: "@technobuddha/project@npm:1.0.0-62"
+"@technobuddha/project@npm:1.0.0-63":
+  version: 1.0.0-63
+  resolution: "@technobuddha/project@npm:1.0.0-63"
   dependencies:
     "@commander-js/extra-typings": "npm:14.0.0"
     "@cspell/cspell-types": "npm:10.0.0"
@@ -2134,7 +2134,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/fab23b2f27d69d5bdddb00af0f6cbd869e8e769e5b3569e74b66a972444bbc0994b19db990c1820515df440be5e61c4abb1fd949afbac23b84c9d674ffd093c0
+  checksum: 10c0/fa75630661946a9e10662397efafe2fc7b4650a033d9477305cbab2dd6849b72fc62be01ec6238ea25401ed4dfbe2c19e90e6a3e22e8579e78204d9740c1eab5
   languageName: node
   linkType: hard
 
@@ -3865,7 +3865,7 @@ __metadata:
     "@cspell/cspell-types": "npm:10.0.0"
     "@dotenvx/dotenvx": "npm:1.65.0"
     "@technobuddha/library": "npm:2.1.0-122"
-    "@technobuddha/project": "npm:1.0.0-62"
+    "@technobuddha/project": "npm:1.0.0-63"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:25.6.2"
     "@types/postcss-import": "npm:^14.0.3"
@@ -5842,10 +5842,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ip-address@npm:^10.0.1":
-  version: 10.1.0
-  resolution: "ip-address@npm:10.1.0"
-  checksum: 10c0/0103516cfa93f6433b3bd7333fa876eb21263912329bfa47010af5e16934eeeff86f3d2ae700a3744a137839ddfad62b900c7a445607884a49b5d1e32a3d7566
+"ip-address@npm:^10.1.1":
+  version: 10.2.0
+  resolution: "ip-address@npm:10.2.0"
+  checksum: 10c0/5a00aada6e922c9c69dfc800ed5d0fa3348675ebdeed0e1575f503f27ca385b5f534363c9af7ad1daf64c1f1409388cdd3cc2e9b9b0fe1c924a431378d55075a
   languageName: node
   linkType: hard
 
