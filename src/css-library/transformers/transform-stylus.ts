@@ -3,7 +3,7 @@ import stylus from 'stylus';
 
 import { type Options } from '../../common/options.ts';
 
-import { type Logger } from '../logger.ts';
+import { type Logger } from '../../common/logger.ts';
 
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';

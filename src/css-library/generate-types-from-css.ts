@@ -9,32 +9,37 @@ import {
   pascalCase,
   quote,
   space,
+  splitLines,
 } from '@technobuddha/library';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 import { type RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
-import { type Options } from '../common/options.ts';
+import { type Logger, type Options } from '../common/index.ts';
 
 import { dashes } from './dashes.ts';
-import { type Logger } from './logger.ts';
 import { transformer } from './transformers/transformer.ts';
 
-export type CSSTypes = {
+type GenerateTypesFromCssReturn = {
   dts: string;
+  dtsFile: string;
   map: RawSourceMap;
+};
+
+type GenerateTypesFromCssOptions = {
+  options: Options;
+  logger: Logger;
+  compilerOptions?: CompilerOptions;
 };
 
 export async function generateTypesFromCss(
   filename: string,
-  logger: Logger,
-  options: Options = {},
-): Promise<CSSTypes> {
+  { options, logger, compilerOptions = {} }: GenerateTypesFromCssOptions,
+): Promise<GenerateTypesFromCssReturn> {
   const directory = path.dirname(filename);
-  const compilerOptions: CompilerOptions = {};
 
-  const { cssModules: cssOptions = { localsConvention: 'camelCase' } } = options;
+  const { cssModules = {} } = options;
 
   return fs
     .readFile(filename, 'utf-8')
@@ -50,34 +55,34 @@ export async function generateTypesFromCss(
 
         return postcss([
           postcssModules({
-            ...cssOptions,
+            ...cssModules,
             getJSON: (cssFilename, json, outputFilename) => {
               classScope = json;
-              return cssOptions.getJSON?.(cssFilename, json, outputFilename ?? empty);
+              return cssModules.getJSON?.(cssFilename, json, outputFilename ?? empty);
             },
           }),
         ])
           .process(css, { from: path.basename(filename), map: { inline: false, prev: sourceMap } })
           .then(({ map }) => {
             const sourceMap = map?.toJSON();
+            const parsed = path.parse(filename);
 
-            let variable = camelCase(path.parse(filename).name.replace(/\.module$/v, empty));
+            let variable = camelCase(parsed.name.replace(/\.module$/v, empty));
             let classname = pascalCase(variable);
             if (!isValidJsVariable(variable)) {
-              variable = camelCase(path.parse(filename).ext.replace(/^\./v, empty));
+              variable = camelCase(parsed.ext.replace(/^\./v, empty));
               classname = pascalCase(variable);
             }
 
             const dts: string[] = [
-              ...defaultBanner.map((line) => `// ${line}`),
-              '/* eslint-disable @typescript-eslint/naming-convention */',
-              '// cspell:disable',
+              ...(cssModules.dtsBanner ? defaultBanner.map((line) => `// ${line}`) : []),
+              ...splitLines(cssModules.dtsHeader ?? empty),
               empty,
               `type ${classname} = {`,
             ];
 
-            const dtsFile = `${path.basename(filename)}.d.ts`;
-            const source = path.parse(filename).base;
+            const { name, ext, base } = path.parse(filename);
+            const dtsFile = `${name}${ext}.d.ts`; //`${name}.d${ext}.ts`;
             const generator = new SourceMapGenerator({
               file: dtsFile,
               sourceRoot: empty,
@@ -88,8 +93,7 @@ export async function generateTypesFromCss(
             for (const [name, scoped] of Object.entries(classScope)) {
               let offset = classOffsets.get(name);
 
-              // TODO look for camelCaseOnly and dashCaseOnly if offset is not found with the original name
-              if (!offset && cssOptions.localsConvention !== 'camelCaseOnly') {
+              if (!offset && cssModules.localsConvention === 'camelCaseOnly') {
                 for (const [n, o] of classOffsets.entries()) {
                   if (camelCase(n) === name) {
                     offset = o;
@@ -97,7 +101,7 @@ export async function generateTypesFromCss(
                   }
                 }
               }
-              if (!offset && cssOptions.localsConvention !== 'dashesOnly') {
+              if (!offset && cssModules.localsConvention === 'dashesOnly') {
                 for (const [n, o] of classOffsets.entries()) {
                   if (dashes(n) === name) {
                     offset = o;
@@ -115,14 +119,12 @@ export async function generateTypesFromCss(
                     line = l;
                     column = c;
                   } else {
-                    // TODO
-                    // eslint-disable-next-line no-console
-                    console.log(`Could not map position for ${name} at ${line}:${column}`);
+                    logger.error(`Could not map position for ${name} at ${line}:${column}`);
                   }
                 }
 
                 generator.addMapping({
-                  source,
+                  source: base,
                   generated: {
                     line: dts.length + 1, // account for the line we're about to add
                     column: 12, // length of {space}{space}readonly{space}{quote},
@@ -137,6 +139,8 @@ export async function generateTypesFromCss(
               dts.push(`${space}${space}readonly${space}${quote(name)}: ${quote(scoped)};`);
             }
 
+            const comment = `//# sourceMappingURL=data:application/json;charset=utf-8;base64`;
+            const b64SourceMap = Buffer.from(JSON.stringify(map)).toString('base64');
             dts.push(
               '};',
               empty,
@@ -144,10 +148,12 @@ export async function generateTypesFromCss(
               empty,
               `export default ${variable};`,
               empty,
+              `${comment},${b64SourceMap}`,
             );
 
             return {
               dts: dts.join('\n'),
+              dtsFile,
               map: generator.toJSON(),
             };
           });

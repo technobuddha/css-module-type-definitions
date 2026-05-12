@@ -1,4 +1,5 @@
 import { type DotenvConfigOptions } from '@dotenvx/dotenvx';
+import { empty } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
   type LessPreprocessorOptions,
@@ -6,15 +7,12 @@ import {
   type StylusPreprocessorOptions,
 } from 'vite';
 
-import { type Logger } from '../css-library/logger.ts';
-
 interface PostcssOptions {
   excludePlugins?: string[];
   useConfig?: boolean;
 }
 
 export interface Options {
-  customTemplate?: string;
   dotenv?: Omit<DotenvConfigOptions, 'path'> & { path?: string };
   goToDefinition?: boolean;
   postcss?: PostcssOptions;
@@ -25,14 +23,25 @@ export interface Options {
     styl?: StylusPreprocessorOptions;
     stylus?: StylusPreprocessorOptions;
   };
-  cssModules?: CSSModulesOptions;
-  cssPattern?: string;
+  cssModules?: CSSModulesOptions & {
+    filePattern?: string;
+    dtsBanner?: boolean;
+    dtsHeader?: string;
+    generateDtsOnSave?: boolean;
+  };
 }
 
-interface CustomTemplateOptions {
-  //classes: CSSExports;
-  filename: string;
-  logger: Logger;
-}
-
-export type CustomTemplate = (dts: string, options: CustomTemplateOptions) => string;
+export const defaultOptions: Options = {
+  cssModules: {
+    scopeBehaviour: 'local',
+    globalModulePaths: [],
+    exportGlobals: true,
+    generateScopedName: '[name]__[local]___[hash:base64:5]',
+    hashPrefix: empty,
+    localsConvention: 'camelCase',
+    filePattern: '\\.module\\.(?:css|less|sass|scss|styl(?:us)?)$',
+    dtsBanner: true,
+    dtsHeader: '/* eslint-disable @typescript-eslint/naming-convention */\n// cspell:disable',
+    generateDtsOnSave: true,
+  },
+};

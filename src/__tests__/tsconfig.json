@@ -4,12 +4,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "composite": true,
-    "lib": ["esnext"],
-    "noEmit": true,
-    "types": ["node", "vitest/globals"]
-  },
+  "compilerOptions": { "lib": ["esnext"], "noEmit": true, "types": ["node", "vitest/globals"] },
   "include": ["*.test.ts", "../@types/*.d.ts"],
   "exclude": ["eslint.config.js"],
   "references": [{ "path": ".." }]

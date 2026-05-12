@@ -1,7 +1,7 @@
 import postcss, { AtRule, type Node, Rule } from 'postcss';
 import { extract } from 'string-extract-class-names';
 
-import { defaultLogger, type Logger } from '../logger.ts';
+import { defaultLogger, type Logger } from '../../common/logger.ts';
 import { getPositionOfOffset, type Offset, offsetAdd } from '../offset.ts';
 
 type ClassName = {

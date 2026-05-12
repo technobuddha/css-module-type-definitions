@@ -4,7 +4,7 @@ import { type CompilerOptions } from 'typescript';
 
 import { type Options } from '../../common/options.ts';
 
-import { type Logger } from '../logger.ts';
+import { type Logger } from '../../common/logger.ts';
 
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { transformLess } from './transform-less.ts';

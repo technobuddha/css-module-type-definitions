@@ -2050,26 +2050,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-122":
-  version: 2.1.0-122
-  resolution: "@technobuddha/library@npm:2.1.0-122"
-  checksum: 10c0/28bee4dc8376b0b12babd4b9df92a81ab47e24d1af307e8a721f1f7cfad78396e97fe9309d4136b27d900b6330c0ffcf2dc5c41c016ea1cc6e95043334532bb2
+"@technobuddha/library@npm:2.1.0-124":
+  version: 2.1.0-124
+  resolution: "@technobuddha/library@npm:2.1.0-124"
+  checksum: 10c0/7ed5bb7961c90ce3627a2895fa58d2ab3b4a5639b5ee69ddda510b9b2983a04bc09c8c86865b1505e663dcb16ef6e55262ab5b43afcca347eddd7809dd033c9b
   languageName: node
   linkType: hard
 
-"@technobuddha/project@npm:1.0.0-63":
-  version: 1.0.0-63
-  resolution: "@technobuddha/project@npm:1.0.0-63"
+"@technobuddha/project@npm:1.0.0-70":
+  version: 1.0.0-70
+  resolution: "@technobuddha/project@npm:1.0.0-70"
   dependencies:
     "@commander-js/extra-typings": "npm:14.0.0"
     "@cspell/cspell-types": "npm:10.0.0"
     "@dotenvx/dotenvx": "npm:1.65.0"
     "@eslint-community/eslint-plugin-eslint-comments": "npm:4.7.1"
     "@eslint/config-helpers": "npm:0.6.0"
-    "@technobuddha/library": "npm:2.1.0-122"
+    "@technobuddha/library": "npm:2.1.0-124"
     "@types/eslint": "npm:9.6.1"
     "@types/ignore-walk": "npm:4.0.3"
-    "@types/jsdom": "npm:^28.0.1"
     "@types/mustache": "npm:^4.2.6"
     "@types/node": "npm:25.6.2"
     "@types/semver": "npm:7.7.1"
@@ -2103,7 +2102,7 @@ __metadata:
     eslint-plugin-react-web-api: "npm:5.7.4"
     eslint-plugin-react-x: "npm:5.7.4"
     eslint-plugin-simple-import-sort: "npm:13.0.0"
-    eslint-plugin-technobuddha: "npm:2.0.0-12"
+    eslint-plugin-technobuddha: "npm:2.0.0-14"
     eslint-plugin-unicorn: "npm:64.0.0"
     globals: "npm:17.6.0"
     husky: "npm:9.1.7"
@@ -2134,7 +2133,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/fa75630661946a9e10662397efafe2fc7b4650a033d9477305cbab2dd6849b72fc62be01ec6238ea25401ed4dfbe2c19e90e6a3e22e8579e78204d9740c1eab5
+  checksum: 10c0/1234309b379dc401fdb9113ca7e36c2df2dede0ec2b42450fb34b3b47dde5cfb37847711510f889210bbc03ff262857563f9c25fbd75fb14c931f90e869e297b
   languageName: node
   linkType: hard
 
@@ -2203,18 +2202,6 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/eb7efafaf25b3de7c07a6298e551d123fee303a468466f0798f958b0a0b3e41009e535430c5f0051ab4ad62aebfd6ba93e9463f2c39b29bc9e0e51c53173f43e
-  languageName: node
-  linkType: hard
-
-"@types/jsdom@npm:^28.0.1":
-  version: 28.0.1
-  resolution: "@types/jsdom@npm:28.0.1"
-  dependencies:
-    "@types/node": "npm:*"
-    "@types/tough-cookie": "npm:*"
-    parse5: "npm:^7.0.0"
-    undici-types: "npm:^7.21.0"
-  checksum: 10c0/4d0e412b4de5389279544ff227c6bacf6a8cb3e2fcabf8b543026568444c60e770848ba752cd134ef90f6ce3e7bafd3158b2a3dc1947c2961a5824b12d15bfac
   languageName: node
   linkType: hard
 
@@ -2307,13 +2294,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/tough-cookie@npm:*":
-  version: 4.0.5
-  resolution: "@types/tough-cookie@npm:4.0.5"
-  checksum: 10c0/68c6921721a3dcb40451543db2174a145ef915bc8bcbe7ad4e59194a0238e776e782b896c7a59f4b93ac6acefca9161fccb31d1ce3b3445cb6faa467297fb473
-  languageName: node
-  linkType: hard
-
 "@types/unist@npm:*":
   version: 3.0.3
   resolution: "@types/unist@npm:3.0.3"
@@ -2327,6 +2307,13 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/2ed949c2e6f7b22b2a91bde8a127265d1e3201baf1e8603e22836db58295170bdd1e25f4a4487c2daedab4a0340458f6adc0fa27f95429211f4dee261383a3b0
+  languageName: node
+  linkType: hard
+
+"@types/vscode@npm:1.118.0":
+  version: 1.118.0
+  resolution: "@types/vscode@npm:1.118.0"
+  checksum: 10c0/f1ce3935fd7ab6e4433a55c2018d790edd3d5bbe495b7dd8afa1fb3defab1e7650d22ba1bc2ab5689771789c3a27cf0a9fb86380b27997725cbca390e34d1d53
   languageName: node
   linkType: hard
 
@@ -3864,14 +3851,15 @@ __metadata:
   dependencies:
     "@cspell/cspell-types": "npm:10.0.0"
     "@dotenvx/dotenvx": "npm:1.65.0"
-    "@technobuddha/library": "npm:2.1.0-122"
-    "@technobuddha/project": "npm:1.0.0-63"
+    "@technobuddha/library": "npm:2.1.0-124"
+    "@technobuddha/project": "npm:1.0.0-70"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:25.6.2"
     "@types/postcss-import": "npm:^14.0.3"
     "@types/postcss-modules-local-by-default": "npm:^4.0.2"
     "@types/postcss-modules-scope": "npm:^3.0.4"
     "@types/stylus": "npm:^0"
+    "@types/vscode": "npm:1.118.0"
     "@vitest/coverage-v8": "npm:4.1.5"
     cspell: "npm:10.0.0"
     husky: "npm:9.1.7"
@@ -4161,13 +4149,6 @@ __metadata:
   version: 4.5.0
   resolution: "entities@npm:4.5.0"
   checksum: 10c0/5b039739f7621f5d1ad996715e53d964035f75ad3b9a4d38c6b3804bb226e282ffeae2443624d8fdd9c47d8e926ae9ac009c54671243f0c3294c26af7cc85250
-  languageName: node
-  linkType: hard
-
-"entities@npm:^6.0.0":
-  version: 6.0.1
-  resolution: "entities@npm:6.0.1"
-  checksum: 10c0/ed836ddac5acb34341094eb495185d527bd70e8632b6c0d59548cbfa23defdbae70b96f9a405c82904efa421230b5b3fd2283752447d737beffd3f3e6ee74414
   languageName: node
   linkType: hard
 
@@ -4925,16 +4906,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-technobuddha@npm:2.0.0-12":
-  version: 2.0.0-12
-  resolution: "eslint-plugin-technobuddha@npm:2.0.0-12"
+"eslint-plugin-technobuddha@npm:2.0.0-14":
+  version: 2.0.0-14
+  resolution: "eslint-plugin-technobuddha@npm:2.0.0-14"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@microsoft/tsdoc-config": "npm:0.18.1"
-    "@technobuddha/library": "npm:2.1.0-122"
+    "@technobuddha/library": "npm:2.1.0-124"
     eslint: "npm:10.3.0"
     get-tsconfig: "npm:4.14.0"
-  checksum: 10c0/4e2fea4d1a816f7890971b2366fc989a037bec411e0d2ae1344c80879c11a217594865549aec2bb5d2b298ab8da7cd53fefb79a669decb5ebf08e51cdc32de79
+  checksum: 10c0/d504155909c4d293c30523097bb835ae7e3baadfb10cb05da26c9194bed1097f5d66cceaccb8eb70755a021b33927281fe4974c34bb49a19b9fa4131e1b5a2ec
   languageName: node
   linkType: hard
 
@@ -7345,15 +7326,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"parse5@npm:^7.0.0":
-  version: 7.3.0
-  resolution: "parse5@npm:7.3.0"
-  dependencies:
-    entities: "npm:^6.0.0"
-  checksum: 10c0/7fd2e4e247e85241d6f2a464d0085eed599a26d7b0a5233790c49f53473232eb85350e8133344d9b3fd58b89339e7ad7270fe1f89d28abe50674ec97b87f80b5
-  languageName: node
-  linkType: hard
-
 "parse5@npm:^8.0.1":
   version: 8.0.1
   resolution: "parse5@npm:8.0.1"
@@ -9013,13 +8985,6 @@ __metadata:
     has-symbols: "npm:^1.1.0"
     which-boxed-primitive: "npm:^1.1.1"
   checksum: 10c0/7dbd35ab02b0e05fe07136c72cb9355091242455473ec15057c11430129bab38b7b3624019b8778d02a881c13de44d63cd02d122ee782fb519e1de7775b5b982
-  languageName: node
-  linkType: hard
-
-"undici-types@npm:^7.21.0":
-  version: 7.24.5
-  resolution: "undici-types@npm:7.24.5"
-  checksum: 10c0/48635d131de0a5b3a3380e241cdb0b8d1dc4b0b77cfc81f137aa121c8421cfdd85ac3d65625a1ae9c6ee18e01791b178916e65df60c94abb69acc183afd6c029
   languageName: node
   linkType: hard
 

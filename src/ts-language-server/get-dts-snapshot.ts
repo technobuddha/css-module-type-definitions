@@ -3,7 +3,7 @@ import { MessageChannel, receiveMessageOnPort, Worker } from 'node:worker_thread
 
 import type TS from 'typescript';
 
-import { type Logger, type Options } from '../css-library/index.ts';
+import { type Logger, type Options } from '../common/index.ts';
 
 type WorkerData = {
   shared: SharedArrayBuffer;
@@ -50,6 +50,7 @@ export function getDtsSnapshot(
   worker.w.postMessage(request);
   Atomics.wait(worker.int32, 0, 0);
   const { dts } =
-    receiveMessageOnPort(worker.localPort)?.message ?? ({} as { dts: string; map: string });
+    receiveMessageOnPort(worker.localPort)?.message ??
+    ({} as { dts: string; dtsFile: string; map: string });
   return ts.ScriptSnapshot.fromString(dts);
 }
