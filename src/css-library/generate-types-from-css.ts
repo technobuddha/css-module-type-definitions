@@ -82,7 +82,7 @@ export async function generateTypesFromCss(
             ];
 
             const { name, ext, base } = path.parse(filename);
-            const dtsFile = `${name}${ext}.d.ts`; //`${name}.d${ext}.ts`;
+            const dtsFile = `${name}${ext}.d.ts`;
             const generator = new SourceMapGenerator({
               file: dtsFile,
               sourceRoot: empty,
@@ -90,12 +90,12 @@ export async function generateTypesFromCss(
 
             const smc = sourceMap ? new SourceMapConsumer(sourceMap) : null;
 
-            for (const [name, scoped] of Object.entries(classScope)) {
-              let offset = classOffsets.get(name);
+            for (const [className, scoped] of Object.entries(classScope)) {
+              let offset = classOffsets.get(className);
 
               if (!offset && cssModules.localsConvention === 'camelCaseOnly') {
                 for (const [n, o] of classOffsets.entries()) {
-                  if (camelCase(n) === name) {
+                  if (camelCase(n) === className) {
                     offset = o;
                     break;
                   }
@@ -103,7 +103,7 @@ export async function generateTypesFromCss(
               }
               if (!offset && cssModules.localsConvention === 'dashesOnly') {
                 for (const [n, o] of classOffsets.entries()) {
-                  if (dashes(n) === name) {
+                  if (dashes(n) === className) {
                     offset = o;
                     break;
                   }
@@ -119,7 +119,7 @@ export async function generateTypesFromCss(
                     line = l;
                     column = c;
                   } else {
-                    logger.error(`Could not map position for ${name} at ${line}:${column}`);
+                    logger.error(`Could not map position for ${className} at ${line}:${column}`);
                   }
                 }
 
@@ -127,7 +127,7 @@ export async function generateTypesFromCss(
                   source: base,
                   generated: {
                     line: dts.length + 1, // account for the line we're about to add
-                    column: 12, // length of {space}{space}readonly{space}{quote},
+                    column: 11, // length of {space}{space}readonly{space}{quote},
                   },
                   original: {
                     line,
@@ -136,11 +136,11 @@ export async function generateTypesFromCss(
                 });
               }
 
-              dts.push(`${space}${space}readonly${space}${quote(name)}: ${quote(scoped)};`);
+              dts.push(`${space}${space}readonly${space}${quote(className)}: ${quote(scoped)};`);
             }
 
             const comment = `//# sourceMappingURL=data:application/json;charset=utf-8;base64`;
-            const b64SourceMap = Buffer.from(JSON.stringify(map)).toString('base64');
+            const b64SourceMap = Buffer.from(JSON.stringify(generator.toJSON())).toString('base64');
             dts.push(
               '};',
               empty,

@@ -45,7 +45,10 @@ export function getDtsSnapshot(
     });
   }
 
-  const request: WorkerRequest = { filename, options };
+  const request: WorkerRequest = {
+    filename,
+    options,
+  };
 
   worker.w.postMessage(request);
   Atomics.wait(worker.int32, 0, 0);
