@@ -4,9 +4,8 @@ import path from 'node:path';
 import { compileStringAsync, type FileImporter, type Importer } from 'sass';
 import { createMatchPath } from 'tsconfig-paths';
 import { type CompilerOptions } from 'typescript';
-import { type Logger } from 'vite';
 
-import { type Options } from '../../common/index.ts';
+import { type Logger, type Options } from '../../common/index.ts';
 
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
@@ -123,24 +122,24 @@ function sassImporters(
 type TransformSassArguments = {
   filename: string;
   directory: string;
-  options?: NonNullable<Options['preprocessor']>['sass'];
+  options: Options;
   compilerOptions: CompilerOptions;
-  logger?: Logger;
+  logger: Logger;
 };
 
 export async function transformSass(
   source: string,
-  { filename, directory, options = {}, compilerOptions }: TransformSassArguments,
+  { filename, directory, options, compilerOptions, logger }: TransformSassArguments,
 ): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
-  const { loadPaths = [], additionalData, ...sassOptions } = options;
+  const { /*loadPaths = [],*/ additionalData, ...sassOptions } = options.preprocessor?.sass ?? {};
   const { paths } = compilerOptions;
 
   // TODO sourceMap with additionalData
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     compileStringAsync(content, {
       importers: sassImporters(directory, paths),
-      loadPaths: [path.dirname(filename), 'node_modules', ...loadPaths],
+      loadPaths: [path.dirname(filename), 'node_modules'], //, ...loadPaths],
       sourceMap: true,
       syntax: ext === '.sass' ? 'indented' : 'scss',
       url: new URL(`file://${filename}`),
@@ -148,7 +147,7 @@ export async function transformSass(
     }).then((compiled) => ({
       css: compiled.css,
       sourceMap: compiled.sourceMap,
-      classOffsets: extractClassOffsetsFromCss(compiled.css, { filename }),
+      classOffsets: extractClassOffsetsFromCss(compiled.css, { filename, logger }),
     })),
   );
 }

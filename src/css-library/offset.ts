@@ -1,5 +1,3 @@
-import { withIndex } from '@technobuddha/library';
-
 export interface Offset {
   /**
    * zero-based index
@@ -17,19 +15,17 @@ export function getPositionOfOffset(text: string, offset: number): Offset {
     column: 0,
   };
 
-  for (const [char, index] of withIndex(text)) {
-    if (index <= offset) {
-      if (char === '\n') {
-        result.line++;
-        result.column = 0;
-      } else {
-        result.column++;
-      }
+  for (const char of text.slice(0, offset)) {
+    if (char === '\n') {
+      result.line++;
+      result.column = -1;
+    } else if (char === '\r') {
+      // Ignore carriage returns, as they may be part of a CRLF sequence.
     } else {
-      break;
+      result.column++;
     }
   }
-  return result;
+  return result.column < 0 ? { line: result.line, column: 0 } : result;
 }
 
 export function offsetAdd(base: Offset, delta: Offset): Offset {

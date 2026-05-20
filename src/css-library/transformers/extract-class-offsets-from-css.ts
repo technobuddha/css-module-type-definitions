@@ -1,23 +1,25 @@
+import { zipperMerge } from '@technobuddha/library';
 import postcss, { AtRule, type Node, Rule } from 'postcss';
 import { extract } from 'string-extract-class-names';
 
-import { defaultLogger, type Logger } from '../../common/logger.ts';
+import { type Logger } from '../../common/logger.ts';
+
 import { getPositionOfOffset, type Offset, offsetAdd } from '../offset.ts';
 
-type ClassName = {
+type ClassOffset = {
   name: string;
   offset: Offset;
 };
 
-type ExtractClassNamesFromCssArguments = {
+type ExtractClassOffsetsFromCssArguments = {
   filename: string;
-  logger?: Logger;
+  logger: Logger;
   less?: boolean;
 };
 
 export function extractClassOffsetsFromCss(
   css: string,
-  { filename, logger = defaultLogger, less = false }: ExtractClassNamesFromCssArguments,
+  { filename, logger, less = false }: ExtractClassOffsetsFromCssArguments,
 ): Map<string, Offset> {
   const classes: Map<string, Offset> = new Map();
 
@@ -28,8 +30,8 @@ export function extractClassOffsetsFromCss(
         // Only the first definition of an exported name will be tracked.
         if (!classes.has(name)) {
           const ruleOffset: Offset = {
-            line: node.source?.start?.line ?? 1, // 1 based lines,
-            column: (node.source?.start?.column ?? 1) - 1, // 0 based columns,
+            line: node.source?.start?.line ?? 1,
+            column: node.source?.start?.column ?? 1,
           };
           classes.set(name, offsetAdd(ruleOffset, offset));
         }
@@ -39,31 +41,26 @@ export function extractClassOffsetsFromCss(
   return classes;
 }
 
-function* walkNode(node: Node, logger: Logger, less: boolean): Generator<ClassName> {
+function* walkNode(node: Node, logger: Logger, less: boolean): Generator<ClassOffset> {
   if (node instanceof Rule) {
-    yield* walkRule(node, less);
+    yield* walkRule(node, less, logger);
   }
   if (node instanceof AtRule) {
     yield* walkAtRule(node, logger);
   }
 }
 
-function* walkRule({ selector }: Rule, less: boolean): Generator<ClassName> {
+function* walkRule({ selector }: Rule, less: boolean, _logger: Logger): Generator<ClassOffset> {
   const { res, ranges } = extract(selector);
-  for (let i = 0; i < res.length; ++i) {
-    const name = res[i];
+  for (const [name, [start]] of zipperMerge(res, ranges ?? [])) {
     if (name.startsWith('.')) {
-      const [start] = ranges?.[i] ?? [0];
-
-      yield {
-        name: name.slice(1),
-        offset: less ? { line: 0, column: start } : getPositionOfOffset(selector, start),
-      };
+      const offset = less ? { line: 0, column: start } : getPositionOfOffset(selector, start);
+      yield { name: name.slice(1), offset };
     }
   }
 }
 
-function* walkAtRule(atRule: AtRule, logger: Logger): Generator<ClassName> {
+function* walkAtRule(atRule: AtRule, logger: Logger): Generator<ClassOffset> {
   const baseOffset: Offset = {
     line: 0,
     column: `@${atRule.name}`.length + (atRule.raws.afterName?.length ?? 0),

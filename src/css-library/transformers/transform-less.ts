@@ -13,15 +13,15 @@ import { type TransformerReturn } from './transformer-return.ts';
 type TransformLessArguments = {
   filename: string;
   directory: string;
-  options?: NonNullable<Options['preprocessor']>['less'];
-  logger?: Logger;
+  options: Options;
+  logger: Logger;
 };
 
 export async function transformLess(
   source: string,
-  { filename, directory, options = {} }: TransformLessArguments,
+  { filename, directory, options, logger }: TransformLessArguments,
 ): Promise<TransformerReturn> {
-  const { additionalData } = options;
+  const additionalData = options.preprocessor?.less?.additionalData;
   // TODO sourceMap with additionalData
 
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
@@ -38,7 +38,7 @@ export async function transformLess(
       .then(({ css, map }) => ({
         css: css.replace(/\/\*# sourceMapping.*$/mv, empty),
         sourceMap: map ? JSON.parse(map) : undefined,
-        classOffsets: extractClassOffsetsFromCss(css, { filename, less: true }),
+        classOffsets: extractClassOffsetsFromCss(css, { filename, logger, less: true }),
       })),
   );
 }

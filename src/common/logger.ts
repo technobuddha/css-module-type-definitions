@@ -1,4 +1,6 @@
-import { err, out, toError } from '@technobuddha/library';
+import fs from 'node:fs/promises';
+
+import { toError } from '@technobuddha/library';
 
 export interface Logger {
   log: (message: string) => void;
@@ -6,6 +8,7 @@ export interface Logger {
 }
 
 export const defaultLogger: Logger = {
-  log: (message: string) => out(`[cmtd] ${message}\n`),
-  error: (error: unknown) => err(`[cmtd] ${toError(error).message}`),
+  log: (message: string) => void fs.appendFile('/tmp/cmtd.log', `[cmtd] ${message}\n`, 'utf-8'),
+  error: (error: unknown) =>
+    void fs.appendFile('/tmp/cmtd.log', `[cmtd] ERROR: ${toError(error).message}\n`, 'utf-8'),
 };

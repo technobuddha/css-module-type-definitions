@@ -8,6 +8,11 @@ const config = {
   },
   typedoc: {
     readme: 'doc/intro.md',
+  },
+  lint: {
+    rules: {
+      'unicorn/prefer-event-target': { rule: 'off' }
+    }
   }
 };
 

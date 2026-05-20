@@ -17,21 +17,22 @@ export interface Options {
   goToDefinition?: boolean;
   postcss?: PostcssOptions;
   preprocessor?: {
-    less?: LessPreprocessorOptions;
+    less?: NonNullable<LessPreprocessorOptions>;
     sass?: SassPreprocessorOptions;
     scss?: SassPreprocessorOptions;
     styl?: StylusPreprocessorOptions;
     stylus?: StylusPreprocessorOptions;
   };
-  cssModules?: CSSModulesOptions & {
-    filePattern?: string;
-    dtsBanner?: boolean;
-    dtsHeader?: string;
-    generateDtsOnSave?: boolean;
+  cssModules: CSSModulesOptions & {
+    extensions: string[];
+    modulePattern: string;
+    dtsBanner: boolean;
+    dtsHeader: string;
+    generateDtsOnSave: boolean;
   };
 }
 
-export const defaultOptions: Options = {
+export const defaultOptions = Object.freeze<Options>({
   cssModules: {
     scopeBehaviour: 'local',
     globalModulePaths: [],
@@ -39,9 +40,10 @@ export const defaultOptions: Options = {
     generateScopedName: '[name]__[local]___[hash:base64:5]',
     hashPrefix: empty,
     localsConvention: 'camelCase',
-    filePattern: '\\.module\\.(?:css|less|sass|scss|styl(?:us)?)$',
     dtsBanner: true,
     dtsHeader: '/* eslint-disable @typescript-eslint/naming-convention */\n// cspell:disable',
     generateDtsOnSave: true,
+    extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
+    modulePattern: '*.module',
   },
-};
+});
