@@ -3,7 +3,7 @@ import path from 'node:path';
 import postcss, { AtRule, type Node, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 
-import { type Logger } from '../common/logger.ts';
+import { type Logger } from '../common/index.ts';
 
 import { getPositionOfOffset, type Offset, offsetAdd } from './offset.ts';
 
@@ -18,6 +18,32 @@ type ExtractClassOffsetsFromCssArguments = {
   less?: boolean;
 };
 
+/**
+ * Extracts exported class-like identifiers and their source offsets from CSS content.
+ *
+ * The returned map includes:
+ * - Class selectors (e.g. `.button`)
+ * - `@value` declarations/import aliases
+ * - `@keyframes` names
+ *
+ * When the same name appears multiple times, only the first occurrence is retained.
+ *
+ * @param css - The CSS source text to analyze.
+ * @param options - Extraction options including the source filename and optional logger.
+ * @returns A map of exported name to source offset.
+ *
+ * @example
+ * ```typescript
+ * const offsets = extractClassOffsetsFromCss('.button-primary { color: red; }', {
+ *   filename: 'styles.module.css',
+ * });
+ *
+ * offsets.get('button-primary');
+ * ```
+ *
+ * @group CSS Modules
+ * @category Class Extraction
+ */
 export function extractClassOffsetsFromCss(
   css: string,
   { filename, logger, less = false }: ExtractClassOffsetsFromCssArguments,

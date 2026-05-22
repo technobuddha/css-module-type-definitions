@@ -19,7 +19,20 @@ export async function update(glob: string, { options, logger, ig }: UpdateOption
       files.map(async (file) =>
         fs
           .readFile(file, 'utf-8')
-          .then(async (content) => generateTypesFromCss(content, file, { options, logger })),
+          .then(async (content) =>
+            generateTypesFromCss(content, file, { options, logger }).then(async ({ files }) =>
+              Promise.all(
+                Object.entries(files).map(async ([filename, content]) =>
+                  fs.writeFile(filename, content, 'utf-8'),
+                ),
+              ),
+            ),
+          )
+          .catch((error) => {
+            logger.error(
+              `Error processing file ${file}: ${error instanceof Error ? error : String(error)}`,
+            );
+          }),
       ),
     ).then(() => undefined),
   );

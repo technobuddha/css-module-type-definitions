@@ -10,18 +10,24 @@ export async function generateTypes(uri: Uri): Promise<void> {
   if (options.cssModules.generateDtsOnSave && config.isCSS(uri)) {
     logger.log(`generateTypes(${uri.fsPath})`);
     return workspace.fs.stat(uri).then(async () =>
-      workspace.fs.readFile(uri).then(async (buffer) =>
-        generateTypesFromCss(await workspace.decode(buffer), uri.path, {
-          options,
-          logger,
-        }).then(async ({ files }) =>
-          Promise.all(
-            Object.entries(files).map(async ([filename, content]) =>
-              workspace.fs.writeFile(uri.with({ path: filename }), await workspace.encode(content)),
-            ),
-          ).then(() => undefined),
+      workspace.fs
+        .readFile(uri)
+        .then(workspace.decode)
+        .then(async (content) =>
+          generateTypesFromCss(content, uri.path, {
+            options,
+            logger,
+          }).then(async ({ files }) =>
+            Promise.all(
+              Object.entries(files).map(async ([filename, content]) =>
+                workspace.fs.writeFile(
+                  uri.with({ path: filename }),
+                  await workspace.encode(content),
+                ),
+              ),
+            ).then(() => undefined),
+          ),
         ),
-      ),
     );
   }
 }

@@ -1,4 +1,4 @@
-import { type DotenvConfigOptions } from '@dotenvx/dotenvx';
+//import { type DotenvConfigOptions } from '@dotenvx/dotenvx';
 import { empty } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
@@ -13,15 +13,14 @@ interface PostcssOptions {
 }
 
 export interface Options {
-  dotenv?: Omit<DotenvConfigOptions, 'path'> & { path?: string };
-  goToDefinition?: boolean;
-  postcss?: PostcssOptions;
-  preprocessor?: {
-    less?: NonNullable<LessPreprocessorOptions>;
-    sass?: SassPreprocessorOptions;
-    scss?: SassPreprocessorOptions;
-    styl?: StylusPreprocessorOptions;
-    stylus?: StylusPreprocessorOptions;
+  // dotenv: Omit<DotenvConfigOptions, 'path'> & { path?: string };
+  postcss: PostcssOptions;
+  preprocessor: {
+    less: LessPreprocessorOptions;
+    sass: SassPreprocessorOptions;
+    scss: SassPreprocessorOptions;
+    styl: StylusPreprocessorOptions;
+    stylus: StylusPreprocessorOptions;
   };
   cssModules: CSSModulesOptions & {
     extensions: string[];
@@ -33,6 +32,14 @@ export interface Options {
 }
 
 export const defaultOptions = Object.freeze<Options>({
+  postcss: {},
+  preprocessor: {
+    less: {},
+    sass: {},
+    scss: {},
+    styl: {},
+    stylus: {},
+  },
   cssModules: {
     scopeBehaviour: 'local',
     globalModulePaths: [],

@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { type RawSourceMap } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
 import { type Logger } from '../../common/logger.ts';
@@ -8,9 +9,13 @@ import { type Options } from '../../common/options.ts';
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
 import { transformStylus } from './transform-stylus.ts';
-import { type TransformerReturn } from './transformer-return.ts';
 
-type TransformerArguments = {
+export type TransformerReturn = {
+  css: string;
+  sourceMap?: RawSourceMap;
+};
+
+export type TransformerArguments = {
   filename: string;
   directory: string;
   options: Options;
@@ -23,51 +28,33 @@ export async function transformer(
   { filename, directory, options, compilerOptions, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
+  const args = {
+    filename,
+    directory,
+    options,
+    logger,
+    compilerOptions,
+  };
 
   switch (ext) {
     case '.less': {
-      return transformLess(css, {
-        filename,
-        directory,
-        options,
-        logger,
-      });
+      return transformLess(css, args);
     }
 
     case '.sass': {
-      return transformSass(css, {
-        filename,
-        directory,
-        options,
-        compilerOptions,
-        logger,
-      });
+      return transformSass(css, args);
     }
 
     case '.scss': {
-      return transformSass(css, {
-        filename,
-        directory,
-        options,
-        compilerOptions,
-        logger,
-      });
+      return transformSass(css, args);
     }
 
     case '.styl': {
-      return transformStylus(css, {
-        filename,
-        options,
-        logger,
-      });
+      return transformStylus(css, args);
     }
 
     case '.stylus': {
-      return transformStylus(css, {
-        filename,
-        options,
-        logger,
-      });
+      return transformStylus(css, args);
     }
 
     default: {

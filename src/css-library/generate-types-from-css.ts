@@ -9,6 +9,7 @@ import {
   quote,
   space,
   splitLines,
+  toError,
 } from '@technobuddha/library';
 import postcss from 'postcss';
 import postcssImport from 'postcss-import';
@@ -22,7 +23,7 @@ import { BANNER_MESSAGE } from './constants.ts';
 import { dashes } from './dashes.ts';
 import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { type Offset } from './offset.ts';
-import { transformer } from './transformers/transformer.ts';
+import { transformer } from './transformers/index.ts';
 
 type GenerateTypesFromCssReturn = {
   files: Record<string, string>;
@@ -44,8 +45,6 @@ export async function generateTypesFromCss(
 
   const { cssModules } = options;
 
-  logger.log(`Generating types for ${filename} in ${directory}`);
-
   return transformer(css, {
     filename,
     directory,
@@ -54,33 +53,40 @@ export async function generateTypesFromCss(
     logger,
   })
     .then(async ({ css, sourceMap }) =>
-      postcss([postcssImport()])
+      postcss()
+        .use(postcssImport({ root: directory }))
         .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
-        .then(async ({ css, map }) => {
+        .then(async ({ css, map, messages }) => {
+          logger.log(`Messages for ${filename}:\n${JSON.stringify(messages)}`);
+          logger.log(`Output for ${filename}:\n${css}`);
           const sourceMap = map?.toJSON();
 
           if (sourceMap) {
+            if (sourceMap.file) {
+              sourceMap.file = path.resolve(sourceMap.file);
+            }
             for (let i = 0; i < sourceMap.sources.length; i++) {
               sourceMap.sources[i] = path.resolve(sourceMap.sources[i]);
             }
           }
 
+          logger.log(`Adjusted source map for ${filename}:\n${JSON.stringify(sourceMap)}`);
+
           const classOffsets = extractClassOffsetsFromCss(css, { filename, logger });
           let classScope: Record<string, string>;
 
-          return postcss([
-            postcssModules({
-              ...cssModules,
-              getJSON: (cssFilename, json, outputFilename) => {
-                classScope = json;
-                logger.log(`Extracted class names from ${cssFilename}: ${outputFilename}`);
-                logger.log(JSON.stringify(json));
-                return cssModules.getJSON?.(cssFilename, json, outputFilename ?? empty);
-              },
-            }),
-          ])
+          return postcss()
+            .use(
+              postcssModules({
+                ...cssModules,
+                getJSON: (cssFilename, json, outputFilename) => {
+                  classScope = json;
+                  return cssModules.getJSON?.(cssFilename, json, outputFilename ?? empty);
+                },
+              }),
+            )
             .process(css, {
-              from: path.basename(filename),
+              from: filename,
               map: { inline: false, prev: sourceMap },
             })
             .then(({ map }) => {
@@ -206,6 +212,10 @@ export async function generateTypesFromCss(
                 },
                 offsets: classOffsets,
               };
+            })
+            .catch((error) => {
+              logger.error(error);
+              throw toError(error);
             });
         }),
     )

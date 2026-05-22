@@ -3,12 +3,9 @@ import path from 'node:path';
 
 import { compileStringAsync, type FileImporter, type Importer } from 'sass';
 import { createMatchPath } from 'tsconfig-paths';
-import { type CompilerOptions } from 'typescript';
-
-import { type Logger, type Options } from '../../common/index.ts';
 
 import { getSource } from './get-source.ts';
-import { type TransformerReturn } from './transformer-return.ts';
+import { type TransformerArguments, type TransformerReturn } from './transformer.ts';
 
 const DEFAULT_EXTS = ['scss', 'sass', 'css'];
 
@@ -118,17 +115,9 @@ function sassImporters(
   ];
 }
 
-type TransformSassArguments = {
-  filename: string;
-  directory: string;
-  options: Options;
-  compilerOptions: CompilerOptions;
-  logger: Logger;
-};
-
 export async function transformSass(
   source: string,
-  { filename, directory, options, compilerOptions }: TransformSassArguments,
+  { filename, directory, options, compilerOptions }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
   const { /*loadPaths = [],*/ additionalData, ...sassOptions } = options.preprocessor?.sass ?? {};

@@ -1,0 +1,11 @@
+// 🚨
+// 🚨 CHANGES TO THIS FILE WILL BE OVERRIDDEN
+// 🚨
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "lib": ["esnext"], "noEmit": true, "types": ["node", "vitest/globals"] },
+  "include": ["*.test.ts", "../../@types/*.d.ts"],
+  "exclude": ["eslint.config.js"],
+  "references": [{ "path": "../.." }]
+}

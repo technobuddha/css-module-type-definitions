@@ -46,12 +46,13 @@ if (import.meta.main) {
       .catch(() => ({}));
 
     const options: Options = {
+      postcss: defaultOptions.postcss,
       preprocessor: {
-        less: viteConfig?.preprocessorOptions?.less,
-        sass: viteConfig?.preprocessorOptions?.sass,
-        scss: viteConfig?.preprocessorOptions?.scss,
-        styl: viteConfig?.preprocessorOptions?.styl,
-        stylus: viteConfig?.preprocessorOptions?.stylus,
+        less: viteConfig?.preprocessorOptions?.less ?? defaultOptions.preprocessor.less,
+        sass: viteConfig?.preprocessorOptions?.sass ?? defaultOptions.preprocessor.sass,
+        scss: viteConfig?.preprocessorOptions?.scss ?? defaultOptions.preprocessor.scss,
+        styl: viteConfig?.preprocessorOptions?.styl ?? defaultOptions.preprocessor.styl,
+        stylus: viteConfig?.preprocessorOptions?.stylus ?? defaultOptions.preprocessor.stylus,
       },
       cssModules: {
         scopeBehaviour:

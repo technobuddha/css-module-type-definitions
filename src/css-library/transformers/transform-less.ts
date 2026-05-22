@@ -3,22 +3,12 @@ import path from 'node:path';
 import { empty } from '@technobuddha/library';
 import less from 'less';
 
-import { type Options } from '../../common/index.ts';
-import { type Logger } from '../../common/logger.ts';
-
 import { getSource } from './get-source.ts';
-import { type TransformerReturn } from './transformer-return.ts';
-
-type TransformLessArguments = {
-  filename: string;
-  directory: string;
-  options: Options;
-  logger: Logger;
-};
+import { type TransformerArguments, type TransformerReturn } from './transformer.ts';
 
 export async function transformLess(
   source: string,
-  { filename, directory, options }: TransformLessArguments,
+  { filename, directory, options }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const additionalData = options.preprocessor?.less?.additionalData;
   // TODO sourceMap with additionalData

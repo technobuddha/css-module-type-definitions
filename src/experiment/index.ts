@@ -7,6 +7,7 @@ console.log(css.l3);
 console.log(css.i1);
 console.log(css.i2);
 console.log(css.i3);
+console.log(css.bletch);
 
 // & this is supposted to be highlighted.
 

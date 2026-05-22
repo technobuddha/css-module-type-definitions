@@ -52,7 +52,6 @@ export class ConfigurationController extends Controller {
     this.dispose();
     this.disposables.push(
       workspace.onDidChangeConfiguration(async (event) => {
-        this.logger.log('Configuration change detected');
         if (event.affectsConfiguration(SETTINGS_PREFIX)) {
           this.logger.log('Relevant configuration change detected, updating options...');
           await this.readOptions();
@@ -76,7 +75,6 @@ export class ConfigurationController extends Controller {
   #viteConfig?: ViteCss;
   private async getViteConfig(): Promise<ViteCss> {
     if (this.#viteConfig === undefined) {
-      this.logger.log('Reading Vite configuration...');
       this.#viteConfig = {};
 
       const glob = `vite.config.{js,cjs,mjs,ts,cts,mts}`;
@@ -115,16 +113,16 @@ export class ConfigurationController extends Controller {
     const config = workspace.getConfiguration(SETTINGS_PREFIX);
 
     this.options = {
-      // customTemplate
-      // dotenv
-      // gotoDefinition
-      // postcss
+      postcss: { ...defaultOptions.postcss },
       preprocessor: {
-        less: viteConfig.preprocessorOptions?.less,
-        sass: viteConfig.preprocessorOptions?.sass,
-        scss: viteConfig.preprocessorOptions?.scss,
-        styl: viteConfig.preprocessorOptions?.styl,
-        stylus: viteConfig.preprocessorOptions?.stylus,
+        less: { ...defaultOptions.preprocessor.less, ...viteConfig.preprocessorOptions?.less },
+        sass: { ...defaultOptions.preprocessor.sass, ...viteConfig.preprocessorOptions?.sass },
+        scss: { ...defaultOptions.preprocessor.scss, ...viteConfig.preprocessorOptions?.scss },
+        styl: { ...defaultOptions.preprocessor.styl, ...viteConfig.preprocessorOptions?.styl },
+        stylus: {
+          ...defaultOptions.preprocessor.stylus,
+          ...viteConfig.preprocessorOptions?.stylus,
+        },
       },
       cssModules: {
         scopeBehaviour:
@@ -192,7 +190,6 @@ export class ConfigurationController extends Controller {
         for (const { dir: dir1, ig: parent } of ignoreDirs) {
           for (const [{ dir: dir2, ig: child }, index] of withIndex(ignoreDirs)) {
             if (isSubdirectory(dir1, dir2)) {
-              this.logger.log(`Combining ignore patterns from ${dir1} into ${dir2}`);
               ignoreDirs[index].ig = ignore().add(parent).add(child);
             }
           }

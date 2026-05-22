@@ -1,7 +1,6 @@
 import { type ExtensionContext, window } from 'vscode';
 
 import {
-  commandCreateTypes,
   commandDeleteTypes,
   commandHideTypeFiles,
   commandShowTypeFiles,
@@ -20,7 +19,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
   context.subscriptions.push(
     config,
     watcher,
-    commandCreateTypes(),
     commandDeleteTypes(),
     commandUpdateTypes(),
     commandShowTypeFiles(),
