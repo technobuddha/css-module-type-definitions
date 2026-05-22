@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "css-module-type-definitions",
-  "description": "Generate Type Definitions for CSS Modules",
   "version": "2.0.0-8",
+  "description": "Generate Type Definitions for CSS Modules",
   "stableVersion": "1.99.6",
   "license": "MIT",
   "type": "module",
@@ -40,8 +40,10 @@
   },
   "dependencies": {
     "@dotenvx/dotenvx": "1.65.0",
-    "@technobuddha/library": "2.1.0-128",
+    "@technobuddha/library": "2.1.0-129",
+    "chalk": "5.6.2",
     "commander": "14.0.3",
+    "cosmiconfig": "9.0.1",
     "ignore": "7.0.5",
     "less": "4.6.4",
     "magic-string": "0.30.21",
@@ -51,23 +53,26 @@
     "postcss-modules": "6.0.1",
     "postcss-modules-local-by-default": "^4.2.0",
     "postcss-modules-scope": "^3.2.1",
+    "postcss-selector-parser": "7.1.1",
     "prettier": "3.8.3",
+    "sane": "5.0.1",
     "sass": "1.99.0",
     "source-map-js": "1.2.1",
-    "string-extract-class-names": "8.1.3",
     "stylus": "0.64.0",
     "tsconfig-paths": "4.2.0",
     "typescript": "6.0.3",
-    "vite": "8.0.12"
+    "vite": "8.0.12",
+    "webpack": "5.107.0"
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.0",
-    "@technobuddha/project": "1.0.0-75",
+    "@technobuddha/project": "1.0.0-77",
     "@types/less": "3.0.8",
     "@types/node": "25.7.0",
     "@types/postcss-import": "^14.0.3",
     "@types/postcss-modules-local-by-default": "^4.0.2",
     "@types/postcss-modules-scope": "^3.0.4",
+    "@types/sane": "2.0.9",
     "@types/stylus": "^0",
     "@types/vscode": "1.118.0",
     "@vitest/coverage-v8": "4.1.6",
@@ -82,7 +87,7 @@
     "ip-address": "^10.1.1"
   },
   "engines": {
-    "vscode": "^1.80.0",
+    "vscode": "^1.118.0",
     "merge": "^2.1.1",
     "node": ">=25.0.0"
   },
@@ -93,24 +98,9 @@
   ],
   "publisher": "technobuddha",
   "activationEvents": [
-    "onLanguage:css",
-    "onLanguage:less",
-    "onLanguage:sass",
-    "onLanguage:scss",
-    "onLanguage:stylus",
-    "onLanguage:typescriptreact",
-    "onLanguage:javascriptreact",
-    "onLanguage:javascript",
-    "onLanguage:typescript",
-    "onLanguage:astro"
+    "onStartupFinished"
   ],
   "contributes": {
-    "typescriptServerPlugins": [
-      {
-        "name": "!typescript-plugin-cmtd",
-        "enableForWorkspaceTypeScriptVersions": true
-      }
-    ],
     "commands": [
       {
         "command": "cmtd.generateTypes",

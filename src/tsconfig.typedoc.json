@@ -10,7 +10,7 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "**/*.d.*.ts"],
   "exclude": ["**/__tests__/**/*.*"],
   "references": []
 }

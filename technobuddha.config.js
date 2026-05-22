@@ -1,6 +1,11 @@
 //@ts-check
 /** @type import("@technobuddha/project").TechnobuddhaConfig */
 const config = {
+  git: {
+    ignore: [
+      'out'
+    ]
+  },
   directories: {
     src: {
       platform: 'node',

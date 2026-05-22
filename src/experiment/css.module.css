@@ -1,0 +1,15 @@
+@import './include.css';
+
+@value foobar: 'foobar';
+
+.l1 {
+  .l2 {
+    .l3 {
+      content: 'l1.2.3';
+    }
+  }
+}
+
+.bletch {
+  composes: foobar from './library.css';
+}

@@ -2,10 +2,9 @@ import path from 'node:path';
 
 import { window, workspace } from 'vscode';
 
+import { config } from '../extension.ts';
 import { deleteTypes } from '../helpers/delete-types.ts';
 import { generateTypes } from '../helpers/generate-types.ts';
-
-import { config } from '../extension.ts';
 
 import { Controller } from './controller.ts';
 
@@ -41,18 +40,24 @@ export class FileWatcherController extends Controller {
       watcher,
       watcher.onDidChange(async (uri) => {
         config.logger.log(`File changed: ${uri.fsPath}`);
-        await generateTypes(uri);
-        window.showInformationMessage(`Updated types for ${path.basename(uri.fsPath)}`);
+        if (!config.isIgnored(uri)) {
+          await generateTypes(uri);
+          window.showInformationMessage(`Updated types for ${path.basename(uri.fsPath)}`);
+        }
       }),
       watcher.onDidCreate(async (uri) => {
         config.logger.log(`File created: ${uri.fsPath}`);
-        await generateTypes(uri);
-        window.showInformationMessage(`Created types for ${path.basename(uri.fsPath)}`);
+        if (!config.isIgnored(uri)) {
+          await generateTypes(uri);
+          window.showInformationMessage(`Created types for ${path.basename(uri.fsPath)}`);
+        }
       }),
       watcher.onDidDelete(async (uri) => {
         config.logger.log(`File deleted: ${uri.fsPath}`);
-        await deleteTypes(uri);
-        window.showInformationMessage(`Deleted types for ${path.basename(uri.fsPath)}`);
+        if (!config.isIgnored(uri)) {
+          await deleteTypes(uri);
+          window.showInformationMessage(`Deleted types for ${path.basename(uri.fsPath)}`);
+        }
       }),
     );
   }

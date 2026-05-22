@@ -122,7 +122,7 @@ if (import.meta.main) {
     program.command('remove').action(async () => remove(globIsTypeDefinition, ig));
     program
       .command('update', { isDefault: true })
-      .action(async () => update(options, globIsCss, ig));
+      .action(async () => update(globIsCss, { ig, options, logger: console }));
 
     return program.parseAsync();
   });

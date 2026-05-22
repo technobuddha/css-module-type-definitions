@@ -5,7 +5,6 @@ import { type CompilerOptions } from 'typescript';
 import { type Logger } from '../../common/logger.ts';
 import { type Options } from '../../common/options.ts';
 
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
 import { transformStylus } from './transform-stylus.ts';
@@ -72,7 +71,7 @@ export async function transformer(
     }
 
     default: {
-      return { css, classOffsets: extractClassOffsetsFromCss(css, { filename, logger }) };
+      return { css };
     }
   }
 }

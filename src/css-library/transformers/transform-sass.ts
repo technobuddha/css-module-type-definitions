@@ -7,7 +7,6 @@ import { type CompilerOptions } from 'typescript';
 
 import { type Logger, type Options } from '../../common/index.ts';
 
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
 import { type TransformerReturn } from './transformer-return.ts';
 
@@ -129,7 +128,7 @@ type TransformSassArguments = {
 
 export async function transformSass(
   source: string,
-  { filename, directory, options, compilerOptions, logger }: TransformSassArguments,
+  { filename, directory, options, compilerOptions }: TransformSassArguments,
 ): Promise<TransformerReturn> {
   const { ext } = path.parse(filename);
   const { /*loadPaths = [],*/ additionalData, ...sassOptions } = options.preprocessor?.sass ?? {};
@@ -147,7 +146,6 @@ export async function transformSass(
     }).then((compiled) => ({
       css: compiled.css,
       sourceMap: compiled.sourceMap,
-      classOffsets: extractClassOffsetsFromCss(compiled.css, { filename, logger }),
     })),
   );
 }

@@ -1,10 +1,11 @@
-import { zipperMerge } from '@technobuddha/library';
+import path from 'node:path';
+
 import postcss, { AtRule, type Node, Rule } from 'postcss';
-import { extract } from 'string-extract-class-names';
+import selectorParser from 'postcss-selector-parser';
 
-import { type Logger } from '../../common/logger.ts';
+import { type Logger } from '../common/logger.ts';
 
-import { getPositionOfOffset, type Offset, offsetAdd } from '../offset.ts';
+import { getPositionOfOffset, type Offset, offsetAdd } from './offset.ts';
 
 type ClassOffset = {
   name: string;
@@ -13,7 +14,7 @@ type ClassOffset = {
 
 type ExtractClassOffsetsFromCssArguments = {
   filename: string;
-  logger: Logger;
+  logger?: Logger;
   less?: boolean;
 };
 
@@ -24,7 +25,7 @@ export function extractClassOffsetsFromCss(
   const classes: Map<string, Offset> = new Map();
 
   postcss()
-    .process(css, { from: filename })
+    .process(css, { from: path.basename(filename) })
     .root.walk((node) => {
       for (const { name, offset } of walkNode(node, logger, less)) {
         // Only the first definition of an exported name will be tracked.
@@ -41,7 +42,7 @@ export function extractClassOffsetsFromCss(
   return classes;
 }
 
-function* walkNode(node: Node, logger: Logger, less: boolean): Generator<ClassOffset> {
+function* walkNode(node: Node, logger?: Logger, less = false): Generator<ClassOffset> {
   if (node instanceof Rule) {
     yield* walkRule(node, less, logger);
   }
@@ -50,17 +51,24 @@ function* walkNode(node: Node, logger: Logger, less: boolean): Generator<ClassOf
   }
 }
 
-function* walkRule({ selector }: Rule, less: boolean, _logger: Logger): Generator<ClassOffset> {
-  const { res, ranges } = extract(selector);
-  for (const [name, [start]] of zipperMerge(res, ranges ?? [])) {
-    if (name.startsWith('.')) {
-      const offset = less ? { line: 0, column: start } : getPositionOfOffset(selector, start);
-      yield { name: name.slice(1), offset };
-    }
-  }
+function walkRule(rule: Rule, _less: boolean, _logger?: Logger): ClassOffset[] {
+  return selectorParser<ClassOffset[]>((selectors) => {
+    const results: ClassOffset[] = [];
+    selectors.walkClasses(
+      (sel) =>
+        void results.push({
+          name: sel.value,
+          offset: {
+            line: (sel.source?.start?.line ?? 1) - 1,
+            column: (sel.source?.start?.column ?? 1) - 1,
+          },
+        }),
+    );
+    return results;
+  }).transformSync(rule.selector);
 }
 
-function* walkAtRule(atRule: AtRule, logger: Logger): Generator<ClassOffset> {
+function* walkAtRule(atRule: AtRule, logger?: Logger): Generator<ClassOffset> {
   const baseOffset: Offset = {
     line: 0,
     column: `@${atRule.name}`.length + (atRule.raws.afterName?.length ?? 0),
@@ -101,7 +109,7 @@ function* walkAtRule(atRule: AtRule, logger: Logger): Generator<ClassOffset> {
 
       yield { name: varName, offset: baseOffset };
     } else {
-      logger.error(`Unsupported "@value" rule input: ${atRule.params}`);
+      logger?.error(`Unsupported "@value" rule input: ${atRule.params}`);
     }
   } else if (atRule.name === 'keyframes') {
     yield { name: atRule.params, offset: baseOffset };

@@ -1,6 +1,6 @@
 import path from 'node:path/posix';
 
-import { splitLines } from '@technobuddha/library';
+import { isSubdirectory, isWithinDirectory, pathDepth, withIndex } from '@technobuddha/library';
 import ignore, { type Ignore } from 'ignore';
 import { type UserConfig } from 'vite';
 import {
@@ -8,16 +8,22 @@ import {
   type Event,
   EventEmitter,
   RelativePattern,
-  Uri,
+  type Uri,
   workspace,
   type WorkspaceFolder,
 } from 'vscode';
 
 import { defaultLogger, defaultOptions, type Logger, type Options } from '../../common/index.ts';
-import { createLogger } from '../create-logger.ts';
+
 import { SETTINGS_PREFIX } from '../constants.ts';
+import { createLogger } from '../create-logger.ts';
 
 import { Controller } from './controller.ts';
+
+type IgnoreDir = {
+  dir: string;
+  ig: Ignore;
+};
 
 type ViteCss = Omit<NonNullable<UserConfig['css']>, 'modules'> & {
   modules?: Exclude<NonNullable<UserConfig['css']>['modules'], false>;
@@ -35,7 +41,7 @@ export class ConfigurationController extends Controller {
   public logger: Logger = defaultLogger;
   public globIsCss = `${defaultOptions.cssModules.modulePattern}.{${defaultOptions.cssModules.extensions.join(',')}}`;
   public globIsTypeDefinition = `${defaultOptions.cssModules.modulePattern}.{${defaultOptions.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
-  public ignores: Map<WorkspaceFolder, Ignore> = new Map();
+  public ignores: Map<WorkspaceFolder, IgnoreDir[]> = new Map();
 
   public constructor() {
     super();
@@ -104,28 +110,6 @@ export class ConfigurationController extends Controller {
     return this.#viteConfig;
   }
 
-  private async readIgnores(): Promise<void> {
-    this.ignores.clear();
-
-    if (workspace.workspaceFolders) {
-      for (const folder of workspace.workspaceFolders) {
-        const gitignoreUri = Uri.joinPath(folder.uri, '.gitignore');
-        const ig = ignore();
-        try {
-          ig.add(
-            await workspace.fs.readFile(gitignoreUri).then(async (data) =>
-              splitLines(await workspace.decode(data))
-                .map((line) => line.trim())
-                .filter((line) => line.length > 0 && !line.startsWith('#')),
-            ),
-          );
-        } catch {}
-
-        this.ignores.set(folder, ig);
-      }
-    }
-  }
-
   private async readOptions(): Promise<void> {
     const viteConfig = await this.getViteConfig();
     const config = workspace.getConfiguration(SETTINGS_PREFIX);
@@ -182,20 +166,69 @@ export class ConfigurationController extends Controller {
     this.globIsTypeDefinition = `${this.options.cssModules.modulePattern}.{${this.options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
+  private async readIgnores(): Promise<void> {
+    this.ignores.clear();
+
+    if (workspace.workspaceFolders) {
+      for (const folder of workspace.workspaceFolders) {
+        const ignoreDirs: IgnoreDir[] = [];
+
+        await workspace
+          .findFiles(new RelativePattern(folder, '**/.gitignore'))
+          .then(async (files) => {
+            for (const file of files) {
+              const ig = ignore();
+              try {
+                ig.add(await workspace.decode(await workspace.fs.readFile(file)));
+              } catch {}
+
+              this.logger.log(`Loaded ignore file: ${file.toString(true)}`);
+              ignoreDirs.push({ dir: path.dirname(workspace.asRelativePath(file, false)), ig });
+            }
+          });
+
+        ignoreDirs.sort((a, b) => pathDepth(b.dir) - pathDepth(a.dir));
+
+        for (const { dir: dir1, ig: parent } of ignoreDirs) {
+          for (const [{ dir: dir2, ig: child }, index] of withIndex(ignoreDirs)) {
+            if (isSubdirectory(dir1, dir2)) {
+              this.logger.log(`Combining ignore patterns from ${dir1} into ${dir2}`);
+              ignoreDirs[index].ig = ignore().add(parent).add(child);
+            }
+          }
+        }
+
+        this.ignores.set(folder, ignoreDirs);
+      }
+    }
+  }
+
+  public isIgnored(file: Uri, folder?: WorkspaceFolder): boolean {
+    const ws = folder ?? workspace.getWorkspaceFolder(file);
+    if (ws) {
+      const relativeFile = workspace.asRelativePath(file, false);
+      const relativeDir = path.dirname(relativeFile);
+
+      const ignoreDir = this.ignores
+        .get(ws)
+        ?.find(({ dir }) => isWithinDirectory(dir, relativeDir));
+      if (ignoreDir) {
+        return ignoreDir.ig.ignores(relativeFile);
+      }
+    }
+    return false;
+  }
+
   public async findUnignoredFiles(glob: string): Promise<Uri[]> {
     const result: Uri[] = [];
 
     if (workspace.workspaceFolders) {
       for (const folder of workspace.workspaceFolders) {
-        const files = await workspace.findFiles(new RelativePattern(folder, glob));
-
-        const ig = this.ignores.get(folder);
-
-        result.push(
-          ...(ig ?
-            files.filter((uri) => !ig.ignores(path.relative(folder.uri.path, uri.path)))
-          : files),
-        );
+        for (const file of await workspace.findFiles(new RelativePattern(folder, glob))) {
+          if (!this.isIgnored(file, folder)) {
+            result.push(file);
+          }
+        }
       }
     }
 

@@ -6,7 +6,6 @@ import less from 'less';
 import { type Options } from '../../common/index.ts';
 import { type Logger } from '../../common/logger.ts';
 
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
 import { type TransformerReturn } from './transformer-return.ts';
 
@@ -19,7 +18,7 @@ type TransformLessArguments = {
 
 export async function transformLess(
   source: string,
-  { filename, directory, options, logger }: TransformLessArguments,
+  { filename, directory, options }: TransformLessArguments,
 ): Promise<TransformerReturn> {
   const additionalData = options.preprocessor?.less?.additionalData;
   // TODO sourceMap with additionalData
@@ -38,7 +37,6 @@ export async function transformLess(
       .then(({ css, map }) => ({
         css: css.replace(/\/\*# sourceMapping.*$/mv, empty),
         sourceMap: map ? JSON.parse(map) : undefined,
-        classOffsets: extractClassOffsetsFromCss(css, { filename, logger, less: true }),
       })),
   );
 }

@@ -4,7 +4,6 @@ import stylus from 'stylus';
 import { type Logger } from '../../common/logger.ts';
 import { type Options } from '../../common/options.ts';
 
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
 import { type TransformerReturn } from './transformer-return.ts';
 
@@ -16,7 +15,7 @@ type TransformStylusArguments = {
 
 export async function transformStylus(
   source: string,
-  { options, filename, logger }: TransformStylusArguments,
+  { options, filename }: TransformStylusArguments,
 ): Promise<TransformerReturn> {
   const { additionalData, ...stylusOptions } =
     options.preprocessor?.styl ?? options.preprocessor?.stylus ?? {};
@@ -37,7 +36,6 @@ export async function transformStylus(
           resolve({
             css,
             sourceMap: (styl as unknown as { sourcemap: RawSourceMap }).sourcemap,
-            classOffsets: extractClassOffsetsFromCss(css, { filename, logger }),
           });
         });
       }),
