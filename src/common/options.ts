@@ -1,4 +1,3 @@
-//import { type DotenvConfigOptions } from '@dotenvx/dotenvx';
 import { empty } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
@@ -7,18 +6,24 @@ import {
   type StylusPreprocessorOptions,
 } from 'vite';
 
-interface PostcssOptions {
-  excludePlugins?: string[];
-  useConfig?: boolean;
-}
+// interface PostcssOptions {
+//   excludePlugins?: string[];
+//   useConfig?: boolean;
+// }
 
 export interface Options {
   // dotenv: Omit<DotenvConfigOptions, 'path'> & { path?: string };
-  postcss: PostcssOptions;
+  // postcss: PostcssOptions;
   preprocessor: {
     less: LessPreprocessorOptions;
-    sass: SassPreprocessorOptions;
-    scss: SassPreprocessorOptions;
+    sass: Omit<
+      SassPreprocessorOptions,
+      'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
+    >;
+    scss: Omit<
+      SassPreprocessorOptions,
+      'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
+    >;
     styl: StylusPreprocessorOptions;
     stylus: StylusPreprocessorOptions;
   };
@@ -32,7 +37,6 @@ export interface Options {
 }
 
 export const defaultOptions = Object.freeze<Options>({
-  postcss: {},
   preprocessor: {
     less: {},
     sass: {},

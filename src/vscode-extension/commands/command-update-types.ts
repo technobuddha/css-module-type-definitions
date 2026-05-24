@@ -27,7 +27,7 @@ export function commandUpdateTypes(): Disposable {
 
     for (const pathname of typedefs) {
       await workspace.fs.delete(Uri.parse(pathname));
-      logger.log(`Deleted orphaned type definition: ${pathname}`);
+      logger.info(`Deleted orphaned type definition: ${pathname}`);
     }
   });
 }

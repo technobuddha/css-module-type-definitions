@@ -57,8 +57,8 @@ export async function generateTypesFromCss(
         .use(postcssImport({ root: directory }))
         .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
         .then(async ({ css, map, messages }) => {
-          logger.log(`Messages for ${filename}:\n${JSON.stringify(messages)}`);
-          logger.log(`Output for ${filename}:\n${css}`);
+          logger.debug(`Messages for ${filename}:\n${JSON.stringify(messages)}`);
+          logger.trace(`Output for ${filename}:\n${css}`);
           const sourceMap = map?.toJSON();
 
           if (sourceMap) {
@@ -70,7 +70,7 @@ export async function generateTypesFromCss(
             }
           }
 
-          logger.log(`Adjusted source map for ${filename}:\n${JSON.stringify(sourceMap)}`);
+          logger.trace(`Adjusted source map for ${filename}:\n${JSON.stringify(sourceMap)}`);
 
           const classOffsets = extractClassOffsetsFromCss(css, { filename, logger });
           let classScope: Record<string, string>;

@@ -127,14 +127,11 @@ export async function transformSass(
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     compileStringAsync(content, {
       importers: sassImporters(directory, paths),
-      loadPaths: [path.dirname(filename), 'node_modules'], //, ...loadPaths],
+      loadPaths: [directory, 'node_modules'], //, ...loadPaths],
       sourceMap: true,
       syntax: ext === '.sass' ? 'indented' : 'scss',
       url: new URL(`file://${filename}`),
       ...sassOptions,
-    }).then((compiled) => ({
-      css: compiled.css,
-      sourceMap: compiled.sourceMap,
-    })),
+    }).then(({ css, sourceMap }) => ({ css, sourceMap })),
   );
 }

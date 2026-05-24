@@ -3,18 +3,21 @@ import fs from 'node:fs/promises';
 import { toError } from '@technobuddha/library';
 
 export interface Logger {
-  log: (message: string) => void;
-  error: (error: unknown) => void;
-  //warn?: (message: string) => void;
-  //debug?: (message: string) => void;
-  //info?: (message: string) => void;
+  trace: (message: string) => void;
+  debug: (message: string) => void;
+  info: (message: string) => void;
+  warn: (message: string) => void;
+  error: (error: string | Error) => void;
 }
 
-function log(message: string): void {
-  void fs.appendFile('/tmp/cmtd.log', `[cmtd] ${message}\n`, 'utf-8');
+function output(message: string): void {
+  void fs.appendFile('/tmp/cmtd.log', `${message}\n`, 'utf-8');
 }
 
 export const defaultLogger: Logger = {
-  log,
-  error: (error: unknown) => log(`ERROR: ${toError(error).message}`),
+  trace: output,
+  debug: output,
+  info: output,
+  warn: (message: string) => output(`WARN: ${message}`),
+  error: (error: string | Error) => output(`ERROR: ${toError(error).message}`),
 };

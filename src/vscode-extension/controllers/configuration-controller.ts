@@ -30,6 +30,7 @@ type ViteCss = Omit<NonNullable<UserConfig['css']>, 'modules'> & {
 };
 
 const reIsRelative = new RegExp(`^\\.{1,2}${path.sep}`, 'v');
+const globViteConfig = `vite.config.{js,cjs,mjs,ts,cts,mts}`;
 
 function toFilename(filename: string | Uri): string {
   return typeof filename === 'string' ? filename : filename.fsPath;
@@ -45,21 +46,53 @@ export class ConfigurationController extends Controller {
 
   public constructor() {
     super();
-    this.logger = createLogger();
   }
 
   public async init(): Promise<void> {
     this.dispose();
+    this.logger = await createLogger();
+
+    const viteWatcher = workspace.createFileSystemWatcher(`**/${globViteConfig}`);
+    const ignoreWatcher = workspace.createFileSystemWatcher('**/.gitignore');
+
     this.disposables.push(
       workspace.onDidChangeConfiguration(async (event) => {
         if (event.affectsConfiguration(SETTINGS_PREFIX)) {
-          this.logger.log('Relevant configuration change detected, updating options...');
+          this.logger.info('Relevant configuration change detected, updating options...');
           await this.readOptions();
           this.onDidChangeEmitter.fire(event);
         }
       }),
       workspace.onDidChangeWorkspaceFolders(async () => {
-        this.logger.log('Workspace folders change detected');
+        this.logger.info('Workspace folders change detected');
+        await this.readIgnores();
+      }),
+
+      viteWatcher,
+      viteWatcher.onDidChange(async (file) => {
+        this.logger.debug(`Vite config changed: ${file.toString(true)}, reloading options`);
+        await this.getViteConfig();
+      }),
+      viteWatcher.onDidCreate(async (file) => {
+        this.logger.debug(`Vite config created: ${file.toString(true)}, reloading options`);
+        await this.getViteConfig();
+      }),
+      viteWatcher.onDidDelete(async (file) => {
+        this.logger.debug(`Vite config deleted: ${file.toString(true)}, reloading options`);
+        await this.getViteConfig();
+      }),
+
+      ignoreWatcher,
+      ignoreWatcher.onDidChange(async (file) => {
+        this.logger.debug(`.gitignore changed: ${file.toString(true)}, reloading ignores`);
+        await this.readIgnores();
+      }),
+      ignoreWatcher.onDidCreate(async (file) => {
+        this.logger.debug(`.gitignore created: ${file.toString(true)}, reloading ignores`);
+        await this.readIgnores();
+      }),
+      ignoreWatcher.onDidDelete(async (file) => {
+        this.logger.debug(`.gitignore deleted: ${file.toString(true)}, reloading ignores`);
         await this.readIgnores();
       }),
     );
@@ -73,43 +106,40 @@ export class ConfigurationController extends Controller {
   }
 
   #viteConfig?: ViteCss;
-  private async getViteConfig(): Promise<ViteCss> {
-    if (this.#viteConfig === undefined) {
-      this.#viteConfig = {};
+  private async getViteConfig(): Promise<void> {
+    this.#viteConfig = {};
 
-      const glob = `vite.config.{js,cjs,mjs,ts,cts,mts}`;
-      workspace.findFiles(glob).then(async (files) => {
-        for (const file of files) {
-          this.logger.log(`Found Vite config file: ${file.fsPath}`);
-          try {
-            const vite: UserConfig = await import(file.fsPath).then((mod) => mod.default ?? mod);
+    this.logger.info('Searching for Vite config files...');
+    workspace.findFiles(globViteConfig).then(async (files) => {
+      for (const file of files) {
+        this.logger.info(`Vite config ${file.toString(true)}`);
+        try {
+          const vite: UserConfig = await import(file.fsPath).then((mod) => mod.default ?? mod);
 
-            if (vite.css?.modules === false) {
-              delete vite.css;
-            }
+          if (vite.css?.modules === false) {
+            delete vite.css;
+          }
 
-            this.#viteConfig = {
-              ...this.#viteConfig,
-              ...vite,
-              modules: { ...this.#viteConfig?.modules, ...vite.css?.modules },
-            };
-          } catch {}
-        }
-      });
-
-      if (typeof this.#viteConfig.modules?.generateScopedName === 'function') {
-        delete this.#viteConfig.modules.generateScopedName;
+          this.#viteConfig = {
+            ...this.#viteConfig,
+            ...vite,
+            modules: { ...this.#viteConfig?.modules, ...vite.css?.modules },
+          };
+        } catch {}
       }
-      if (typeof this.#viteConfig.modules?.localsConvention === 'function') {
-        delete this.#viteConfig.modules.localsConvention;
-      }
+    });
+
+    if (typeof this.#viteConfig.modules?.generateScopedName === 'function') {
+      delete this.#viteConfig.modules.generateScopedName;
     }
-
-    return this.#viteConfig;
+    if (typeof this.#viteConfig.modules?.localsConvention === 'function') {
+      delete this.#viteConfig.modules.localsConvention;
+    }
   }
 
   private async readOptions(): Promise<void> {
-    const viteConfig = await this.getViteConfig();
+    await this.getViteConfig();
+    const viteConfig = this.#viteConfig ?? {};
     const config = workspace.getConfiguration(SETTINGS_PREFIX);
 
     this.options = {
@@ -180,7 +210,7 @@ export class ConfigurationController extends Controller {
                 ig.add(await workspace.decode(await workspace.fs.readFile(file)));
               } catch {}
 
-              this.logger.log(`Loaded ignore file: ${file.toString(true)}`);
+              this.logger.debug(`Loaded ignore file: ${file.toString(true)}`);
               ignoreDirs.push({ dir: path.dirname(workspace.asRelativePath(file, false)), ig });
             }
           });

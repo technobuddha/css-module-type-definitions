@@ -1,109 +1,68 @@
 #! /usr/bin/env node
 import fs from 'node:fs/promises';
 
-import { splitLines } from '@technobuddha/library';
+import { out, splitLines, toError } from '@technobuddha/library';
 import ignore from 'ignore';
-import { type UserConfig } from 'vite';
 
-import { defaultOptions, type Options } from '../common/index.ts';
+import { defaultOptions, type Logger, type Options } from '../common/index.ts';
 
+import { readViteConfig, readVSCodeSettings } from './helpers/index.ts';
 import { remove } from './remove.ts';
 import { update } from './update.ts';
+import { watch } from './watch.ts';
 
 if (import.meta.main) {
+  const logger: Logger = {
+    trace: () => {},
+    debug: () => {},
+    info: (msg) => out(msg, '\n'),
+    warn: (msg) => out(msg, '\n'),
+    error: (error) => out(toError(error).message, '\n'),
+  };
+
   await import('commander').then(async ({ program }) => {
-    let viteConfig: UserConfig['css'] = undefined;
-
-    for (const extension of ['js', 'cjs', 'mjs', 'ts', 'cts', 'mts']) {
-      const vite: UserConfig | undefined = await import(`vite.config.${extension}`)
-        .then((mod) => mod.default ?? mod)
-        .catch(() => undefined);
-      if (vite) {
-        viteConfig = vite.css;
-        break;
-      }
-    }
-    if (viteConfig?.modules === false) {
-      viteConfig.modules = undefined;
-    }
-    if (typeof viteConfig?.modules?.generateScopedName === 'function') {
-      delete viteConfig.modules.generateScopedName;
-    }
-    if (typeof viteConfig?.modules?.localsConvention === 'function') {
-      delete viteConfig.modules.localsConvention;
-    }
-
-    const cmtdSettings: Record<string, unknown> = await fs
-      .readFile('.vscode/settings.json', 'utf-8')
-      .then((json) => JSON.parse(json))
-      .then((settings) =>
-        Object.fromEntries(
-          Object.entries(settings)
-            .filter(([key]) => key.startsWith('cmtd.'))
-            .map(([key, value]) => [key.slice(5), value]),
-        ),
-      )
-      .catch(() => ({}));
+    const viteConfig = await readViteConfig();
+    const vscodeSettings = await readVSCodeSettings();
 
     const options: Options = {
-      postcss: defaultOptions.postcss,
       preprocessor: {
-        less: viteConfig?.preprocessorOptions?.less ?? defaultOptions.preprocessor.less,
-        sass: viteConfig?.preprocessorOptions?.sass ?? defaultOptions.preprocessor.sass,
-        scss: viteConfig?.preprocessorOptions?.scss ?? defaultOptions.preprocessor.scss,
-        styl: viteConfig?.preprocessorOptions?.styl ?? defaultOptions.preprocessor.styl,
-        stylus: viteConfig?.preprocessorOptions?.stylus ?? defaultOptions.preprocessor.stylus,
+        less: viteConfig.preprocessorOptions?.less ?? defaultOptions.preprocessor.less,
+        sass: viteConfig.preprocessorOptions?.sass ?? defaultOptions.preprocessor.sass,
+        scss: viteConfig.preprocessorOptions?.scss ?? defaultOptions.preprocessor.scss,
+        styl: viteConfig.preprocessorOptions?.styl ?? defaultOptions.preprocessor.styl,
+        stylus: viteConfig.preprocessorOptions?.stylus ?? defaultOptions.preprocessor.stylus,
       },
       cssModules: {
         scopeBehaviour:
-          (cmtdSettings[
-            'cssModules.scope.scopeBehaviour'
-          ] as Options['cssModules']['scopeBehaviour']) ??
-          viteConfig?.modules?.scopeBehaviour ??
+          vscodeSettings.scopeBehaviour ??
+          viteConfig.modules?.scopeBehaviour ??
           defaultOptions.cssModules.scopeBehaviour,
         globalModulePaths:
-          (cmtdSettings[
-            'cssModules.globalModulePaths'
-          ] as Options['cssModules']['globalModulePaths']) ??
-          viteConfig?.modules?.globalModulePaths ??
+          vscodeSettings.globalModulePaths ??
+          viteConfig.modules?.globalModulePaths ??
           defaultOptions.cssModules.globalModulePaths,
         exportGlobals:
-          (cmtdSettings['cssModules.exportGlobals'] as Options['cssModules']['exportGlobals']) ??
-          viteConfig?.modules?.exportGlobals ??
+          vscodeSettings.exportGlobals ??
+          viteConfig.modules?.exportGlobals ??
           defaultOptions.cssModules.exportGlobals,
         generateScopedName:
-          (cmtdSettings[
-            'cssModules.generateScopedName'
-          ] as Options['cssModules']['generateScopedName']) ??
-          viteConfig?.modules?.generateScopedName ??
+          vscodeSettings.generateScopedName ??
+          viteConfig.modules?.generateScopedName ??
           defaultOptions.cssModules.generateScopedName,
         hashPrefix:
-          (cmtdSettings['cssModules.hashPrefix'] as Options['cssModules']['hashPrefix']) ??
-          viteConfig?.modules?.hashPrefix ??
+          vscodeSettings.hashPrefix ??
+          viteConfig.modules?.hashPrefix ??
           defaultOptions.cssModules.hashPrefix,
         localsConvention:
-          (cmtdSettings[
-            'cssModules.localsConvention'
-          ] as Options['cssModules']['localsConvention']) ??
-          viteConfig?.modules?.localsConvention ??
+          vscodeSettings.localsConvention ??
+          viteConfig.modules?.localsConvention ??
           defaultOptions.cssModules.localsConvention,
-        dtsBanner:
-          (cmtdSettings['cssModules.dtsBanner'] as Options['cssModules']['dtsBanner']) ??
-          defaultOptions.cssModules.dtsBanner,
-        dtsHeader:
-          (cmtdSettings['cssModules.dtsHeader'] as Options['cssModules']['dtsHeader']) ??
-          defaultOptions.cssModules.dtsHeader,
+        dtsBanner: vscodeSettings.dtsBanner ?? defaultOptions.cssModules.dtsBanner,
+        dtsHeader: vscodeSettings.dtsHeader ?? defaultOptions.cssModules.dtsHeader,
         generateDtsOnSave:
-          (cmtdSettings[
-            'cssModules.generateDtsOnSave'
-          ] as Options['cssModules']['generateDtsOnSave']) ??
-          defaultOptions.cssModules.generateDtsOnSave,
-        modulePattern:
-          (cmtdSettings['cssModules.modulePattern'] as Options['cssModules']['modulePattern']) ??
-          defaultOptions.cssModules.modulePattern,
-        extensions:
-          (cmtdSettings['cssModules.extensions'] as Options['cssModules']['extensions']) ??
-          defaultOptions.cssModules.extensions,
+          vscodeSettings.generateDtsOnSave ?? defaultOptions.cssModules.generateDtsOnSave,
+        modulePattern: vscodeSettings.modulePattern ?? defaultOptions.cssModules.modulePattern,
+        extensions: vscodeSettings.extensions ?? defaultOptions.cssModules.extensions,
       },
     };
 
@@ -120,10 +79,13 @@ if (import.meta.main) {
       )
       .then((lines) => ig.add(lines));
 
-    program.command('remove').action(async () => remove(globIsTypeDefinition, ig));
     program
-      .command('update', { isDefault: true })
-      .action(async () => update(globIsCss, { ig, options, logger: console }));
+      .command('update')
+      .action(async () => update(globIsCss, globIsTypeDefinition, { ig, options, logger }));
+    program
+      .command('watch')
+      .action(async () => watch(globIsCss, globIsTypeDefinition, { ig, options, logger }));
+    program.command('remove').action(async () => remove(globIsTypeDefinition, ig, logger));
 
     return program.parseAsync();
   });

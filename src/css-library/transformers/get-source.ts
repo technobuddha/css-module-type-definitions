@@ -14,13 +14,18 @@ type GetSourceArguments = {
   sep?: string;
 };
 
+type GetSourceReturn = {
+  content: string;
+  map?: RawSourceMap;
+};
+
 export async function getSource({
   source,
   filename,
   additionalData,
   sourceMap = false,
   sep = empty,
-}: GetSourceArguments): Promise<{ content: string; map?: RawSourceMap }> {
+}: GetSourceArguments): Promise<GetSourceReturn> {
   if (additionalData) {
     if (typeof additionalData === 'function') {
       const content = await additionalData(source, filename);

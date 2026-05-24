@@ -1815,37 +1815,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-130":
-  version: 2.1.0-130
-  resolution: "@technobuddha/library@npm:2.1.0-130"
-  checksum: 10c0/c0d2e74965fa92ab070917c8cb3555eceb6327dbdc4e7543ccb0cd7ed19254576b34e9d9e923be32953de38b95c622ab780b116c44bdef57cd06b04d3aef1b75
+"@technobuddha/library@npm:2.1.0-132":
+  version: 2.1.0-132
+  resolution: "@technobuddha/library@npm:2.1.0-132"
+  checksum: 10c0/3d0a07f1bc58866368520c309c1e0be9c87cd9049805e8ff415f6f25065350b74fe82792a36202904eb5cf5ad54ba23486ebda962ba71a3ce8159f24d9fe41e5
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-131":
-  version: 2.1.0-131
-  resolution: "@technobuddha/library@npm:2.1.0-131"
-  checksum: 10c0/30ce8b61ffd1009a5ecc73397745e20e097e05e7d30a362187edbc3ccf9543e8a056450ba54e4a9fe880c19f66c77428288f5e4a7a7516f8a590a9a65d4c6b02
-  languageName: node
-  linkType: hard
-
-"@technobuddha/project@npm:1.0.0-80":
-  version: 1.0.0-80
-  resolution: "@technobuddha/project@npm:1.0.0-80"
+"@technobuddha/project@npm:1.0.0-82":
+  version: 1.0.0-82
+  resolution: "@technobuddha/project@npm:1.0.0-82"
   dependencies:
     "@commander-js/extra-typings": "npm:14.0.0"
     "@cspell/cspell-types": "npm:10.0.0"
     "@dotenvx/dotenvx": "npm:1.67.0"
     "@eslint-community/eslint-plugin-eslint-comments": "npm:4.7.1"
     "@eslint/config-helpers": "npm:0.6.0"
-    "@technobuddha/library": "npm:2.1.0-131"
+    "@technobuddha/library": "npm:2.1.0-132"
     "@types/eslint": "npm:9.6.1"
     "@types/ignore-walk": "npm:4.0.3"
     "@types/mustache": "npm:^4.2.6"
     "@types/node": "npm:25.9.1"
     "@types/semver": "npm:7.7.1"
     "@types/unzipper": "npm:^0.10.11"
-    "@types/watch": "npm:^1.0.6"
     "@typescript-eslint/eslint-plugin": "npm:8.59.4"
     "@typescript-eslint/parser": "npm:8.59.4"
     "@vitest/coverage-v8": "npm:4.1.7"
@@ -1855,6 +1847,7 @@ __metadata:
     better-ajv-errors: "npm:2.0.3"
     canvas: "npm:3.2.3"
     chalk: "npm:5.6.2"
+    chokidar: "npm:5.0.0"
     commander: "npm:14.0.3"
     cosmiconfig: "npm:9.0.1"
     cspell: "npm:10.0.0"
@@ -1874,7 +1867,7 @@ __metadata:
     eslint-plugin-react-web-api: "npm:5.8.4"
     eslint-plugin-react-x: "npm:5.8.4"
     eslint-plugin-simple-import-sort: "npm:13.0.0"
-    eslint-plugin-technobuddha: "npm:2.0.0-19"
+    eslint-plugin-technobuddha: "npm:2.0.0-20"
     eslint-plugin-unicorn: "npm:64.0.0"
     globals: "npm:17.6.0"
     husky: "npm:9.1.7"
@@ -1897,7 +1890,6 @@ __metadata:
     unzipper: "npm:0.12.3"
     vite: "npm:8.0.14"
     vitest: "npm:4.1.7"
-    watch: "npm:1.0.2"
   bin:
     bad-jsdoc: dist/bad-jsdoc/bad-jsdoc.js
     build: dist/build/main.js
@@ -1905,7 +1897,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/d8818d9303347c284062bd1ea3704f82eab598164fc6c5ec20abbe3c109159fe7292e391c738acd25c257942513519a530c92d14827ab6ed240323be2afa2904
+  checksum: 10c0/6b3b3850a714dcbb2d6fab6deef02ac89b07ca2383e22049093a88c47f5a99b47de60b26a9d8b1960eb7ca9f978f85bd32397e7ea81c2226f651e15307df2f8f
   languageName: node
   linkType: hard
 
@@ -2086,15 +2078,6 @@ __metadata:
   version: 1.118.0
   resolution: "@types/vscode@npm:1.118.0"
   checksum: 10c0/f1ce3935fd7ab6e4433a55c2018d790edd3d5bbe495b7dd8afa1fb3defab1e7650d22ba1bc2ab5689771789c3a27cf0a9fb86380b27997725cbca390e34d1d53
-  languageName: node
-  linkType: hard
-
-"@types/watch@npm:^1.0.6":
-  version: 1.0.6
-  resolution: "@types/watch@npm:1.0.6"
-  dependencies:
-    "@types/node": "npm:*"
-  checksum: 10c0/60e07238bfd265fa034b61f7f85f58f4131cb2b4e35012e8f1afe0b695c3c64c00cb5051c6c2ea5604950804ed43eaf1b0064f04c7ca56eb2e13c6c46ce27ee7
   languageName: node
   linkType: hard
 
@@ -3275,6 +3258,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chokidar@npm:5.0.0":
+  version: 5.0.0
+  resolution: "chokidar@npm:5.0.0"
+  dependencies:
+    readdirp: "npm:^5.0.0"
+  checksum: 10c0/42fc907cb2a7ff5c9e220f84dae75380a77997f851c2a5e7865a2cf9ae45dd407a23557208cdcdbf3ac8c93341135a1748e4c48c31855f3bfa095e5159b6bdec
+  languageName: node
+  linkType: hard
+
 "chokidar@npm:^4.0.0":
   version: 4.0.3
   resolution: "chokidar@npm:4.0.3"
@@ -3596,8 +3588,8 @@ __metadata:
   resolution: "css-module-type-definitions@workspace:."
   dependencies:
     "@cspell/cspell-types": "npm:10.0.0"
-    "@technobuddha/library": "npm:2.1.0-131"
-    "@technobuddha/project": "npm:1.0.0-80"
+    "@technobuddha/library": "npm:2.1.0-132"
+    "@technobuddha/project": "npm:1.0.0-82"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:25.9.1"
     "@types/postcss-import": "npm:^14.0.3"
@@ -4654,16 +4646,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-technobuddha@npm:2.0.0-19":
-  version: 2.0.0-19
-  resolution: "eslint-plugin-technobuddha@npm:2.0.0-19"
+"eslint-plugin-technobuddha@npm:2.0.0-20":
+  version: 2.0.0-20
+  resolution: "eslint-plugin-technobuddha@npm:2.0.0-20"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@microsoft/tsdoc-config": "npm:0.18.1"
-    "@technobuddha/library": "npm:2.1.0-130"
+    "@technobuddha/library": "npm:2.1.0-132"
     eslint: "npm:10.4.0"
     get-tsconfig: "npm:4.14.0"
-  checksum: 10c0/d7b77d280deb0db47684c584495fa023a8a162bd0c3799788f6f2cdae4715f89d1e4943679ae16fcadc7463aaf97bb5b5338016fa6cc3029d7c4456f888fa09f
+  checksum: 10c0/76476d76cbf1150aa1cca05298914f897bcae1eaf6bf7d6ebb46b352a7daf76ae62e0382525762d97cc8e18040277abf9411c99c0272574074626583eb439110
   languageName: node
   linkType: hard
 
@@ -4872,15 +4864,6 @@ __metadata:
   version: 3.3.0
   resolution: "events@npm:3.3.0"
   checksum: 10c0/d6b6f2adbccbcda74ddbab52ed07db727ef52e31a61ed26db9feb7dc62af7fc8e060defa65e5f8af9449b86b52cc1a1f6a79f2eafcf4e62add2b7a1fa4a432f6
-  languageName: node
-  linkType: hard
-
-"exec-sh@npm:^0.2.0":
-  version: 0.2.2
-  resolution: "exec-sh@npm:0.2.2"
-  dependencies:
-    merge: "npm:^1.2.0"
-  checksum: 10c0/2c2ea327775f839b872cd965dc3f48f2f600a86f795bf482f8de9db3737deca4119bbafae0d47d0093f36ce6031223174c39fb5b2850e58f9d935b5d8d6bc673
   languageName: node
   linkType: hard
 
@@ -6568,13 +6551,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"merge@npm:^1.2.0":
-  version: 1.2.1
-  resolution: "merge@npm:1.2.1"
-  checksum: 10c0/09f0ed1e85f336feb32d93d1243cb8930be22c7e6e4aa0c59a08a6f680d274dbe021c7d2a35ee8383cab2524efbb3f51985c3052e3dcf134951656511edf4693
-  languageName: node
-  linkType: hard
-
 "micromatch@npm:^4.0.2, micromatch@npm:^4.0.8":
   version: 4.0.8
   resolution: "micromatch@npm:4.0.8"
@@ -7419,6 +7395,13 @@ __metadata:
   version: 4.1.2
   resolution: "readdirp@npm:4.1.2"
   checksum: 10c0/60a14f7619dec48c9c850255cd523e2717001b0e179dc7037cfa0895da7b9e9ab07532d324bfb118d73a710887d1e35f79c495fa91582784493e085d18c72c62
+  languageName: node
+  linkType: hard
+
+"readdirp@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "readdirp@npm:5.0.0"
+  checksum: 10c0/faf1ec57cff2020f473128da3f8d2a57813cc3a08a36c38cae1c9af32c1579906cc50ba75578043b35bade77e945c098233665797cf9730ba3613a62d6e79219
   languageName: node
   linkType: hard
 
@@ -8936,18 +8919,6 @@ __metadata:
   dependencies:
     makeerror: "npm:1.0.12"
   checksum: 10c0/a17e037bccd3ca8a25a80cb850903facdfed0de4864bd8728f1782370715d679fa72e0a0f5da7c1c1379365159901e5935f35be531229da53bbfc0efdabdb48e
-  languageName: node
-  linkType: hard
-
-"watch@npm:1.0.2":
-  version: 1.0.2
-  resolution: "watch@npm:1.0.2"
-  dependencies:
-    exec-sh: "npm:^0.2.0"
-    minimist: "npm:^1.2.0"
-  bin:
-    watch: ./cli.js
-  checksum: 10c0/6914c5cd44d6e3cb60c8ab7849ec03c51a07259d86410356630729a14c3f4ccb011865cdb33a052c75fb9ead2eaa646afa32d0fe7682b0b585e65a868b153eca
   languageName: node
   linkType: hard
 

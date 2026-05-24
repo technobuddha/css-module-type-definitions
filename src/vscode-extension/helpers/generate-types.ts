@@ -8,7 +8,7 @@ export async function generateTypes(uri: Uri): Promise<void> {
   const { options, logger } = config;
 
   if (options.cssModules.generateDtsOnSave && config.isCSS(uri)) {
-    logger.log(`generateTypes(${uri.fsPath})`);
+    logger.info(`generateTypes(${uri.fsPath})`);
     return workspace.fs.stat(uri).then(async () =>
       workspace.fs
         .readFile(uri)

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { window, workspace } from 'vscode';
+import { workspace } from 'vscode';
 
 import { config } from '../extension.ts';
 import { deleteTypes } from '../helpers/delete-types.ts';
@@ -22,7 +22,7 @@ export class FileWatcherController extends Controller {
   private listenForChanges(): void {
     config.onDidChange(
       () => {
-        config.logger.log('Configuration changed, reloading options and file watchers');
+        config.logger.info('Configuration changed, reloading options and file watchers');
         this.dispose();
         this.loadOptions();
         this.listenForChanges();
@@ -39,24 +39,24 @@ export class FileWatcherController extends Controller {
     this.disposables.push(
       watcher,
       watcher.onDidChange(async (uri) => {
-        config.logger.log(`File changed: ${uri.fsPath}`);
+        config.logger.info(`didChanged: ${uri.toString(true)}`);
         if (!config.isIgnored(uri)) {
           await generateTypes(uri);
-          window.showInformationMessage(`Updated types for ${path.basename(uri.fsPath)}`);
+          config.logger.info(`Updated types for ${path.basename(uri.fsPath)}`);
         }
       }),
       watcher.onDidCreate(async (uri) => {
-        config.logger.log(`File created: ${uri.fsPath}`);
+        config.logger.info(`didCreate: ${uri.toString(true)}`);
         if (!config.isIgnored(uri)) {
           await generateTypes(uri);
-          window.showInformationMessage(`Created types for ${path.basename(uri.fsPath)}`);
+          config.logger.info(`Created types for ${path.basename(uri.fsPath)}`);
         }
       }),
       watcher.onDidDelete(async (uri) => {
-        config.logger.log(`File deleted: ${uri.fsPath}`);
+        config.logger.info(`didDelete: ${uri.toString(true)}`);
         if (!config.isIgnored(uri)) {
           await deleteTypes(uri);
-          window.showInformationMessage(`Deleted types for ${path.basename(uri.fsPath)}`);
+          config.logger.info(`Deleted types for ${path.basename(uri.fsPath)}`);
         }
       }),
     );

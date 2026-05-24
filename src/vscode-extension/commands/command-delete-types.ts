@@ -8,7 +8,7 @@ export function commandDeleteTypes(): Disposable {
 
     await config.findUnignoredFiles(`**/${globIsTypeDefinition}`).then(async (uris) => {
       for (const uri of uris) {
-        logger.log(`Deleted file: ${uri.fsPath}`);
+        logger.info(`Deleted file: ${uri.fsPath}`);
         await workspace.fs.delete(uri);
       }
     });

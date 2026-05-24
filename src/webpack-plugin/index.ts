@@ -83,7 +83,7 @@ export class CMTD {
               declarations.push(`'${key}'`);
             } else {
               declarations.push(`'${key}'`);
-              this.logger.log(`{CMTD} ${chalk.yellow(`${fileName}: Invalid ${key}`)}`);
+              this.logger.info(`{CMTD} ${chalk.yellow(`${fileName}: Invalid ${key}`)}`);
             }
           }
 
@@ -118,7 +118,7 @@ export class CMTD {
             resolve();
           } else {
             void fs.promises.writeFile(outputFilePath, replacement, 'utf-8').then(() => {
-              this.logger.log(`{CMTD} ${chalk.green('Types Generated for')} ${fileName}`);
+              this.logger.info(`{CMTD} ${chalk.green('Types Generated for')} ${fileName}`);
               resolve();
             });
           }
@@ -142,7 +142,7 @@ export class CMTD {
     const DELAY = 10; // Number of milliseconds to delay for file to finish writing
     const target = path.resolve(this.rootDirectoryPath, this.inputDirectoryName);
 
-    this.logger.log(
+    this.logger.info(
       `{CMTD} ${chalk.blue('Watching')} ${this.inputDirectoryName} ${this.globPattern}`,
     );
 
