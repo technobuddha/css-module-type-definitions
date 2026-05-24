@@ -5,9 +5,8 @@ import { empty } from '@technobuddha/library';
 import chokidar from 'chokidar';
 import { type Ignore } from 'ignore';
 
-import { type Logger, type Options } from '../common/index.ts';
+import { fileOperation, generateTypes, type Logger, type Options } from '../common/index.ts';
 
-import { fileOperation, generateTypes } from './helpers/index.ts';
 import { update } from './update.ts';
 
 type UpdateOptions = {

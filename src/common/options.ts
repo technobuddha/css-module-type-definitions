@@ -32,6 +32,7 @@ export interface Options {
     modulePattern: string;
     dtsBanner: boolean;
     dtsHeader: string;
+    dtsFooter: string;
     generateDtsOnSave: boolean;
   };
 }
@@ -52,7 +53,9 @@ export const defaultOptions = Object.freeze<Options>({
     hashPrefix: empty,
     localsConvention: 'camelCase',
     dtsBanner: true,
-    dtsHeader: '/* eslint-disable @typescript-eslint/naming-convention */\n// cspell:disable',
+    dtsHeader:
+      '// cspell:disable\n/* eslint eslint-comments/no-unlimited-disable: "off" */\n/* eslint-disable */',
+    dtsFooter: empty,
     generateDtsOnSave: true,
     extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
     modulePattern: '*.module',

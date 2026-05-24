@@ -143,7 +143,6 @@ export class ConfigurationController extends Controller {
     const config = workspace.getConfiguration(SETTINGS_PREFIX);
 
     this.options = {
-      postcss: { ...defaultOptions.postcss },
       preprocessor: {
         less: { ...defaultOptions.preprocessor.less, ...viteConfig.preprocessorOptions?.less },
         sass: { ...defaultOptions.preprocessor.sass, ...viteConfig.preprocessorOptions?.sass },
@@ -181,6 +180,7 @@ export class ConfigurationController extends Controller {
           defaultOptions.cssModules.localsConvention,
         dtsBanner: config.get('cssModules.dtsBanner') ?? defaultOptions.cssModules.dtsBanner,
         dtsHeader: config.get('cssModules.dtsHeader') ?? defaultOptions.cssModules.dtsHeader,
+        dtsFooter: config.get('cssModules.dtsFooter') ?? defaultOptions.cssModules.dtsFooter,
         generateDtsOnSave:
           config.get('cssModules.generateDtsOnSave') ?? defaultOptions.cssModules.generateDtsOnSave,
         modulePattern:

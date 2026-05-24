@@ -59,6 +59,7 @@ if (import.meta.main) {
           defaultOptions.cssModules.localsConvention,
         dtsBanner: vscodeSettings.dtsBanner ?? defaultOptions.cssModules.dtsBanner,
         dtsHeader: vscodeSettings.dtsHeader ?? defaultOptions.cssModules.dtsHeader,
+        dtsFooter: vscodeSettings.dtsFooter ?? defaultOptions.cssModules.dtsFooter,
         generateDtsOnSave:
           vscodeSettings.generateDtsOnSave ?? defaultOptions.cssModules.generateDtsOnSave,
         modulePattern: vscodeSettings.modulePattern ?? defaultOptions.cssModules.modulePattern,

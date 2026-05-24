@@ -1,10 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { type Logger, type Options } from '../../common/index.ts';
-import { generateTypesFromCss } from '../../css-library/index.ts';
+import { generateTypesFromCss } from '../css-library/index.ts';
 
-import { fileOperation } from './file-operation.ts';
+import { fileOperation, type Logger, type Options } from './index.ts';
 
 type GenerateTypesOptions = {
   options: Options;

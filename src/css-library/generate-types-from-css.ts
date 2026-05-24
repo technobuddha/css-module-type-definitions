@@ -136,11 +136,14 @@ export async function generateTypesFromCss(
               }
 
               const dts: string[] = [
-                ...(cssModules.dtsBanner ?
-                  defaultBanner(BANNER_MESSAGE).map((line) => `// ${line}`)
-                : []),
                 ...splitLines(cssModules.dtsHeader ?? empty),
+                '{',
+                ...(cssModules.dtsBanner ?
+                  defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`)
+                : []),
+                '}',
                 empty,
+                '// prettier-ignore',
                 `${space.repeat(0)}type ${classname} = {`,
               ];
 
@@ -202,6 +205,8 @@ export async function generateTypesFromCss(
                 `${space.repeat(0)}export default ${variable};`,
                 empty,
                 `//# sourceMappingURL=${path.basename(mapFile)}`,
+                empty,
+                ...splitLines(cssModules.dtsFooter ?? empty),
                 empty,
               );
 

@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 
 import { type Ignore } from 'ignore';
 
-import { type Logger, type Options } from '../common/index.ts';
+import { fileOperation, generateTypes, type Logger, type Options } from '../common/index.ts';
 
-import { fileOperation, findUnignoredFiles, generateTypes } from './helpers/index.ts';
+import { findUnignoredFiles } from './helpers/index.ts';
 
 type UpdateOptions = {
   options: Options;

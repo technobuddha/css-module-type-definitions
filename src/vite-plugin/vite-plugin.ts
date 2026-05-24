@@ -1,31 +1,15 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ResolvedConfig, type Plugin } from 'vite';
+import { type Plugin, type ResolvedConfig } from 'vite';
 
-import { defaultOptions, type Options } from '../common/index.ts';
-import { generateTypesFromCss } from '../css-library/generate-types-from-css.ts';
+import { defaultOptions, generateTypes, type Options } from '../common/index.ts';
 
 function updateOptions(current: Options, viteConfig: ResolvedConfig): Options {
   return {
-    postcss: current.postcss,
     preprocessor: current.preprocessor,
     cssModules: { ...viteConfig.css.modules, ...current.cssModules },
-  } as Options;
-}
-
-async function generateDeclarationFile(file: string, options: Options): Promise<void> {
-  return fs
-    .readFile(file, 'utf-8')
-    .then(async (css) =>
-      generateTypesFromCss(css, file, { options, logger: console }).then(async ({ files }) =>
-        Promise.all(
-          Object.entries(files).map(async ([filename, content]) =>
-            fs.writeFile(filename, content, 'utf-8'),
-          ),
-        ).then(() => console.log(`{CMTD} Generated type definitions for ${file}`)),
-      ),
-    );
+  };
 }
 
 /**
@@ -67,7 +51,6 @@ async function generateDeclarationFile(file: string, options: Options): Promise<
  */
 export const pluginCssModuleTypeDefinitions = (opts?: Partial<Options>): Plugin => {
   let options: Options = {
-    postcss: { ...defaultOptions.postcss, ...opts?.postcss },
     preprocessor: { ...defaultOptions.preprocessor, ...opts?.preprocessor },
     cssModules: { ...defaultOptions.cssModules, ...opts?.cssModules },
   };
@@ -83,13 +66,13 @@ export const pluginCssModuleTypeDefinitions = (opts?: Partial<Options>): Plugin 
         const promises: Promise<void>[] = [];
 
         for await (const file of fs.glob(globIsCss)) {
-          promises.push(generateDeclarationFile(file, options));
+          // TODO console should be replaced with a proper logger
+          promises.push(generateTypes(file, { options, logger: console }));
         }
 
         return Promise.all(promises).then(() => undefined);
-      } else {
-        throw new Error('css.modules must be enabled in vite.config');
       }
+      throw new Error('css.modules must be enabled in vite.config');
     },
     async handleHotUpdate({ file, server: { config } }) {
       if (config.css.modules) {
@@ -97,7 +80,8 @@ export const pluginCssModuleTypeDefinitions = (opts?: Partial<Options>): Plugin 
         const globIsCss = `${options.cssModules.modulePattern}.{${options.cssModules.extensions.join(',')}}`;
 
         if (path.matchesGlob(file, globIsCss)) {
-          return generateDeclarationFile(file, options);
+          // TODO console should be replaced with a proper logger
+          return generateTypes(file, { options, logger: console });
         }
       } else {
         throw new Error('css.modules must be enabled in vite.config');
