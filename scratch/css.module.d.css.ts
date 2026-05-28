@@ -9,13 +9,8 @@
 
 // prettier-ignore
 type Css = {
-  readonly 'i1': string;
-  readonly 'i2': string;
-  readonly 'i3': string;
-  readonly 'l1': string;
-  readonly 'l2': string;
-  readonly 'l3': string;
-  readonly 'bletch': string;
+  readonly 'foo': string;
+  readonly 'boo': string;
 };
 
 declare const css: Css;
@@ -23,3 +18,4 @@ declare const css: Css;
 export default css;
 
 //# sourceMappingURL=css.module.d.css.ts.map
+

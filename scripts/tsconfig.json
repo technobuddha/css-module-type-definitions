@@ -3,14 +3,13 @@
 // 🚨
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "./tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
     "lib": ["esnext"],
     "noEmit": true,
+    "rewriteRelativeImportExtensions": false,
     "types": ["node"]
   },
-  "include": ["*.config.js", "*.config.ts"],
+  "include": ["*.ts"],
   "exclude": ["eslint.config.js"]
 }

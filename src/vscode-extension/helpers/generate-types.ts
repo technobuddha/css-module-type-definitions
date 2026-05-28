@@ -1,14 +1,22 @@
 import { type Uri, workspace } from 'vscode';
 
+import { type Logger, type Options } from '../../common/index.ts';
 import { generateTypesFromCss } from '../../css-library/index.ts';
 
 import { config } from '../extension.ts';
 
-export async function generateTypes(uri: Uri): Promise<void> {
-  const { options, logger } = config;
+type GenerateTypesOptions = {
+  options: Options;
+  logger: Logger;
+};
+
+export async function generateTypes(
+  uri: Uri,
+  { options, logger }: GenerateTypesOptions,
+): Promise<void> {
+  logger.info(`generateTypes(${uri.fsPath})`);
 
   if (options.cssModules.generateDtsOnSave && config.isCSS(uri)) {
-    logger.info(`generateTypes(${uri.fsPath})`);
     return workspace.fs.stat(uri).then(async () =>
       workspace.fs
         .readFile(uri)
@@ -16,7 +24,7 @@ export async function generateTypes(uri: Uri): Promise<void> {
         .then(async (content) =>
           generateTypesFromCss(content, uri.path, {
             options,
-            logger,
+            logger: config.logger,
           }).then(async ({ files }) =>
             Promise.all(
               Object.entries(files).map(async ([filename, content]) =>

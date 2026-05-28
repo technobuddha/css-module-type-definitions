@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { type Options } from '../../common/index.ts';
+import { type Options } from './index.ts';
 
 type CssModules = Partial<Options['cssModules']>;
 

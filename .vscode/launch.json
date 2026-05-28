@@ -9,12 +9,9 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.*"],
-      "preLaunchTask": "yarn",
-      "env": {
-        "TSS_LOG": "-logToFile true -file /tmp/tsserver.log -level verbose"
-      }
+      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}/out"],
+      "outFiles": ["${workspaceFolder}/out/**/*.*"],
+      "preLaunchTask": "esbuild"
     },
     {
       "name": "Extension Tests",
@@ -26,7 +23,7 @@
         "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
       ],
       "outFiles": ["${workspaceFolder}/dist/test/**/*.js"],
-      "preLaunchTask": "yarn"
+      "preLaunchTask": "build"
     }
   ]
 }

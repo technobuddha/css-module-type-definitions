@@ -1,6 +1,10 @@
 //@ts-check
 /** @type import("@technobuddha/project").TechnobuddhaConfig */
 const config = {
+  package: {
+    dependencies: ['sugarss'],
+    devDependencies: ['webpack-cli', 'ts-loader'],
+  },
   git: {
     ignore: [
       'out'
@@ -10,6 +14,9 @@ const config = {
     src: {
       platform: 'node',
     },
+    scratch: {
+      platform: 'vite-client',
+    }
   },
   typedoc: {
     readme: 'doc/intro.md',

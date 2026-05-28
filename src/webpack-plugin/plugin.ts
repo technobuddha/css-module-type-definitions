@@ -1,12 +1,14 @@
 import { type Compiler, type WebpackPluginInstance } from 'webpack';
 
-import CMTD, { type CMTDOptions } from './index.ts';
+import { type Options } from '../common/index.ts';
+
+import CMTD from './index.ts';
 
 export class CMTDWebpackPlugin implements WebpackPluginInstance {
   private readonly cmtd: CMTD;
   private isWatching: boolean;
 
-  public constructor(options: CMTDOptions) {
+  public constructor(options: Partial<Options>) {
     this.cmtd = new CMTD(options);
     this.isWatching = false;
   }
@@ -22,9 +24,7 @@ export class CMTDWebpackPlugin implements WebpackPluginInstance {
       }
 
       this.isWatching = true;
-      return this.cmtd.scan().then(() => this.cmtd.watch());
+      return this.cmtd.scan().then(async () => this.cmtd.watch());
     });
   }
 }
-
-export default CMTDWebpackPlugin;

@@ -19,6 +19,38 @@ const config = {
       { build: 'default' },
     ]
   },
+  extension: {
+    steps: [
+      {
+        display: 'Prepare',
+        command: ['rm -rf out', 'mkdir out'],
+      },
+      {
+        display: 'package.json',
+        command: './scripts/package-extension.ts',
+      },
+      {
+        display: 'LICENSE',
+        command: 'cp LICENSE.md out/LICENSE.md',
+      },
+      {
+        display: 'README',
+        command: 'cp README.md out/README.md',
+      },
+      {
+        display: 'assets',
+        command: 'cp assets/icon/cmtd.png assets/extension/.vscodeignore out',
+      },
+      {
+        display: 'Webpack',
+        command: 'webpack --mode=production',
+      },
+      {
+        display: 'package',
+        command: 'cd out && vsce package',
+      }
+    ]
+  },
   publish: {
     steps: [
       { build: 'default' },

@@ -8,7 +8,6 @@ export function commandHideTypeFiles(): Disposable {
 
     const wsConfig = workspace.getConfiguration();
     window.showInformationMessage('Type files will now be hidden in the explorer.');
-    config.logger.debug(JSON.stringify(wsConfig.get('cmtd.showTypeFiles')));
 
     wsConfig.update('cmtd.showTypeFiles', false);
     wsConfig.update('files.exclude', { [pattern]: true });

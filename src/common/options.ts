@@ -1,6 +1,5 @@
 import { empty } from '@technobuddha/library';
 import {
-  type CSSModulesOptions,
   type LessPreprocessorOptions,
   type SassPreprocessorOptions,
   type StylusPreprocessorOptions,
@@ -12,8 +11,6 @@ import {
 // }
 
 export interface Options {
-  // dotenv: Omit<DotenvConfigOptions, 'path'> & { path?: string };
-  // postcss: PostcssOptions;
   preprocessor: {
     less: LessPreprocessorOptions;
     sass: Omit<
@@ -27,7 +24,13 @@ export interface Options {
     styl: StylusPreprocessorOptions;
     stylus: StylusPreprocessorOptions;
   };
-  cssModules: CSSModulesOptions & {
+  cssModules: {
+    scopeBehaviour: 'global' | 'local';
+    globalModulePaths: RegExp[];
+    exportGlobals: boolean;
+    generateScopedName: string;
+    hashPrefix: string;
+    localsConvention: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly';
     extensions: string[];
     modulePattern: string;
     dtsBanner: boolean;

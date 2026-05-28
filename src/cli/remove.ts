@@ -1,17 +1,15 @@
 import fs from 'node:fs/promises';
 
-import { type Ignore } from 'ignore';
+import { fileOperation, type Ignorer, type Logger } from '../common/index.ts';
 
-import { fileOperation, type Logger } from '../common/index.ts';
-
-import { findUnignoredFiles } from './helpers/index.ts';
-
-export async function remove(glob: string, ig: Ignore, logger: Logger): Promise<void> {
-  await findUnignoredFiles(glob, ig).then(async (files) =>
-    Promise.all(
-      files.map(async (file) =>
-        fs.rm(file).then(() => logger.info(fileOperation(file, 'deleted'))),
+export async function remove(glob: string, ignorer: Ignorer, logger: Logger): Promise<void> {
+  await ignorer
+    .findUnignoredFiles(`**/${glob}`)
+    .then(async (files) =>
+      Promise.all(
+        files.map(async (file) =>
+          fs.rm(file).then(() => logger.info(fileOperation(file, 'deleted'))),
+        ),
       ),
-    ),
-  );
+    );
 }
