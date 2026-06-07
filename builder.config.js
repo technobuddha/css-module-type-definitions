@@ -6,24 +6,11 @@ const config = {
     steps: [
       {
         display: 'Prepare',
-        command: 'rm -rf ./dist'
+        command: ['rm -rf ./dist ./out', 'mkdir dist out'],
       },
       {
         display: 'CMTD',
         command: 'tsc --build src',
-      }
-    ],
-  },
-  compile: {
-    steps: [
-      { build: 'default' },
-    ]
-  },
-  extension: {
-    steps: [
-      {
-        display: 'Prepare',
-        command: ['rm -rf out', 'mkdir out'],
       },
       {
         display: 'package.json',
@@ -49,6 +36,11 @@ const config = {
         display: 'package',
         command: 'cd out && vsce package',
       }
+    ],
+  },
+  compile: {
+    steps: [
+      { build: 'default' },
     ]
   },
   publish: {
