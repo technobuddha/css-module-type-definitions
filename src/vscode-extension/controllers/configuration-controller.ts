@@ -10,32 +10,27 @@ import {
 } from 'vscode';
 import { type URI, Utils } from 'vscode-uri';
 
-import {
-  defaultLogger,
-  defaultOptions,
-  type Logger,
-  type Options,
-  readViteConfig,
-} from '../../common/index.ts';
+import { defaultLogger, defaultOptions, type Logger, type Options } from '../../common/index.ts';
 
 import { SETTINGS_PREFIX } from '../constants.ts';
 import { createLogger } from '../create-logger.ts';
 
-import { Controller } from './controller.ts';
-import { UriIgnorer } from './ingore-controller.ts';
+import { UriIgnorer } from './uri-ignorer.ts';
+import { ViteWatcher } from './vite-watcher.ts';
+import { VSDisposable } from './vs-disposable.ts';
 
 const reIsRelative = new RegExp(`^\\.{1,2}${path.sep}`, 'v');
-const globViteConfig = `vite.config.{js,cjs,mjs,ts,cts,mts}`;
 
 function toFilename(filename: string | URI): string {
   return typeof filename === 'string' ? filename : filename.fsPath;
 }
 
-export class ConfigurationController extends Controller {
+export class ConfigurationController extends VSDisposable {
   private readonly onDidChangeEmitter = new EventEmitter<ConfigurationChangeEvent>();
   public logger: Logger = defaultLogger;
   readonly #options: Map<WorkspaceFolder, Options> = new Map();
   readonly #ignores: Map<WorkspaceFolder, UriIgnorer> = new Map();
+  readonly #vite: Map<WorkspaceFolder, ViteWatcher> = new Map();
 
   public constructor() {
     super();
@@ -44,8 +39,6 @@ export class ConfigurationController extends Controller {
   public async init(): Promise<void> {
     await this.dispose();
     this.logger = await createLogger();
-
-    const viteWatcher = workspace.createFileSystemWatcher(`**/${globViteConfig}`);
 
     this.disposables.push(
       workspace.onDidChangeConfiguration(async (event) => {
@@ -57,26 +50,20 @@ export class ConfigurationController extends Controller {
       }),
       workspace.onDidChangeWorkspaceFolders(async () => {
         this.logger.info('Workspace folders change detected');
-        await this.readIgnores();
-        await this.readOptions();
-      }),
-
-      viteWatcher,
-      viteWatcher.onDidChange(async (file) => {
-        this.logger.debug(`Vite config changed: ${file.toString(true)}, reloading options`);
-        await this.readOptions();
-      }),
-      viteWatcher.onDidCreate(async (file) => {
-        this.logger.debug(`Vite config created: ${file.toString(true)}, reloading options`);
-        await this.readOptions();
-      }),
-      viteWatcher.onDidDelete(async (file) => {
-        this.logger.debug(`Vite config deleted: ${file.toString(true)}, reloading options`);
+        await this.updateIgnores();
         await this.readOptions();
       }),
     );
 
-    await this.readIgnores();
+    if (workspace.workspaceFolders) {
+      for (const folder of workspace.workspaceFolders) {
+        const watcher = await ViteWatcher.create(folder, { logger: this.logger });
+
+        this.#vite.set(folder, watcher);
+      }
+    }
+
+    await this.updateIgnores();
     return this.readOptions();
   }
 
@@ -84,7 +71,7 @@ export class ConfigurationController extends Controller {
     return this.onDidChangeEmitter.event;
   }
 
-  private async readIgnores(): Promise<void> {
+  private async updateIgnores(): Promise<void> {
     if (workspace.workspaceFolders) {
       for (const ignored of this.#ignores.keys()) {
         if (!workspace.workspaceFolders.includes(ignored)) {
@@ -105,63 +92,64 @@ export class ConfigurationController extends Controller {
   }
 
   private async readOptions(): Promise<void> {
-    const viteConfig = await readViteConfig(this.logger);
-
     this.#options.clear();
-    for (const folder of workspace.workspaceFolders ?? []) {
-      const config = workspace.getConfiguration(SETTINGS_PREFIX, folder);
+    if (workspace.workspaceFolders) {
+      for (const folder of workspace.workspaceFolders) {
+        const viteConfig = this.#vite.get(folder)?.config ?? {};
+        const config = workspace.getConfiguration(SETTINGS_PREFIX, folder);
 
-      const options: Options = {
-        preprocessor: {
-          less: { ...defaultOptions.preprocessor.less, ...viteConfig?.preprocessorOptions?.less },
-          sass: { ...defaultOptions.preprocessor.sass, ...viteConfig?.preprocessorOptions?.sass },
-          scss: { ...defaultOptions.preprocessor.scss, ...viteConfig?.preprocessorOptions?.scss },
-          styl: { ...defaultOptions.preprocessor.styl, ...viteConfig?.preprocessorOptions?.styl },
-          stylus: {
-            ...defaultOptions.preprocessor.stylus,
-            ...viteConfig?.preprocessorOptions?.stylus,
+        const options: Options = {
+          preprocessor: {
+            less: { ...defaultOptions.preprocessor.less, ...viteConfig?.preprocessorOptions?.less },
+            sass: { ...defaultOptions.preprocessor.sass, ...viteConfig?.preprocessorOptions?.sass },
+            scss: { ...defaultOptions.preprocessor.scss, ...viteConfig?.preprocessorOptions?.scss },
+            styl: { ...defaultOptions.preprocessor.styl, ...viteConfig?.preprocessorOptions?.styl },
+            stylus: {
+              ...defaultOptions.preprocessor.stylus,
+              ...viteConfig?.preprocessorOptions?.stylus,
+            },
           },
-        },
-        cssModules: {
-          scopeBehaviour:
-            config.get('cssModules.scopeBehaviour') ??
-            viteConfig?.modules?.scopeBehaviour ??
-            defaultOptions.cssModules.scopeBehaviour,
-          globalModulePaths:
-            config.get('cssModules.globalModulePaths') ??
-            viteConfig?.modules?.globalModulePaths ??
-            defaultOptions.cssModules.globalModulePaths,
-          exportGlobals:
-            config.get('cssModules.exportGlobals') ??
-            viteConfig?.modules?.exportGlobals ??
-            defaultOptions.cssModules.exportGlobals,
-          generateScopedName:
-            config.get('cssModules.generateScopedName') ??
-            viteConfig?.modules?.generateScopedName ??
-            defaultOptions.cssModules.generateScopedName,
-          hashPrefix:
-            config.get('cssModules.hashPrefix') ??
-            viteConfig?.modules?.hashPrefix ??
-            defaultOptions.cssModules.hashPrefix,
-          localsConvention:
-            config.get('cssModules.localsConvention') ??
-            viteConfig?.modules?.localsConvention ??
-            defaultOptions.cssModules.localsConvention,
-          dtsBanner: config.get('cssModules.dtsBanner') ?? defaultOptions.cssModules.dtsBanner,
-          dtsHeader: config.get('cssModules.dtsHeader') ?? defaultOptions.cssModules.dtsHeader,
-          dtsFooter: config.get('cssModules.dtsFooter') ?? defaultOptions.cssModules.dtsFooter,
-          generateDtsOnSave:
-            config.get('cssModules.generateDtsOnSave') ??
-            defaultOptions.cssModules.generateDtsOnSave,
-          modulePattern:
-            config.get<string>('cssModules.modulePattern') ??
-            defaultOptions.cssModules.modulePattern,
-          extensions:
-            config.get<string[]>('cssModules.extensions') ?? defaultOptions.cssModules.extensions,
-        },
-      };
+          cssModules: {
+            scopeBehaviour:
+              config.get('cssModules.scopeBehaviour') ??
+              viteConfig?.modules?.scopeBehaviour ??
+              defaultOptions.cssModules.scopeBehaviour,
+            globalModulePaths:
+              config.get('cssModules.globalModulePaths') ??
+              viteConfig?.modules?.globalModulePaths ??
+              defaultOptions.cssModules.globalModulePaths,
+            exportGlobals:
+              config.get('cssModules.exportGlobals') ??
+              viteConfig?.modules?.exportGlobals ??
+              defaultOptions.cssModules.exportGlobals,
+            generateScopedName:
+              config.get('cssModules.generateScopedName') ??
+              viteConfig?.modules?.generateScopedName ??
+              defaultOptions.cssModules.generateScopedName,
+            hashPrefix:
+              config.get('cssModules.hashPrefix') ??
+              viteConfig?.modules?.hashPrefix ??
+              defaultOptions.cssModules.hashPrefix,
+            localsConvention:
+              config.get('cssModules.localsConvention') ??
+              viteConfig?.modules?.localsConvention ??
+              defaultOptions.cssModules.localsConvention,
+            dtsBanner: config.get('cssModules.dtsBanner') ?? defaultOptions.cssModules.dtsBanner,
+            dtsHeader: config.get('cssModules.dtsHeader') ?? defaultOptions.cssModules.dtsHeader,
+            dtsFooter: config.get('cssModules.dtsFooter') ?? defaultOptions.cssModules.dtsFooter,
+            generateDtsOnSave:
+              config.get('cssModules.generateDtsOnSave') ??
+              defaultOptions.cssModules.generateDtsOnSave,
+            modulePattern:
+              config.get<string>('cssModules.modulePattern') ??
+              defaultOptions.cssModules.modulePattern,
+            extensions:
+              config.get<string[]>('cssModules.extensions') ?? defaultOptions.cssModules.extensions,
+          },
+        };
 
-      this.#options.set(folder, options);
+        this.#options.set(folder, options);
+      }
     }
   }
 
@@ -232,6 +220,12 @@ export class ConfigurationController extends Controller {
     for (const ignorer of this.#ignores.values()) {
       await ignorer.dispose();
     }
+
+    for (const watcher of this.#vite.values()) {
+      await watcher.dispose();
+    }
+
     this.#ignores.clear();
+    this.#vite.clear();
   }
 }

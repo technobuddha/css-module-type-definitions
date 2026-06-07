@@ -1,5 +1,7 @@
 .foo {
   .boo {
-    color: blue;
+    .bar {
+      color: blue;
+    }
   }
 }

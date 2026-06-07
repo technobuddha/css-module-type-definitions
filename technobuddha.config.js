@@ -3,7 +3,7 @@
 const config = {
   package: {
     dependencies: ['sugarss'],
-    devDependencies: ['webpack-cli', 'ts-loader'],
+    devDependencies: ['webpack-cli', 'ts-loader', 'vite-plugin-inspect'],
   },
   git: {
     ignore: [

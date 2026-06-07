@@ -1,16 +1,6 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { type Plugin } from 'vite';
 
-import { type Plugin, type ResolvedConfig } from 'vite';
-
-import { defaultOptions, generateTypes, type Options } from '../common/index.ts';
-
-function updateOptions(current: Options, viteConfig: ResolvedConfig): Options {
-  return {
-    preprocessor: current.preprocessor,
-    cssModules: { ...viteConfig.css.modules, ...current.cssModules },
-  };
-}
+import { defaultLogger, FileIgnorer, Optionator, type Options, watch } from '../common/index.ts';
 
 /**
  * Vite plugin that automatically generates TypeScript type definition files for CSS modules.
@@ -49,40 +39,22 @@ function updateOptions(current: Options, viteConfig: ResolvedConfig): Options {
  * @group Vite
  * @category Plugin
  */
-export const pluginCssModuleTypeDefinitions = (opts?: Partial<Options>): Plugin => {
-  let options: Options = {
-    preprocessor: { ...defaultOptions.preprocessor, ...opts?.preprocessor },
-    cssModules: { ...defaultOptions.cssModules, ...opts?.cssModules },
-  };
+export const pluginCssModuleTypeDefinitions = async (opts?: Partial<Options>): Promise<Plugin> => {
+  const ignorer = new FileIgnorer('.', { watch: false, logger: defaultLogger });
+  let optionator: Optionator;
 
   return {
     name: 'css-module-type-definitions',
     apply: 'serve',
     async configureServer({ config }) {
       if (config.css.modules) {
-        options = updateOptions(options, config);
+        optionator = await Optionator.create(opts, {
+          watch: false,
+          logger: defaultLogger,
+          vite: config,
+        });
 
-        const globIsCss = `**/${options.cssModules.modulePattern}.{${options.cssModules.extensions.join(',')}}`;
-        const promises: Promise<void>[] = [];
-
-        for await (const file of fs.glob(globIsCss)) {
-          // TODO console should be replaced with a proper logger
-          promises.push(generateTypes(file, { options, logger: console }));
-        }
-
-        return Promise.all(promises).then(() => undefined);
-      }
-      throw new Error('css.modules must be enabled in vite.config');
-    },
-    async handleHotUpdate({ file, server: { config } }) {
-      if (config.css.modules) {
-        options = updateOptions(options, config);
-        const globIsCss = `${options.cssModules.modulePattern}.{${options.cssModules.extensions.join(',')}}`;
-
-        if (path.matchesGlob(file, globIsCss)) {
-          // TODO console should be replaced with a proper logger
-          return generateTypes(file, { options, logger: console });
-        }
+        void watch({ optionator, ignorer, logger: defaultLogger });
       } else {
         throw new Error('css.modules must be enabled in vite.config');
       }

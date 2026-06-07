@@ -1,6 +1,6 @@
 import { type Disposable } from 'vscode';
 
-export class Controller implements Disposable {
+export class VSDisposable implements Disposable {
   protected readonly disposables: Disposable[] = [];
 
   public async dispose(): Promise<void> {

@@ -3,31 +3,26 @@ import ignore, { type Ignore } from 'ignore';
 import { RelativePattern, workspace, type WorkspaceFolder } from 'vscode';
 import { type URI, Utils } from 'vscode-uri';
 
-import { type Logger } from '../../common/logger.ts';
+import { defaultLogger, type Ignorer, type Logger } from '../../common/index.ts';
 
-import { Controller } from './controller.ts';
+import { VSDisposable } from './vs-disposable.ts';
 
 type UriIgnorerOptions = {
   logger?: Logger;
   watch?: boolean;
 };
 
-export class UriIgnorer extends Controller {
+export class UriIgnorer extends VSDisposable implements Ignorer<URI> {
   public folder: WorkspaceFolder;
   public logger: Logger;
   public ignores: Map<URI, Ignore> = new Map();
 
   public static async create(
     folder: WorkspaceFolder,
-    { logger = console, watch = true }: UriIgnorerOptions = {},
+    { logger = defaultLogger, watch = true }: UriIgnorerOptions = {},
   ): Promise<UriIgnorer> {
     const ignorer = new UriIgnorer(folder, { logger, watch });
-
-    await workspace.findFiles('**/.gitignore').then(async (files) => {
-      for (const file of files) {
-        await ignorer.add(file);
-      }
-    });
+    await ignorer.scanIgnoreFiles();
 
     return ignorer;
   }
@@ -44,29 +39,35 @@ export class UriIgnorer extends Controller {
 
       this.disposables.push(
         watcher,
-        watcher.onDidCreate(async (f) => this.add(f)),
-        watcher.onDidChange(async (f) => this.add(f)),
-        watcher.onDidDelete(async (f) => this.del(f)),
+        watcher.onDidCreate(async () => this.scanIgnoreFiles()),
+        watcher.onDidChange(async () => this.scanIgnoreFiles()),
+        watcher.onDidDelete(async () => this.scanIgnoreFiles()),
       );
     }
   }
 
-  private async add(file: URI): Promise<void> {
-    this.logger.debug(`+ignore: ${file.toString(true)}`);
-    const dirname = Utils.dirname(file);
+  private async scanIgnoreFiles(): Promise<void> {
+    this.logger.debug(`<${this.folder.name}> scanning .gitignore files`);
+    this.ignores.clear();
 
-    try {
-      const content = await workspace.fs.readFile(file).then(workspace.decode);
-      this.ignores.set(dirname, ignore().add(content));
-    } catch (error) {
-      this.logger.error(toError(error));
-    }
-  }
-
-  private async del(file: URI): Promise<void> {
-    this.logger.debug(`-ignore: ${file.toString(true)}`);
-    const dirname = Utils.dirname(file);
-    this.ignores.delete(dirname);
+    return workspace
+      .findFiles(new RelativePattern(this.folder, '**/.gitignore'))
+      .then(async (files) => {
+        for (const file of files) {
+          if (!this.isIgnored(file)) {
+            try {
+              const dirname = Utils.dirname(file);
+              const content = await workspace.fs.readFile(file).then(workspace.decode);
+              this.ignores.set(dirname, ignore().add(content));
+              this.logger.debug(
+                `<${this.folder.name}> ignore: ${workspace.asRelativePath(file, false)}`,
+              );
+            } catch (error) {
+              this.logger.error(toError(error));
+            }
+          }
+        }
+      });
   }
 
   public isIgnored(file: URI): boolean {

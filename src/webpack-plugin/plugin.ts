@@ -1,30 +1,25 @@
 import { type Compiler, type WebpackPluginInstance } from 'webpack';
 
-import { type Options } from '../common/index.ts';
-
-import CMTD from './index.ts';
+import { defaultLogger, FileIgnorer, Optionator, type Options,watch } from '../common/index.ts';
 
 export class CMTDWebpackPlugin implements WebpackPluginInstance {
-  private readonly cmtd: CMTD;
-  private isWatching: boolean;
+  readonly #options: Partial<Options> | undefined;
 
-  public constructor(options: Partial<Options>) {
-    this.cmtd = new CMTD(options);
-    this.isWatching = false;
+  public constructor(options?: Partial<Options>) {
+    this.#options = options;
   }
 
   public apply(compiler: Compiler): void {
-    compiler.hooks.beforeRun.tap('CMTDWebpackPlugin', (_compilation) => {
-      void this.cmtd.scan();
-    });
+    compiler.hooks.initialize.tap('CMTD', () => {
+      (async () => {
+        const ignorer = new FileIgnorer('.', { watch: true, logger: defaultLogger });
+        const optionator = await Optionator.create(this.#options, {
+          logger: defaultLogger,
+          watch: true,
+        });
 
-    compiler.hooks.watchRun.tapPromise('CMTDWebpackPlugin', async () => {
-      if (this.isWatching) {
-        return Promise.resolve();
-      }
-
-      this.isWatching = true;
-      return this.cmtd.scan().then(async () => this.cmtd.watch());
+        void watch({ optionator, ignorer, logger: defaultLogger });
+      })();
     });
   }
 }

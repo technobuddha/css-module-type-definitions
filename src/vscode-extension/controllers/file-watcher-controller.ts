@@ -6,9 +6,9 @@ import { config } from '../extension.ts';
 import { deleteTypes } from '../helpers/delete-types.ts';
 import { generateTypes } from '../helpers/generate-types.ts';
 
-import { Controller } from './controller.ts';
+import { VSDisposable } from './vs-disposable.ts';
 
-export class FileWatcherController extends Controller {
+export class FileWatcherController extends VSDisposable {
   public static async create(): Promise<FileWatcherController> {
     return new FileWatcherController();
   }

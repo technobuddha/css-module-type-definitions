@@ -5,29 +5,24 @@ import { empty } from '@technobuddha/library';
 import chokidar from 'chokidar';
 
 import {
+  type FileIgnorer,
   fileOperation,
   generateTypes,
-  type Ignorer,
   type Logger,
-  type Options,
-} from '../common/index.ts';
-
+  type Optionator,
+} from './index.ts';
 import { update } from './update.ts';
 
 type UpdateOptions = {
-  options: Options;
+  optionator: Optionator;
   logger: Logger;
-  ignorer: Ignorer;
+  ignorer: FileIgnorer;
 };
 
-export async function watch(
-  globIsCss: string,
-  globIsTypeDefinition: string,
-  { options, logger, ignorer }: UpdateOptions,
-): Promise<void> {
+export async function watch({ optionator, logger, ignorer }: UpdateOptions): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   return new Promise<void>(async () => {
-    await update(globIsCss, globIsTypeDefinition, { options, logger, ignorer });
+    await update({ optionator, logger, ignorer });
 
     chokidar
       .watch(process.cwd(), {
@@ -45,16 +40,19 @@ export async function watch(
             return ignorer.isIgnored(slashed);
           }
           if (stats?.isFile()) {
-            return ignorer.isIgnored(rPath) || !path.matchesGlob(path.basename(rPath), globIsCss);
+            return (
+              ignorer.isIgnored(rPath) ||
+              !path.matchesGlob(path.basename(rPath), optionator.globIsCss)
+            );
           }
           return false;
         },
       })
       .on('change', (file) => {
-        void generateTypes(file, { options, logger });
+        void generateTypes(file, { options: optionator.options, logger });
       })
       .on('add', (file) => {
-        void generateTypes(file, { options, logger });
+        void generateTypes(file, { options: optionator.options, logger });
       })
       .on('unlink', (file) => {
         const { dir, name, ext } = path.parse(file);

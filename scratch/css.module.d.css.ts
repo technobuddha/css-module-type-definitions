@@ -11,6 +11,7 @@
 type Css = {
   readonly 'foo': string;
   readonly 'boo': string;
+  readonly 'bar': string;
 };
 
 declare const css: Css;

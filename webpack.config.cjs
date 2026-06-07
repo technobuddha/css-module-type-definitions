@@ -49,14 +49,14 @@ const config = {
       }
 
       if (
-        request === 'vite'
-        || request?.startsWith('vite/')
-        || request === 'esbuild'
+        // request === 'vite'
+        // || request?.startsWith('vite/') ||
+        request === 'esbuild'
         || request?.startsWith('esbuild/')
         || request === 'rolldown'
         || request?.startsWith('rolldown/')
         || request?.startsWith('@rolldown/')
-        || request?.startsWith('@vitejs/')
+        // || request?.startsWith('@vitejs/')
       ) {
         return callback(null, `commonjs ${request}`);
       }

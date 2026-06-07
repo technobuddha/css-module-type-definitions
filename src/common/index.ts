@@ -1,7 +1,13 @@
+export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
 export { generateTypes } from './generate-types.ts';
-export { Ignorer } from './ignorer.ts';
+export { type Ignorer } from './ignorer.ts';
 export { defaultLogger, type Logger } from './logger.ts';
+export { Optionator } from './optionator.ts';
 export { defaultOptions, type Options } from './options.ts';
-export { readViteConfig, type ViteCss } from './read-vite-config.ts';
+export { readViteConfig, transformViteConfig, type ViteCss } from './read-vite-config.ts';
 export { readVSCodeSettings } from './read-vscode-settings.ts';
+export { remove } from './remove.ts';
+export { update } from './update.ts';
+export { VITE_EXTENSIONS } from './vite.ts';
+export { watch } from './watch.ts';

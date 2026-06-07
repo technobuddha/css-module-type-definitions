@@ -1,89 +1,65 @@
 #! /usr/bin/env node
-import { out, toError } from '@technobuddha/library';
-import { program } from 'commander';
+import { noop, outln, toError } from '@technobuddha/library';
+import { Argument, Option, program } from 'commander';
 
-import {
-  defaultOptions,
-  Ignorer,
-  type Logger,
-  type Options,
-  readViteConfig,
-  readVSCodeSettings,
-} from '../common/index.ts';
+import { FileIgnorer, type Logger, Optionator } from '../common/index.ts';
+import { remove, update, watch } from '../common/index.ts';
 
-import { remove } from './remove.ts';
-import { update } from './update.ts';
-import { watch } from './watch.ts';
+type LogLevel = 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'off';
+const LOGLEVELS: Record<LogLevel, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warning: 3,
+  error: 4,
+  off: 5,
+};
 
 if (import.meta.main) {
-  const logger: Logger = {
-    trace: () => {},
-    debug: () => {},
-    info: (msg) => out(msg, '\n'),
-    warn: (msg) => out(msg, '\n'),
-    error: (error) => out(toError(error).message, '\n'),
-  };
+  program
+    .addArgument(new Argument('<action>', 'Action').choices(['update', 'watch', 'remove']))
+    .addOption(
+      new Option('-l, --log <logLevel>').choices([
+        'off',
+        'error',
+        'warning',
+        'info',
+        'debug',
+        'trace',
+      ]),
+    )
+    .action(
+      async (
+        action,
+        { log }: { log: 'off' | 'error' | 'warning' | 'info' | 'debug' | 'trace' },
+      ) => {
+        const level = LOGLEVELS[log] ?? 2;
 
-  const viteConfig = await readViteConfig(logger);
-  const vscodeSettings = await readVSCodeSettings();
+        const logger: Logger = {
+          trace: level <= 0 ? outln : noop,
+          debug: level <= 1 ? outln : noop,
+          info: level <= 2 ? outln : noop,
+          warn: level <= 3 ? outln : noop,
+          error: level <= 4 ? (error) => outln(toError(error).message) : noop,
+        };
 
-  const options: Options = {
-    preprocessor: {
-      less: viteConfig?.preprocessorOptions?.less ?? defaultOptions.preprocessor.less,
-      sass: viteConfig?.preprocessorOptions?.sass ?? defaultOptions.preprocessor.sass,
-      scss: viteConfig?.preprocessorOptions?.scss ?? defaultOptions.preprocessor.scss,
-      styl: viteConfig?.preprocessorOptions?.styl ?? defaultOptions.preprocessor.styl,
-      stylus: viteConfig?.preprocessorOptions?.stylus ?? defaultOptions.preprocessor.stylus,
-    },
-    cssModules: {
-      scopeBehaviour:
-        vscodeSettings.scopeBehaviour ??
-        viteConfig?.modules?.scopeBehaviour ??
-        defaultOptions.cssModules.scopeBehaviour,
-      globalModulePaths:
-        vscodeSettings.globalModulePaths ??
-        viteConfig?.modules?.globalModulePaths ??
-        defaultOptions.cssModules.globalModulePaths,
-      exportGlobals:
-        vscodeSettings.exportGlobals ??
-        viteConfig?.modules?.exportGlobals ??
-        defaultOptions.cssModules.exportGlobals,
-      generateScopedName:
-        vscodeSettings.generateScopedName ??
-        viteConfig?.modules?.generateScopedName ??
-        defaultOptions.cssModules.generateScopedName,
-      hashPrefix:
-        vscodeSettings.hashPrefix ??
-        viteConfig?.modules?.hashPrefix ??
-        defaultOptions.cssModules.hashPrefix,
-      localsConvention:
-        vscodeSettings.localsConvention ??
-        viteConfig?.modules?.localsConvention ??
-        defaultOptions.cssModules.localsConvention,
-      dtsBanner: vscodeSettings.dtsBanner ?? defaultOptions.cssModules.dtsBanner,
-      dtsHeader: vscodeSettings.dtsHeader ?? defaultOptions.cssModules.dtsHeader,
-      dtsFooter: vscodeSettings.dtsFooter ?? defaultOptions.cssModules.dtsFooter,
-      generateDtsOnSave:
-        vscodeSettings.generateDtsOnSave ?? defaultOptions.cssModules.generateDtsOnSave,
-      modulePattern: vscodeSettings.modulePattern ?? defaultOptions.cssModules.modulePattern,
-      extensions: vscodeSettings.extensions ?? defaultOptions.cssModules.extensions,
-    },
-  };
+        await using ignorer = new FileIgnorer(process.cwd(), { logger, watch: action === 'watch' });
+        await using optionator = await Optionator.create({}, { logger, watch: action === 'watch' });
 
-  const globIsCss = `${options.cssModules.modulePattern}.{${options.cssModules.extensions.join(',')}}`;
-  const globIsTypeDefinition = `${options.cssModules.modulePattern}.{${options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
+        switch (action) {
+          case 'update': {
+            return await update({ ignorer, optionator, logger });
+          }
+          case 'watch': {
+            return await watch({ ignorer, optionator, logger });
+          }
+          case 'remove': {
+            return await remove({ ignorer, optionator, logger });
+          }
+          // no default
+        }
+      },
+    );
 
-  {
-    await using ignorer = new Ignorer(process.cwd(), { logger });
-
-    program
-      .command('update')
-      .action(async () => update(globIsCss, globIsTypeDefinition, { ignorer, options, logger }));
-    program
-      .command('watch')
-      .action(async () => watch(globIsCss, globIsTypeDefinition, { ignorer, options, logger }));
-    program.command('remove').action(async () => remove(globIsTypeDefinition, ignorer, logger));
-
-    await program.parseAsync();
-  }
+  await program.parseAsync();
 }

@@ -1,6 +1,4 @@
-import fs from 'node:fs/promises';
-
-import { toError } from '@technobuddha/library';
+import { errln, outln, space, toError } from '@technobuddha/library';
 
 export interface Logger {
   trace: (message: string) => void;
@@ -10,14 +8,10 @@ export interface Logger {
   error: (error: string | Error) => void;
 }
 
-function output(message: string): void {
-  void fs.appendFile('/tmp/cmtd.log', `${message}\n`, 'utf-8');
-}
-
 export const defaultLogger: Logger = {
-  trace: output,
-  debug: output,
-  info: output,
-  warn: (message: string) => output(`WARN: ${message}`),
-  error: (error: string | Error) => output(`ERROR: ${toError(error).message}`),
+  trace: outln,
+  debug: outln,
+  info: outln,
+  warn: (message: string) => outln('Warning:', space, message),
+  error: (error: string | Error) => errln('Error:', space, toError(error).message),
 };

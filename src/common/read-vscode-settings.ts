@@ -1,10 +1,13 @@
 import fs from 'node:fs/promises';
 
-import { type Options } from './index.ts';
+import { type Logger } from './logger.ts';
+import { type Options } from './options.ts';
 
 type CssModules = Partial<Options['cssModules']>;
 
-export async function readVSCodeSettings(): Promise<CssModules> {
+export async function readVSCodeSettings(logger?: Logger): Promise<CssModules> {
+  logger?.debug('VSCode: .vscode/settings.json');
+
   return fs
     .readFile('.vscode/settings.json', 'utf-8')
     .then(JSON.parse)
