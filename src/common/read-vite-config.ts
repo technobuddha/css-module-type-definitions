@@ -1,6 +1,7 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { dynamicImport, fileExists, toRelativePath } from '@technobuddha/library';
+import { dynamicImport, fileExists, noop, toRelativePath } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
   type ResolvedConfig,
@@ -19,14 +20,30 @@ export type ViteCss = Partial<
   }
 >;
 
-export async function readViteConfig(root: string, logger?: Logger): Promise<ViteCss | undefined> {
-  for (const ext of ['js', 'cjs', 'mjs', 'ts', 'cts', 'mts']) {
-    const viteConfigPath = toRelativePath(path.resolve(path.join(root, `vite.config.${ext}`)));
-    if (await fileExists(viteConfigPath)) {
-      return dynamicImport<UserConfig>(viteConfigPath).then((viteConfig) => {
-        logger?.debug(`Vite: ${path.relative(root, viteConfigPath)}`);
+export async function readViteConfig(file: string, logger?: Logger): Promise<ViteCss | undefined> {
+  const { ext, dir } = path.parse(file);
+  const tmpname = path.resolve(path.join(dir, `vite${Date.now()}${Math.random()}.${ext}`));
+
+  logger?.error(file);
+
+  return fs
+    .cp(file, tmpname, { force: true })
+    .then(async () =>
+      dynamicImport<UserConfig>(toRelativePath(tmpname)).then((viteConfig) => {
+        if (viteConfig?.css?.modules) {
+          logger?.trace(`Vite: ${JSON.stringify(viteConfig.css.modules)}`);
+        }
         return transformViteConfig(viteConfig);
-      });
+      }),
+    )
+    .finally(() => void fs.rm(tmpname, { force: true }).catch(noop));
+}
+
+export async function locateViteConfigurationFile(root: string): Promise<string | undefined> {
+  for (const ext of ['js', 'cjs', 'mjs', 'ts', 'cts', 'mts']) {
+    const viteConfigPath = path.resolve(path.join(root, `vite.config.${ext}`));
+    if (await fileExists(viteConfigPath)) {
+      return viteConfigPath;
     }
   }
 

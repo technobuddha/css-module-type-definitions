@@ -5,12 +5,10 @@ import {
   type StylusPreprocessorOptions,
 } from 'vite';
 
-// interface PostcssOptions {
-//   excludePlugins?: string[];
-//   useConfig?: boolean;
-// }
+import { type LogLevel } from './logger.ts';
 
 export interface Options {
+  logLevel: LogLevel;
   preprocessor: {
     less: LessPreprocessorOptions;
     sass: Omit<
@@ -41,6 +39,7 @@ export interface Options {
 }
 
 export const defaultOptions = Object.freeze<Options>({
+  logLevel: 'info',
   preprocessor: {
     less: {},
     sass: {},

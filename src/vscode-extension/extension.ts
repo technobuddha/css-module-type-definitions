@@ -9,12 +9,11 @@ import {
 import { ConfigurationController } from './controllers/configuration-controller.ts';
 import { FileWatcherController } from './controllers/file-watcher-controller.ts';
 
-export const config = new ConfigurationController();
+export const config = await ConfigurationController.create();
 
 export async function activate(context: ExtensionContext): Promise<void> {
   window.showInformationMessage('css-module-type-definitions is now activating');
 
-  await config.init();
   const watcher = await FileWatcherController.create();
   context.subscriptions.push(
     config,

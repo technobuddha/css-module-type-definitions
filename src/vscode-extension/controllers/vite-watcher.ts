@@ -1,7 +1,8 @@
+import { fileExists } from '@technobuddha/library';
 import { type CSSModulesOptions, type ResolvedCSSOptions } from 'vite';
-import { RelativePattern, workspace, type WorkspaceFolder } from 'vscode';
+import { RelativePattern, Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { defaultLogger, type Logger, readViteConfig, VITE_EXTENSIONS } from '../../common/index.ts';
+import { type Logger, readViteConfig, VITE_EXTENSIONS } from '../../common/index.ts';
 
 import { VSDisposable } from './vs-disposable.ts';
 
@@ -15,7 +16,8 @@ export type ViteCss = Partial<
 >;
 
 type ViteWatcherOptions = {
-  logger?: Logger;
+  folder: WorkspaceFolder;
+  logger: Logger;
 };
 
 export class ViteWatcher extends VSDisposable {
@@ -23,17 +25,14 @@ export class ViteWatcher extends VSDisposable {
   public logger: Logger;
   public config: ViteCss | undefined;
 
-  public static async create(
-    folder: WorkspaceFolder,
-    { logger = defaultLogger }: ViteWatcherOptions = {},
-  ): Promise<ViteWatcher> {
-    const watcher = new ViteWatcher(folder, { logger });
+  public static async create({ folder, logger }: ViteWatcherOptions): Promise<ViteWatcher> {
+    const watcher = new ViteWatcher({ folder, logger });
 
     await watcher.loadConfig();
     return watcher;
   }
 
-  private constructor(folder: WorkspaceFolder, { logger }: Required<ViteWatcherOptions>) {
+  private constructor({ folder, logger }: ViteWatcherOptions) {
     super();
     this.folder = folder;
     this.logger = logger;
@@ -51,6 +50,14 @@ export class ViteWatcher extends VSDisposable {
   }
 
   private async loadConfig(): Promise<void> {
-    this.config = await readViteConfig(this.folder.uri.fsPath, this.logger);
+    this.config = undefined;
+
+    for (const ext of VITE_EXTENSIONS) {
+      const configPath = Uri.joinPath(this.folder.uri, `vite.config.${ext}`);
+      if (await fileExists(configPath.fsPath)) {
+        this.config = await readViteConfig(configPath.fsPath, this.logger);
+        break;
+      }
+    }
   }
 }

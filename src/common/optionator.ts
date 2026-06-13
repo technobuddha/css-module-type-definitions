@@ -1,86 +1,132 @@
+/* eslint-disable require-atomic-updates */
 import path from 'node:path';
 
-import { empty } from '@technobuddha/library';
+import { deepEquals, locatePackageRoot } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
 
-import { type Logger } from './logger.ts';
+import { fileOperation } from './file-operation.ts';
+import { type Logger, loggerOutput, stdioLogger } from './logger.ts';
 import { defaultOptions, type Options } from './options.ts';
-import { readViteConfig, transformViteConfig, type ViteCss } from './read-vite-config.ts';
-import { readVSCodeSettings } from './read-vscode-settings.ts';
-import { VITE_EXTENSIONS } from './vite.ts';
+import {
+  locateViteConfigurationFile,
+  readViteConfig,
+  transformViteConfig,
+  type ViteCss,
+} from './read-vite-config.ts';
+import { locateVSCodeConfigrationFile, readVSCodeSettings } from './read-vscode-settings.ts';
 
 type OptionatorOptions = {
-  logger?: Logger;
   watch?: boolean;
   vite?: UserConfig | ResolvedConfig;
+  logger?: Logger;
 };
 
 export class Optionator implements AsyncDisposable {
-  #top: Partial<Options> = {};
-  #options: Options = defaultOptions;
-  #watcher: FSWatcher | undefined;
-  readonly #logger: Logger | undefined;
-  readonly #watchVite: boolean;
+  readonly #top: Partial<Options> = {};
+  readonly #eventTarget: EventTarget = new EventTarget();
+  readonly #listeners: Set<() => void> = new Set();
+  readonly #baseLogger: Logger;
   #vite: ViteCss | undefined;
+  #vscode: Awaited<ReturnType<typeof readVSCodeSettings>> | undefined;
+  #options: Options = defaultOptions;
+  readonly #watcher: Set<FSWatcher> = new Set();
+  #logger: Logger;
 
   public static async create(
     top: Partial<Options> = {},
-    { logger, watch = false, vite }: OptionatorOptions = {},
+    { watch = false, vite, logger = stdioLogger }: OptionatorOptions = {},
   ): Promise<Optionator> {
-    const optionator = new Optionator(watch, logger, vite);
-    optionator.#top = top;
+    const root = (await locatePackageRoot()) ?? process.cwd();
+
+    const optionator = new Optionator(top, logger);
+
+    const vscodeConfigPath = await locateVSCodeConfigrationFile(root);
+    if (vscodeConfigPath) {
+      optionator.#logger?.debug(
+        fileOperation(path.relative(root, vscodeConfigPath), 'configuration'),
+      );
+
+      if (watch) {
+        const watcher = chokidar.watch(vscodeConfigPath, {
+          ignoreInitial: true,
+          persistent: true,
+          atomic: true,
+        });
+
+        const respond = (reason: 'add' | 'change' | 'unlink') => (file: string) => {
+          optionator.#logger?.debug(fileOperation(file, reason));
+          void optionator.readOptions();
+        };
+
+        watcher.on('add', respond('add'));
+        watcher.on('change', respond('change'));
+        watcher.on('unlink', respond('unlink'));
+
+        optionator.#watcher.add(watcher);
+      }
+
+      optionator.#vscode = await readVSCodeSettings(vscodeConfigPath, optionator.#logger);
+    }
+
+    if (vite) {
+      optionator.#vite = transformViteConfig(vite);
+    } else {
+      const viteConfigPath = await locateViteConfigurationFile(root);
+
+      if (viteConfigPath) {
+        optionator.#logger?.debug(
+          fileOperation(path.relative(root, viteConfigPath), 'configuration'),
+        );
+
+        if (watch) {
+          const watcher = chokidar.watch(viteConfigPath, {
+            ignoreInitial: true,
+            persistent: true,
+            atomic: true,
+          });
+
+          const respond =
+            (reason: 'add' | 'change' | 'unlink') =>
+            (file: string): void => {
+              optionator.#logger?.debug(fileOperation(file, reason));
+
+              (async () => {
+                optionator.#vite = await readViteConfig(viteConfigPath, optionator.#logger);
+                void optionator.readOptions();
+              })();
+            };
+
+          watcher
+            .on('add', respond('add'))
+            .on('change', respond('change'))
+            .on('unlink', respond('unlink'));
+
+          optionator.#watcher.add(watcher);
+        }
+
+        optionator.#vite = await readViteConfig(viteConfigPath, optionator.#logger);
+      }
+    }
+
+    optionator.#options = optionator.compileOptions();
+    optionator.#logger = optionator.buildLogger();
+
     await optionator.readOptions();
     return optionator;
   }
 
-  private constructor(watch = false, logger?: Logger, vite?: UserConfig | ResolvedConfig) {
-    this.#logger = logger;
-    if (vite) {
-      this.#vite = transformViteConfig(vite);
-      this.#watchVite = false;
-    } else {
-      this.#watchVite = watch;
-    }
+  private constructor(top: Partial<Options>, baseLogger: Logger) {
+    this.#top = top;
+    this.#baseLogger = baseLogger;
+    this.#options = this.compileOptions();
 
-    if (watch) {
-      this.#watcher = chokidar.watch('.', {
-        ignored: (file, stats) => {
-          const { dir, base, name, ext } = path.parse(file);
-
-          return (
-            (stats?.isFile() ?? false) &&
-            !(
-              (this.#watchVite &&
-                name === 'vite.config' &&
-                VITE_EXTENSIONS.includes(ext) &&
-                dir === empty) ||
-              (base === 'settings.json' && dir === '.vscode')
-            )
-          );
-        },
-        ignoreInitial: true,
-        persistent: true,
-      });
-
-      const respond = (file: string): void => {
-        this.#logger?.debug(`${file} changed, reloading options...`);
-        void this.readOptions();
-      };
-
-      this.#watcher.on('add', respond);
-      this.#watcher.on('change', respond);
-      this.#watcher.on('unlink', respond);
-    }
+    this.#logger = this.buildLogger();
   }
 
-  private async readOptions(): Promise<void> {
-    if (this.#watchVite) {
-      this.#vite = await readViteConfig('.', this.#logger);
-    }
-    const vscode = await readVSCodeSettings(this.#logger);
-
-    this.#options = {
+  private compileOptions(): Options {
+    return {
+      logLevel: this.#top.logLevel ?? this.#vscode?.logLevel ?? defaultOptions.logLevel,
       preprocessor: {
         less:
           this.#top.preprocessor?.less ??
@@ -106,60 +152,84 @@ export class Optionator implements AsyncDisposable {
       cssModules: {
         scopeBehaviour:
           this.#top.cssModules?.scopeBehaviour ??
-          vscode?.scopeBehaviour ??
+          this.#vscode?.scopeBehaviour ??
           this.#vite?.modules?.scopeBehaviour ??
           defaultOptions.cssModules.scopeBehaviour,
         globalModulePaths:
           this.#top.cssModules?.globalModulePaths ??
-          vscode?.globalModulePaths ??
+          this.#vscode?.globalModulePaths ??
           this.#vite?.modules?.globalModulePaths ??
           defaultOptions.cssModules.globalModulePaths,
         exportGlobals:
           this.#top.cssModules?.exportGlobals ??
-          vscode?.exportGlobals ??
+          this.#vscode?.exportGlobals ??
           this.#vite?.modules?.exportGlobals ??
           defaultOptions.cssModules.exportGlobals,
         generateScopedName:
           this.#top.cssModules?.generateScopedName ??
-          vscode?.generateScopedName ??
+          this.#vscode?.generateScopedName ??
           this.#vite?.modules?.generateScopedName ??
           defaultOptions.cssModules.generateScopedName,
         hashPrefix:
           this.#top.cssModules?.hashPrefix ??
-          vscode?.hashPrefix ??
+          this.#vscode?.hashPrefix ??
           this.#vite?.modules?.hashPrefix ??
           defaultOptions.cssModules.hashPrefix,
         localsConvention:
           this.#top.cssModules?.localsConvention ??
-          vscode?.localsConvention ??
+          this.#vscode?.localsConvention ??
           this.#vite?.modules?.localsConvention ??
           defaultOptions.cssModules.localsConvention,
         dtsBanner:
           this.#top.cssModules?.dtsBanner ??
-          vscode?.dtsBanner ??
+          this.#vscode?.dtsBanner ??
           defaultOptions.cssModules.dtsBanner,
         dtsHeader:
           this.#top.cssModules?.dtsHeader ??
-          vscode?.dtsHeader ??
+          this.#vscode?.dtsHeader ??
           defaultOptions.cssModules.dtsHeader,
         dtsFooter:
           this.#top.cssModules?.dtsFooter ??
-          vscode?.dtsFooter ??
+          this.#vscode?.dtsFooter ??
           defaultOptions.cssModules.dtsFooter,
         generateDtsOnSave:
           this.#top.cssModules?.generateDtsOnSave ??
-          vscode?.generateDtsOnSave ??
+          this.#vscode?.generateDtsOnSave ??
           defaultOptions.cssModules.generateDtsOnSave,
         modulePattern:
           this.#top.cssModules?.modulePattern ??
-          vscode?.modulePattern ??
+          this.#vscode?.modulePattern ??
           defaultOptions.cssModules.modulePattern,
         extensions:
           this.#top.cssModules?.extensions ??
-          vscode?.extensions ??
+          this.#vscode?.extensions ??
           defaultOptions.cssModules.extensions,
       },
     };
+  }
+
+  private async readOptions(): Promise<void> {
+    const options = this.compileOptions();
+
+    if (!deepEquals(options, this.#options)) {
+      this.#options = options;
+      this.#eventTarget.dispatchEvent(new Event('change'));
+    }
+    this.#logger = this.buildLogger();
+  }
+
+  private buildLogger(): Logger {
+    return {
+      trace: loggerOutput('trace', this.#options.logLevel, this.#baseLogger.trace),
+      debug: loggerOutput('debug', this.#options.logLevel, this.#baseLogger.debug),
+      info: loggerOutput('info', this.#options.logLevel, this.#baseLogger.info),
+      warn: loggerOutput('warn', this.#options.logLevel, this.#baseLogger.warn),
+      error: loggerOutput('error', this.#options.logLevel, this.#baseLogger.error),
+    };
+  }
+
+  public get logger(): Logger {
+    return this.#logger;
   }
 
   public get options(): Options {
@@ -174,14 +244,25 @@ export class Optionator implements AsyncDisposable {
     return `${this.#options.cssModules.modulePattern}.{${this.#options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
+  public onDidChange(listener: () => void): void {
+    this.#listeners.add(listener);
+    this.#eventTarget.addEventListener('change', listener);
+  }
+
   public async dispose(): Promise<void> {
     return this[Symbol.asyncDispose]();
   }
 
   public async [Symbol.asyncDispose](): Promise<void> {
     if (this.#watcher) {
-      await this.#watcher.close();
-      this.#watcher = undefined;
+      for (const watcher of Array.from(this.#watcher)) {
+        await watcher.close();
+        this.#watcher.delete(watcher);
+      }
+    }
+
+    for (const listener of this.#listeners) {
+      this.#eventTarget.removeEventListener('change', listener);
     }
   }
 }

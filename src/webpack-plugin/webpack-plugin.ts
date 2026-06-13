@@ -1,6 +1,7 @@
+import { locatePackageRoot } from '@technobuddha/library';
 import { type Compiler, type WebpackPluginInstance } from 'webpack';
 
-import { defaultLogger, FileIgnorer, Optionator, type Options,watch } from '../common/index.ts';
+import { FileIgnorer, Optionator, type Options, watch } from '../common/index.ts';
 
 export class CMTDWebpackPlugin implements WebpackPluginInstance {
   readonly #options: Partial<Options> | undefined;
@@ -12,13 +13,13 @@ export class CMTDWebpackPlugin implements WebpackPluginInstance {
   public apply(compiler: Compiler): void {
     compiler.hooks.initialize.tap('CMTD', () => {
       (async () => {
-        const ignorer = new FileIgnorer('.', { watch: true, logger: defaultLogger });
+        const root = (await locatePackageRoot()) ?? process.cwd();
         const optionator = await Optionator.create(this.#options, {
-          logger: defaultLogger,
           watch: true,
         });
+        const ignorer = await FileIgnorer.create({ root, logger: optionator.logger, watch: true });
 
-        void watch({ optionator, ignorer, logger: defaultLogger });
+        void watch({ root, optionator, ignorer });
       })();
     });
   }

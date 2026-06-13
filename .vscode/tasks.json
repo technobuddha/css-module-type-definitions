@@ -18,13 +18,6 @@
       "isBackground": true,
       "problemMatcher": "$tsc-watch",
       "group": "build"
-    },
-    {
-      "label": "esbuild",
-      "type": "shell",
-      "command": "node",
-      "args": ["scripts/build-extension.ts"],
-      "group": "build"
     }
   ]
 }

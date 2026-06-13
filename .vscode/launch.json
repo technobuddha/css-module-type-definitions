@@ -11,7 +11,7 @@
       "request": "launch",
       "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}/out"],
       "outFiles": ["${workspaceFolder}/out/**/*.*"],
-      "preLaunchTask": "esbuild"
+      "preLaunchTask": "build"
     },
     {
       "name": "Extension Tests",

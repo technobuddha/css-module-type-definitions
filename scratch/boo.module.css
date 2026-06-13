@@ -1,1 +1,11 @@
-
+.one {
+  .two {
+    .three-four {
+      .👻five {
+        .six_seven {
+          color: black;
+        }
+      }
+    }
+  }
+}

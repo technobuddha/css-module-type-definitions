@@ -9,6 +9,14 @@
 
 // prettier-ignore
 type Boo = {
+  readonly 'one': string;
+  readonly 'two': string;
+  readonly 'three-four': string;
+  readonly 'threeFour': string;
+  readonly '👻five': string;
+  readonly '👻Five': string;
+  readonly 'six_seven': string;
+  readonly 'sixSeven': string;
 };
 
 declare const boo: Boo;

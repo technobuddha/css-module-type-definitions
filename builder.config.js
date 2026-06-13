@@ -26,7 +26,7 @@ const config = {
       },
       {
         display: 'assets',
-        command: 'cp assets/icon/cmtd.png assets/extension/.vscodeignore assets/extensions/* out',
+        command: 'cp assets/icon/cmtd.png assets/extension/.vscodeignore assets/extension/* out',
       },
       {
         display: 'Webpack',

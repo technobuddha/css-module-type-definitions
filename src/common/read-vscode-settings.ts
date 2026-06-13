@@ -1,19 +1,24 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { fileExists } from '@technobuddha/library';
 
 import { type Logger } from './logger.ts';
 import { type Options } from './options.ts';
 
-type CssModules = Partial<Options['cssModules']>;
+type CssModules = Partial<Options['cssModules'] & Pick<Options, 'logLevel'>>;
 
-export async function readVSCodeSettings(logger?: Logger): Promise<CssModules> {
-  logger?.debug('VSCode: .vscode/settings.json');
-
+export async function readVSCodeSettings(
+  file: string,
+  _logger?: Logger,
+): Promise<CssModules | undefined> {
   return fs
-    .readFile('.vscode/settings.json', 'utf-8')
+    .readFile(file, 'utf-8')
     .then(JSON.parse)
     .then(
       (settings: Record<string, unknown>) =>
         ({
+          logLevel: settings['cmtd.logLevel'],
           scopeBehaviour: settings['cmtd.cssModules.scopeBehaviour'],
           globalModulePaths: settings['cmtd.cssModules.globalModulePaths'],
           exportGlobals: settings['cmtd.cssModules.exportGlobals'],
@@ -28,5 +33,15 @@ export async function readVSCodeSettings(logger?: Logger): Promise<CssModules> {
           extensions: settings['cmtd.cssModules.extensions'],
         }) as CssModules,
     )
-    .catch(() => ({}));
+    .catch(() => undefined);
+}
+
+export async function locateVSCodeConfigrationFile(root: string): Promise<string | undefined> {
+  const vscodeConfigPath = path.resolve(root, '.vscode', 'settings.json');
+
+  if (await fileExists(vscodeConfigPath)) {
+    return vscodeConfigPath;
+  }
+
+  return undefined;
 }

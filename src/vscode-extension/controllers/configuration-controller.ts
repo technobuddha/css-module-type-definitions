@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 import { type URI, Utils } from 'vscode-uri';
 
-import { defaultLogger, defaultOptions, type Logger, type Options } from '../../common/index.ts';
+import { defaultOptions, type Logger, type Options } from '../../common/index.ts';
 
 import { SETTINGS_PREFIX } from '../constants.ts';
 import { createLogger } from '../create-logger.ts';
@@ -26,79 +26,88 @@ function toFilename(filename: string | URI): string {
 }
 
 export class ConfigurationController extends VSDisposable {
-  private readonly onDidChangeEmitter = new EventEmitter<ConfigurationChangeEvent>();
-  public logger: Logger = defaultLogger;
-  readonly #options: Map<WorkspaceFolder, Options> = new Map();
-  readonly #ignores: Map<WorkspaceFolder, UriIgnorer> = new Map();
-  readonly #vite: Map<WorkspaceFolder, ViteWatcher> = new Map();
+  public readonly logger: Logger = createLogger();
+  protected readonly onDidChangeEmitter = new EventEmitter<ConfigurationChangeEvent>();
+  protected readonly folderOptions: Map<WorkspaceFolder, Options> = new Map();
+  protected readonly folderIgnores: Map<WorkspaceFolder, UriIgnorer> = new Map();
+  protected readonly folderVite: Map<WorkspaceFolder, ViteWatcher> = new Map();
+
+  public static async create(): Promise<ConfigurationController> {
+    const controller = new ConfigurationController();
+
+    await controller.updateFolders();
+    await controller.loadOptions();
+
+    return controller;
+  }
 
   public constructor() {
     super();
-  }
-
-  public async init(): Promise<void> {
-    await this.dispose();
-    this.logger = await createLogger();
 
     this.disposables.push(
       workspace.onDidChangeConfiguration(async (event) => {
         if (event.affectsConfiguration(SETTINGS_PREFIX)) {
           this.logger.info('Relevant configuration change detected, updating options...');
-          await this.readOptions();
+          await this.loadOptions();
           this.onDidChangeEmitter.fire(event);
         }
       }),
       workspace.onDidChangeWorkspaceFolders(async () => {
         this.logger.info('Workspace folders change detected');
-        await this.updateIgnores();
-        await this.readOptions();
+        await this.updateFolders();
+        await this.loadOptions();
       }),
     );
-
-    if (workspace.workspaceFolders) {
-      for (const folder of workspace.workspaceFolders) {
-        const watcher = await ViteWatcher.create(folder, { logger: this.logger });
-
-        this.#vite.set(folder, watcher);
-      }
-    }
-
-    await this.updateIgnores();
-    return this.readOptions();
   }
 
   public get onDidChange(): Event<ConfigurationChangeEvent> {
     return this.onDidChangeEmitter.event;
   }
 
-  private async updateIgnores(): Promise<void> {
+  private async updateFolders(): Promise<void> {
     if (workspace.workspaceFolders) {
-      for (const ignored of this.#ignores.keys()) {
-        if (!workspace.workspaceFolders.includes(ignored)) {
-          await this.#ignores.get(ignored)?.dispose();
-          this.#ignores.delete(ignored);
+      for (const [folder, watcher] of Array.from(this.folderVite.entries())) {
+        if (!workspace.workspaceFolders.includes(folder)) {
+          await watcher.dispose();
+          this.folderVite.delete(folder);
         }
       }
 
       for (const folder of workspace.workspaceFolders) {
-        if (!this.#ignores.has(folder)) {
-          this.#ignores.set(
+        if (!this.folderVite.has(folder)) {
+          const watcher = await ViteWatcher.create({ folder, logger: this.logger });
+          this.folderVite.set(folder, watcher);
+        }
+      }
+
+      for (const ignored of Array.from(this.folderIgnores.keys())) {
+        if (!workspace.workspaceFolders.includes(ignored)) {
+          await this.folderIgnores.get(ignored)!.dispose();
+          this.folderIgnores.delete(ignored);
+        }
+      }
+
+      for (const folder of workspace.workspaceFolders) {
+        if (!this.folderIgnores.has(folder)) {
+          this.folderIgnores.set(
             folder,
-            await UriIgnorer.create(folder, { logger: this.logger, watch: true }),
+            await UriIgnorer.create({ folder, logger: this.logger, watch: true }),
           );
         }
       }
     }
   }
 
-  private async readOptions(): Promise<void> {
-    this.#options.clear();
+  private async loadOptions(): Promise<void> {
+    this.folderOptions.clear();
+
     if (workspace.workspaceFolders) {
       for (const folder of workspace.workspaceFolders) {
-        const viteConfig = this.#vite.get(folder)?.config ?? {};
+        const viteConfig = this.folderVite.get(folder)?.config ?? {};
         const config = workspace.getConfiguration(SETTINGS_PREFIX, folder);
 
         const options: Options = {
+          logLevel: defaultOptions.logLevel,
           preprocessor: {
             less: { ...defaultOptions.preprocessor.less, ...viteConfig?.preprocessorOptions?.less },
             sass: { ...defaultOptions.preprocessor.sass, ...viteConfig?.preprocessorOptions?.sass },
@@ -148,13 +157,13 @@ export class ConfigurationController extends VSDisposable {
           },
         };
 
-        this.#options.set(folder, options);
+        this.folderOptions.set(folder, options);
       }
     }
   }
 
   public options(folder: WorkspaceFolder): Options {
-    const options = this.#options.get(folder);
+    const options = this.folderOptions.get(folder);
     if (options) {
       return options;
     }
@@ -172,17 +181,17 @@ export class ConfigurationController extends VSDisposable {
     return `${options.cssModules.modulePattern}.{${options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
-  public isIgnored(file: URI, folder?: WorkspaceFolder): boolean {
+  public isIgnored(file: URI): boolean {
     this.logger.warn(`Checking if file is ignored: ${file.toString(true)}`);
 
-    const ws = folder ?? workspace.getWorkspaceFolder(file);
+    const ws = workspace.getWorkspaceFolder(file);
     if (ws) {
       this.logger.warn(`Found workspace folder for file: ${ws.name}`);
-      this.logger.warn(`Ignorer exists for workspace folder: ${this.#ignores.has(ws)}`);
+      this.logger.warn(`Ignorer exists for workspace folder: ${this.folderIgnores.has(ws)}`);
       this.logger.warn(
-        `Checking if file is ignored by ignorer: ${this.#ignores.get(ws)?.isIgnored(file)}`,
+        `Checking if file is ignored by ignorer: ${this.folderIgnores.get(ws)?.isIgnored(file)}`,
       );
-      return this.#ignores.get(ws)?.isIgnored(file) ?? false;
+      return this.folderIgnores.get(ws)?.isIgnored(file) ?? false;
     }
     return false;
   }
@@ -191,7 +200,7 @@ export class ConfigurationController extends VSDisposable {
     const result: URI[] = [];
 
     for (const file of await workspace.findFiles(new RelativePattern(folder, glob))) {
-      if (!this.isIgnored(file, folder)) {
+      if (!this.isIgnored(file)) {
         result.push(file);
       }
     }
@@ -217,15 +226,15 @@ export class ConfigurationController extends VSDisposable {
 
   public override async dispose(): Promise<void> {
     await super.dispose();
-    for (const ignorer of this.#ignores.values()) {
+
+    for (const [dir, ignorer] of Array.from(this.folderIgnores.entries())) {
       await ignorer.dispose();
+      this.folderIgnores.delete(dir);
     }
 
-    for (const watcher of this.#vite.values()) {
+    for (const [dir, watcher] of Array.from(this.folderVite.entries())) {
       await watcher.dispose();
+      this.folderVite.delete(dir);
     }
-
-    this.#ignores.clear();
-    this.#vite.clear();
   }
 }

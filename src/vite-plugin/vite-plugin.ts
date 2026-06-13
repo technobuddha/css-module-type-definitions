@@ -1,46 +1,11 @@
+import { locatePackageRoot } from '@technobuddha/library';
 import { type Plugin } from 'vite';
 
-import { defaultLogger, FileIgnorer, Optionator, type Options, watch } from '../common/index.ts';
+import { FileIgnorer, Optionator, type Options, watch } from '../common/index.ts';
 
-/**
- * Vite plugin that automatically generates TypeScript type definition files for CSS modules.
- *
- * This plugin integrates with Vite's development server to:
- * - Scan for CSS module files on server startup
- * - Generate corresponding `.d.ts` files with exported class name types
- * - Update type definitions automatically when CSS module files change via HMR
- *
- * @param opts - Configuration options for CSS module type definition generation
- * @returns A Vite plugin instance
- *
- * @throws When `css.modules` is not enabled in the Vite configuration
- *
- * @example
- * ```ts
- * // vite.config.ts
- * import { defineConfig } from 'vite';
- * import { pluginCssModuleTypeDefinitions } from 'css-module-type-definitions';
- *
- * export default defineConfig({
- *   css: {
- *     modules: {
- *       localsConvention: 'camelCase'
- *     }
- *   },
- *   plugins: [
- *     pluginCssModuleTypeDefinitions({
- *       extension: 'module.css',
- *       localsConvention: 'camelCase'
- *     })
- *   ]
- * });
- * ```
- *
- * @group Vite
- * @category Plugin
- */
 export const pluginCssModuleTypeDefinitions = async (opts?: Partial<Options>): Promise<Plugin> => {
-  const ignorer = new FileIgnorer('.', { watch: false, logger: defaultLogger });
+  const root = (await locatePackageRoot()) ?? process.cwd();
+  let ignorer: FileIgnorer;
   let optionator: Optionator;
 
   return {
@@ -50,11 +15,12 @@ export const pluginCssModuleTypeDefinitions = async (opts?: Partial<Options>): P
       if (config.css.modules) {
         optionator = await Optionator.create(opts, {
           watch: false,
-          logger: defaultLogger,
           vite: config,
         });
 
-        void watch({ optionator, ignorer, logger: defaultLogger });
+        ignorer = await FileIgnorer.create({ root, logger: optionator.logger, watch: true });
+
+        void watch({ root, optionator, ignorer });
       } else {
         throw new Error('css.modules must be enabled in vite.config');
       }

@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 
 import { type PackageJson } from 'type-fest';
 
-import { defaultOptions } from '../src/common/index.ts';
+import { LOGLEVELS } from '../src/common/logger.ts';
+import { defaultOptions } from '../src/common/options.ts';
 
 if (import.meta.main) {
   await fs
@@ -23,9 +24,10 @@ if (import.meta.main) {
       delete packageJson.technobuddhaProject;
       delete packageJson.packageManager;
 
+      // engines...
       packageJson.engines ??= {};
       packageJson.engines.vscode = '^1.120.0';
-      // engines...
+
       packageJson.displayName = 'CSS Module Type Definitions';
       packageJson.preview = true;
       packageJson.icon = 'cmtd.png';
@@ -75,6 +77,17 @@ if (import.meta.main) {
           type: 'object',
           title: 'CSS Module Type Definitions',
           properties: {
+            'cmtd.logLevel': {
+              type: 'string',
+              enum: LOGLEVELS,
+              default: 'info',
+              description: 'Logging level.',
+            },
+            'cmtd.showTypeFiles': {
+              type: 'boolean',
+              default: true,
+              description: 'Whether to show type files in the explorer.',
+            },
             'cmtd.cssModules.scopeBehaviour': {
               type: 'string',
               enum: ['global', 'local'],
@@ -157,11 +170,6 @@ if (import.meta.main) {
               default: defaultOptions.cssModules.generateDtsOnSave,
               description:
                 'Whether to automatically generate .d.ts files for CSS modules when saving the corresponding CSS file.',
-            },
-            'cmtd.showTypeFiles': {
-              type: 'boolean',
-              default: true,
-              description: 'Whether to show type files in the explorer.',
             },
           },
         },
