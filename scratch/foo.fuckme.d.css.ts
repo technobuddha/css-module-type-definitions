@@ -8,19 +8,14 @@
 }
 
 // prettier-ignore
-type Boo = {
+type FooFuckme = {
   readonly 'one': string;
   readonly 'two': string;
-  readonly 'three-four': string;
-  readonly 'threeFour': string;
-  readonly 'five': string;
-  readonly 'six_seven': string;
-  readonly 'sixSeven': string;
 };
 
-declare const boo: Boo;
+declare const fooFuckme: FooFuckme;
 
-export default boo;
+export default fooFuckme;
 
-//# sourceMappingURL=boo.module.d.css.ts.map
+//# sourceMappingURL=foo.fuckme.d.css.ts.map
 

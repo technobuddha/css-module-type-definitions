@@ -143,7 +143,6 @@ export class ConfigurationController extends VSDisposable {
               config.get('cssModules.localsConvention') ??
               viteConfig?.modules?.localsConvention ??
               defaultOptions.cssModules.localsConvention,
-            dtsBanner: config.get('cssModules.dtsBanner') ?? defaultOptions.cssModules.dtsBanner,
             dtsHeader: config.get('cssModules.dtsHeader') ?? defaultOptions.cssModules.dtsHeader,
             dtsFooter: config.get('cssModules.dtsFooter') ?? defaultOptions.cssModules.dtsFooter,
             generateDtsOnSave:
@@ -172,13 +171,25 @@ export class ConfigurationController extends VSDisposable {
   }
 
   public globIsCss(folder: WorkspaceFolder): string {
-    const options = this.options(folder);
-    return `${options.cssModules.modulePattern}.{${options.cssModules.extensions.join(',')}}`;
+    const { modulePattern, extensions } = this.options(folder).cssModules;
+
+    if (extensions.length === 0) {
+      return modulePattern;
+    } else if (extensions.length === 1) {
+      return `${modulePattern}.${extensions[0]}`;
+    }
+
+    return `${modulePattern}.{${extensions.join(',')}}`;
   }
 
   public globIsTypeDefinition(folder: WorkspaceFolder): string {
-    const options = this.options(folder);
-    return `${options.cssModules.modulePattern}.{${options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
+    const { modulePattern, extensions } = this.options(folder).cssModules;
+
+    if (extensions.length === 0) {
+      return `${modulePattern}.d{.ts,.ts.map}`;
+    }
+
+    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
   public isIgnored(file: URI): boolean {

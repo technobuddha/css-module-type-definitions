@@ -26,17 +26,27 @@ export interface Options {
     scopeBehaviour: 'global' | 'local';
     globalModulePaths: RegExp[];
     exportGlobals: boolean;
-    generateScopedName: string;
+    generateScopedName: string | ((name: string, filename: string, css: string) => string);
     hashPrefix: string;
-    localsConvention: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly';
+    localsConvention:
+      | 'camelCase'
+      | 'camelCaseOnly'
+      | 'dashes'
+      | 'dashesOnly'
+      | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
     extensions: string[];
     modulePattern: string;
-    dtsBanner: boolean;
     dtsHeader: string;
     dtsFooter: string;
     generateDtsOnSave: boolean;
   };
 }
+
+export type PartialOptions = {
+  logLevel?: Options['logLevel'];
+  preprocessor?: Partial<Options['preprocessor']>;
+  cssModules?: Partial<Options['cssModules']>;
+};
 
 export const defaultOptions = Object.freeze<Options>({
   logLevel: 'info',
@@ -54,12 +64,10 @@ export const defaultOptions = Object.freeze<Options>({
     generateScopedName: '[name]__[local]___[hash:base64:5]',
     hashPrefix: empty,
     localsConvention: 'camelCase',
-    dtsBanner: true,
-    dtsHeader:
-      '// cspell:disable\n/* eslint eslint-comments/no-unlimited-disable: "off" */\n/* eslint-disable */',
+    dtsHeader: empty,
     dtsFooter: empty,
     generateDtsOnSave: true,
-    extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
+    extensions: [], //['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
     modulePattern: '*.module',
   },
 });

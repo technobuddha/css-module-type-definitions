@@ -132,12 +132,13 @@ export async function generateTypesFromCss(
               }
 
               const dts: string[] = [
-                ...splitLines(cssModules.dtsHeader ?? empty),
+                '// cspell:disable',
+                '/* eslint eslint-comments/no-unlimited-disable: "off" */',
+                '/* eslint-disable */',
                 '{',
-                ...(cssModules.dtsBanner ?
-                  defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`)
-                : []),
+                ...defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`),
                 '}',
+                ...(cssModules.dtsHeader ? splitLines(cssModules.dtsHeader) : []),
                 empty,
                 '// prettier-ignore',
                 `${space.repeat(0)}type ${classname} = {`,

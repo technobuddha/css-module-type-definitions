@@ -12,19 +12,12 @@ import {
 import { type Logger } from './logger.ts';
 
 export type ViteCss = Partial<
-  Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & {
-    modules?: Omit<CSSModulesOptions, 'generateScopedName' | 'localsConvention'> & {
-      generateScopedName?: Extract<CSSModulesOptions['generateScopedName'], string>;
-      localsConvention?: Extract<CSSModulesOptions['localsConvention'], string>;
-    };
-  }
+  Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { modules?: CSSModulesOptions }
 >;
 
 export async function readViteConfig(file: string, logger?: Logger): Promise<ViteCss | undefined> {
   const { ext, dir } = path.parse(file);
   const tmpname = path.resolve(path.join(dir, `vite${Date.now()}${Math.random()}.${ext}`));
-
-  logger?.error(file);
 
   return fs
     .cp(file, tmpname, { force: true })
@@ -54,12 +47,6 @@ export function transformViteConfig(vite: UserConfig | ResolvedConfig): ViteCss 
   const cssConfig = vite?.css ?? {};
   if (cssConfig.modules === false) {
     delete cssConfig.modules;
-  }
-  if (typeof cssConfig.modules?.generateScopedName === 'function') {
-    delete cssConfig.modules.generateScopedName;
-  }
-  if (typeof cssConfig?.modules?.localsConvention === 'function') {
-    delete cssConfig.modules.localsConvention;
   }
   return cssConfig as ViteCss;
 }

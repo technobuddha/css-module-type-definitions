@@ -7,7 +7,7 @@ import { type ResolvedConfig, type UserConfig } from 'vite';
 
 import { fileOperation } from './file-operation.ts';
 import { type Logger, loggerOutput, stdioLogger } from './logger.ts';
-import { defaultOptions, type Options } from './options.ts';
+import { defaultOptions, type Options, type PartialOptions } from './options.ts';
 import {
   locateViteConfigurationFile,
   readViteConfig,
@@ -23,7 +23,7 @@ type OptionatorOptions = {
 };
 
 export class Optionator implements AsyncDisposable {
-  readonly #top: Partial<Options> = {};
+  readonly #top: PartialOptions = {};
   readonly #eventTarget: EventTarget = new EventTarget();
   readonly #listeners: Set<() => void> = new Set();
   readonly #baseLogger: Logger;
@@ -34,9 +34,11 @@ export class Optionator implements AsyncDisposable {
   #logger: Logger;
 
   public static async create(
-    top: Partial<Options> = {},
+    top: PartialOptions = {},
     { watch = false, vite, logger = stdioLogger }: OptionatorOptions = {},
   ): Promise<Optionator> {
+    logger.debug('Initializing Optionator...', JSON.stringify(top));
+
     const root = (await locatePackageRoot()) ?? process.cwd();
 
     const optionator = new Optionator(top, logger);
@@ -116,7 +118,7 @@ export class Optionator implements AsyncDisposable {
     return optionator;
   }
 
-  private constructor(top: Partial<Options>, baseLogger: Logger) {
+  private constructor(top: PartialOptions, baseLogger: Logger) {
     this.#top = top;
     this.#baseLogger = baseLogger;
     this.#options = this.compileOptions();
@@ -180,10 +182,6 @@ export class Optionator implements AsyncDisposable {
           this.#vscode?.localsConvention ??
           this.#vite?.modules?.localsConvention ??
           defaultOptions.cssModules.localsConvention,
-        dtsBanner:
-          this.#top.cssModules?.dtsBanner ??
-          this.#vscode?.dtsBanner ??
-          defaultOptions.cssModules.dtsBanner,
         dtsHeader:
           this.#top.cssModules?.dtsHeader ??
           this.#vscode?.dtsHeader ??
@@ -237,11 +235,25 @@ export class Optionator implements AsyncDisposable {
   }
 
   public get globIsCss(): string {
-    return `${this.#options.cssModules.modulePattern}.{${this.#options.cssModules.extensions.join(',')}}`;
+    const { modulePattern, extensions } = this.#options.cssModules;
+
+    if (extensions.length === 0) {
+      return modulePattern;
+    } else if (extensions.length === 1) {
+      return `${modulePattern}.${extensions[0]}`;
+    }
+
+    return `${modulePattern}.{${extensions.join(',')}}`;
   }
 
   public get globIsTypeDefinition(): string {
-    return `${this.#options.cssModules.modulePattern}.{${this.#options.cssModules.extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
+    const { modulePattern, extensions } = this.#options.cssModules;
+
+    if (extensions.length === 0) {
+      return `${modulePattern}.d{.ts,.ts.map}`;
+    }
+
+    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
   public onDidChange(listener: () => void): void {

@@ -3,8 +3,8 @@ import fs from 'node:fs/promises';
 
 import { type PackageJson } from 'type-fest';
 
+import { defaultOptions, type Options } from '../src/common/index.ts';
 import { LOGLEVELS } from '../src/common/logger.ts';
-import { defaultOptions } from '../src/common/options.ts';
 
 if (import.meta.main) {
   await fs
@@ -108,7 +108,10 @@ if (import.meta.main) {
               displayName: 'displayName',
               title: 'title',
               type: 'string',
-              default: defaultOptions.cssModules.generateScopedName,
+              default: defaultOptions.cssModules.generateScopedName as Extract<
+                Options['cssModules']['generateScopedName'],
+                string
+              >,
               description: 'Generating scoped names with a custom template. See',
             },
             'cmtd.cssModules.hashPrefix': {
@@ -119,7 +122,10 @@ if (import.meta.main) {
             'cmtd.cssModules.localsConvention': {
               type: 'string',
               enum: ['camelCase', 'camelCaseOnly', 'dashes', 'dashesOnly'],
-              default: defaultOptions.cssModules.localsConvention,
+              default: defaultOptions.cssModules.localsConvention as Extract<
+                Options['cssModules']['localsConvention'],
+                string
+              >,
               description: 'Generating scoped names',
             },
             'cmtd.cssModules.globalModulePaths': {
@@ -144,12 +150,6 @@ if (import.meta.main) {
               default: defaultOptions.cssModules.modulePattern,
               description:
                 'Glob pattern to identify CSS module files. This pattern is used to determine which CSS files should have corresponding .d.ts files generated.',
-            },
-            'cmtd.cssModules.dtsBanner': {
-              type: 'boolean',
-              default: defaultOptions.cssModules.dtsBanner,
-              description:
-                'Whether to include a banner comment at the top of generated .d.ts files.',
             },
             'cmtd.cssModules.dtsHeader': {
               type: 'string',

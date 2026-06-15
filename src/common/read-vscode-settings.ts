@@ -25,7 +25,6 @@ export async function readVSCodeSettings(
           generateScopedName: settings['cmtd.cssModules.generateScopedName'],
           hashPrefix: settings['cmtd.cssModules.hashPrefix'],
           localsConvention: settings['cmtd.cssModules.localsConvention'],
-          dtsBanner: settings['cmtd.cssModules.dtsBanner'],
           dtsHeader: settings['cmtd.cssModules.dtsHeader'],
           dtsFooter: settings['cmtd.cssModules.dtsFooter'],
           generateDtsOnSave: settings['cmtd.cssModules.generateDtsOnSave'],

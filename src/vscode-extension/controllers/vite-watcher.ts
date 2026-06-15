@@ -1,19 +1,9 @@
 import { fileExists } from '@technobuddha/library';
-import { type CSSModulesOptions, type ResolvedCSSOptions } from 'vite';
 import { RelativePattern, Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { type Logger, readViteConfig, VITE_EXTENSIONS } from '../../common/index.ts';
+import { type Logger, readViteConfig, VITE_EXTENSIONS, type ViteCss } from '../../common/index.ts';
 
 import { VSDisposable } from './vs-disposable.ts';
-
-export type ViteCss = Partial<
-  Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & {
-    modules?: Omit<CSSModulesOptions, 'generateScopedName' | 'localsConvention'> & {
-      generateScopedName?: Extract<CSSModulesOptions['generateScopedName'], string>;
-      localsConvention?: Extract<CSSModulesOptions['localsConvention'], string>;
-    };
-  }
->;
 
 type ViteWatcherOptions = {
   folder: WorkspaceFolder;

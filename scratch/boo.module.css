@@ -1,7 +1,7 @@
 .one {
   .two {
     .three-four {
-      .👻five {
+      :global(.five) {
         .six_seven {
           color: black;
         }
