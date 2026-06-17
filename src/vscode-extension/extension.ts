@@ -6,10 +6,8 @@ import {
   commandShowTypeFiles,
   commandUpdateTypes,
 } from './commands/index.ts';
-import { ConfigurationController } from './controllers/configuration-controller.ts';
+import { config } from './controllers/configuration-controller.ts';
 import { FileWatcherController } from './controllers/file-watcher-controller.ts';
-
-export const config = await ConfigurationController.create();
 
 export async function activate(context: ExtensionContext): Promise<void> {
   window.showInformationMessage('css-module-type-definitions is now activating');

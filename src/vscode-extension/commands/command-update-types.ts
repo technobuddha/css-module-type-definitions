@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { commands, type Disposable, Uri, workspace } from 'vscode';
 
-import { config } from '../extension.ts';
+import { config } from '../controllers/configuration-controller.ts';
 import { generateTypes } from '../helpers/generate-types.ts';
 
 export function commandUpdateTypes(): Disposable {

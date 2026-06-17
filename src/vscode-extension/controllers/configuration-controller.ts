@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 import { type URI, Utils } from 'vscode-uri';
 
-import { defaultOptions, type Logger, type Options } from '../../common/index.ts';
+import { defaultOptions, type Logger, normalizeOptions, type Options } from '../../common/index.ts';
 
 import { SETTINGS_PREFIX } from '../constants.ts';
 import { createLogger } from '../create-logger.ts';
@@ -106,7 +106,7 @@ export class ConfigurationController extends VSDisposable {
         const viteConfig = this.folderVite.get(folder)?.config ?? {};
         const config = workspace.getConfiguration(SETTINGS_PREFIX, folder);
 
-        const options: Options = {
+        const options = normalizeOptions({
           logLevel: defaultOptions.logLevel,
           preprocessor: {
             less: { ...defaultOptions.preprocessor.less, ...viteConfig?.preprocessorOptions?.less },
@@ -154,7 +154,7 @@ export class ConfigurationController extends VSDisposable {
             extensions:
               config.get<string[]>('cssModules.extensions') ?? defaultOptions.cssModules.extensions,
           },
-        };
+        });
 
         this.folderOptions.set(folder, options);
       }
@@ -173,9 +173,7 @@ export class ConfigurationController extends VSDisposable {
   public globIsCss(folder: WorkspaceFolder): string {
     const { modulePattern, extensions } = this.options(folder).cssModules;
 
-    if (extensions.length === 0) {
-      return modulePattern;
-    } else if (extensions.length === 1) {
+    if (extensions.length === 1) {
       return `${modulePattern}.${extensions[0]}`;
     }
 
@@ -184,10 +182,6 @@ export class ConfigurationController extends VSDisposable {
 
   public globIsTypeDefinition(folder: WorkspaceFolder): string {
     const { modulePattern, extensions } = this.options(folder).cssModules;
-
-    if (extensions.length === 0) {
-      return `${modulePattern}.d{.ts,.ts.map}`;
-    }
 
     return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
@@ -249,3 +243,5 @@ export class ConfigurationController extends VSDisposable {
     }
   }
 }
+
+export const config = await ConfigurationController.create();

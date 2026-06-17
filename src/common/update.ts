@@ -8,9 +8,6 @@ type UpdateOptions = {
 };
 
 export async function update({ optionator, ignorer }: UpdateOptions): Promise<void> {
-  optionator.logger.info(optionator.globIsCss);
-  optionator.logger.info(optionator.globIsTypeDefinition);
-
   const typedefs = new Set(
     await ignorer.findUnignoredFiles(`**/${optionator.globIsTypeDefinition}`),
   );

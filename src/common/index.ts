@@ -1,10 +1,10 @@
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
 export { generateTypes } from './generate-types.ts';
-export { type Ignorer } from './ignorer.ts';
+export { Ignorer } from './ignorer.ts';
 export { defaultLogger, type Logger, type LogLevel, LOGLEVELS } from './logger.ts';
 export { Optionator } from './optionator.ts';
-export { defaultOptions, type Options, type PartialOptions } from './options.ts';
+export { defaultOptions, normalizeOptions, type Options, type PartialOptions } from './options.ts';
 export {
   locateViteConfigurationFile,
   readViteConfig,

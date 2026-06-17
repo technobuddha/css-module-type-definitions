@@ -101,6 +101,7 @@ export async function generateTypesFromCss(
                     }
                   }
                 }
+
                 if (
                   !offset &&
                   (cssModules.localsConvention === 'dashes' ||

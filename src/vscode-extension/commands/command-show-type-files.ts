@@ -1,6 +1,6 @@
 import { commands, type Disposable, window, workspace } from 'vscode';
 
-import { config } from '../extension.ts';
+import { config } from '../controllers/configuration-controller.ts';
 
 export function commandShowTypeFiles(): Disposable {
   return commands.registerCommand('cmtd.typeFiles.show', async () => {

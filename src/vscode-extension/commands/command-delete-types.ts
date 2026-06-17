@@ -1,6 +1,6 @@
 import { commands, type Disposable, workspace } from 'vscode';
 
-import { config } from '../extension.ts';
+import { config } from '../controllers/configuration-controller.ts';
 
 export function commandDeleteTypes(): Disposable {
   return commands.registerCommand('cmtd.deleteTypes', async () => {

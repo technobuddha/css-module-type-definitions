@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { type Uri, workspace } from 'vscode';
 
-import { config } from '../extension.ts';
+import { config } from '../controllers/configuration-controller.ts';
 
 export async function deleteTypes(uri: Uri): Promise<void> {
   config.logger.info(`deleteTypes(${uri.fsPath})`);

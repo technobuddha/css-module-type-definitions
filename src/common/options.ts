@@ -1,4 +1,4 @@
-import { empty } from '@technobuddha/library';
+import { cull, empty } from '@technobuddha/library';
 import {
   type LessPreprocessorOptions,
   type SassPreprocessorOptions,
@@ -33,7 +33,8 @@ export interface Options {
       | 'camelCaseOnly'
       | 'dashes'
       | 'dashesOnly'
-      | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
+      | ((originalClassName: string, generatedClassName: string, inputFile: string) => string)
+      | undefined;
     extensions: string[];
     modulePattern: string;
     dtsHeader: string;
@@ -63,11 +64,20 @@ export const defaultOptions = Object.freeze<Options>({
     exportGlobals: true,
     generateScopedName: '[name]__[local]___[hash:base64:5]',
     hashPrefix: empty,
-    localsConvention: 'camelCase',
+    localsConvention: undefined,
     dtsHeader: empty,
     dtsFooter: empty,
     generateDtsOnSave: true,
-    extensions: [], //['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
+    extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
     modulePattern: '*.module',
   },
 });
+
+export function normalizeOptions(options: Options): Options {
+  const extensions = cull(options.cssModules.extensions, { emptyStrings: true });
+  if (extensions.length === 0) {
+    options.cssModules.extensions = defaultOptions.cssModules.extensions;
+  }
+
+  return options;
+}

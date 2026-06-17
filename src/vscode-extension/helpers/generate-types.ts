@@ -3,7 +3,7 @@ import { type Uri, workspace } from 'vscode';
 import { type Logger, type Options } from '../../common/index.ts';
 import { generateTypesFromCss } from '../../css-library/index.ts';
 
-import { config } from '../extension.ts';
+import { config } from '../controllers/configuration-controller.ts';
 
 type GenerateTypesOptions = {
   options: Options;

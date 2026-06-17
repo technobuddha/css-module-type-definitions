@@ -1,31 +1,44 @@
+import os from 'node:os';
 import path from 'node:path';
-import util from 'node:util';
+
+import chalk from 'chalk';
 
 type Operation = 'created' | 'updated' | 'deleted' | 'configuration' | 'add' | 'change' | 'unlink';
 
 export function fileOperation(file: string, mode: Operation): string {
-  const rFile = path.relative(process.cwd(), file);
+  const aFile = path.resolve(file);
+  const cFile = path.relative(process.cwd(), file);
+  const hFile = `~/${path.relative(os.homedir(), file)}`;
+
+  const display =
+    aFile.length < cFile.length ?
+      aFile.length < hFile.length ?
+        aFile
+      : hFile
+    : cFile.length < hFile.length ? cFile
+    : hFile;
+
   switch (mode) {
     case 'created': {
-      return `${util.styleText('green', '[created]'.padEnd(16))} ${rFile}`;
+      return `${chalk.green('[created]'.padEnd(16))} ${display}`;
     }
 
     case 'updated': {
-      return `${util.styleText('yellow', '[updated]'.padEnd(16))} ${rFile}`;
+      return `${chalk.yellow('[updated]'.padEnd(16))} ${display}`;
     }
 
     case 'deleted': {
-      return `${util.styleText('red', '[deleted]'.padEnd(16))} ${rFile}`;
+      return `${chalk.red('[deleted]'.padEnd(16))} ${display}`;
     }
 
     case 'configuration': {
-      return `${util.styleText('blue', '⟦configuration⟧'.padEnd(16))} ${rFile}`;
+      return `${chalk.blue('⟦configuration⟧'.padEnd(16))} ${display}`;
     }
 
     case 'add':
     case 'change':
     case 'unlink': {
-      return `${util.styleText('cyan', `⟦${mode}⟧`.padEnd(16))} ${rFile}`;
+      return `${chalk.cyan(`⟦${mode}⟧`.padEnd(16))} ${display}`;
     }
 
     // no default

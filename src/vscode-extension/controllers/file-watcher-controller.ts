@@ -2,10 +2,10 @@ import path from 'node:path';
 
 import { RelativePattern, workspace } from 'vscode';
 
-import { config } from '../extension.ts';
 import { deleteTypes } from '../helpers/delete-types.ts';
 import { generateTypes } from '../helpers/generate-types.ts';
 
+import { config } from './configuration-controller.ts';
 import { VSDisposable } from './vs-disposable.ts';
 
 export class FileWatcherController extends VSDisposable {

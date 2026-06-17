@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-import { locatePackageRoot, prune } from '@technobuddha/library';
+import { cull, locatePackageRoot } from '@technobuddha/library';
 import { Argument, Option, program } from 'commander';
 
 import { FileIgnorer, LOGLEVELS, Optionator, remove, update, watch } from '../common/index.ts';
@@ -8,17 +8,22 @@ import { FileIgnorer, LOGLEVELS, Optionator, remove, update, watch } from '../co
 if (import.meta.main) {
   program
     .addArgument(new Argument('<action>', 'Action').choices(['update', 'watch', 'remove']))
-    .addOption(new Option('-l, --logLevel <logLevel>').choices(LOGLEVELS))
-    .addOption(new Option('--scope-behaviour <scopeBehaviour>').choices(['global', 'local']))
+    .addOption(new Option('-l, --logLevel <logLevel>', 'Logging Level').choices(LOGLEVELS))
+    .addOption(
+      new Option('--scope-behaviour <scopeBehaviour>', 'Scope Behaviour').choices([
+        'global',
+        'local',
+      ]),
+    )
     .option('--global-module-paths <globalModulePaths...>', 'Paths to global modules')
     .option('--export-globals', 'Export global classes from CSS modules')
     .option(
       '--generate-scoped-name <generateScopedName>',
-      'Pattern or function for generating scoped class names',
+      'Pattern for generating scoped class names',
     )
     .option('--hash-prefix <hashPrefix>', 'Prefix for hash in generated class names')
     .addOption(
-      new Option('--locals-convention <localsConvention>').choices([
+      new Option('--locals-convention <localsConvention>', 'Locals Convention').choices([
         'camelCase',
         'dashes',
         'dashesOnly',
@@ -48,7 +53,7 @@ if (import.meta.main) {
         const root = (await locatePackageRoot()) ?? process.cwd();
 
         await using optionator = await Optionator.create(
-          prune({
+          cull({
             logLevel,
             cssModules: {
               scopeBehaviour,
