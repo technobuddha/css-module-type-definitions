@@ -18,7 +18,7 @@ export const pluginCssModuleTypeDefinitions = async (opts?: Partial<Options>): P
           vite: config,
         });
 
-        ignorer = await FileIgnorer.create({ root, logger: optionator.logger, watch: true });
+        ignorer = await FileIgnorer.create({ root, logger: optionator, watch: true });
 
         void watch({ root, optionator, ignorer });
       } else {

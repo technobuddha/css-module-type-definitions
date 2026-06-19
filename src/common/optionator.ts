@@ -6,7 +6,7 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
 
 import { fileOperation } from './file-operation.ts';
-import { type Logger, loggerOutput, stdioLogger } from './logger.ts';
+import { type Logger, type LoggerController, loggerOutput, stdioLogger } from './logger.ts';
 import { defaultOptions, normalizeOptions, type Options, type PartialOptions } from './options.ts';
 import {
   locateViteConfigurationFile,
@@ -22,7 +22,7 @@ type OptionatorOptions = {
   logger?: Logger;
 };
 
-export class Optionator implements AsyncDisposable {
+export class Optionator implements LoggerController, AsyncDisposable {
   protected readonly top: PartialOptions = {};
   protected readonly eventTarget: EventTarget = new EventTarget();
   protected readonly listeners: Set<() => void> = new Set();
@@ -31,7 +31,15 @@ export class Optionator implements AsyncDisposable {
   protected vscode: Awaited<ReturnType<typeof readVSCodeSettings>> | undefined;
   protected readonly watcher: Set<FSWatcher> = new Set();
   #options: Options = defaultOptions;
-  #logger: Logger;
+  public get logger(): Logger {
+    return {
+      trace: loggerOutput('trace', this.#options.logLevel, this.baseLogger.trace),
+      debug: loggerOutput('debug', this.#options.logLevel, this.baseLogger.debug),
+      info: loggerOutput('info', this.#options.logLevel, this.baseLogger.info),
+      warn: loggerOutput('warn', this.#options.logLevel, this.baseLogger.warn),
+      error: loggerOutput('error', this.#options.logLevel, this.baseLogger.error),
+    };
+  }
 
   public static async create(
     top: PartialOptions = {},
@@ -43,7 +51,7 @@ export class Optionator implements AsyncDisposable {
 
     const vscodeConfigPath = await locateVSCodeConfigrationFile(root);
     if (vscodeConfigPath) {
-      optionator.#logger?.debug(
+      optionator.logger?.debug(
         fileOperation(path.relative(root, vscodeConfigPath), 'configuration'),
       );
 
@@ -55,7 +63,7 @@ export class Optionator implements AsyncDisposable {
         });
 
         const respond = (reason: 'add' | 'change' | 'unlink') => (file: string) => {
-          optionator.#logger?.debug(fileOperation(file, reason));
+          optionator.logger?.debug(fileOperation(file, reason));
           void optionator.readOptions();
         };
 
@@ -66,7 +74,7 @@ export class Optionator implements AsyncDisposable {
         optionator.watcher.add(watcher);
       }
 
-      optionator.vscode = await readVSCodeSettings(vscodeConfigPath, optionator.#logger);
+      optionator.vscode = await readVSCodeSettings(vscodeConfigPath, optionator.logger);
     }
 
     if (vite) {
@@ -75,7 +83,7 @@ export class Optionator implements AsyncDisposable {
       const viteConfigPath = await locateViteConfigurationFile(root);
 
       if (viteConfigPath) {
-        optionator.#logger?.debug(
+        optionator.logger?.debug(
           fileOperation(path.relative(root, viteConfigPath), 'configuration'),
         );
 
@@ -89,10 +97,10 @@ export class Optionator implements AsyncDisposable {
           const respond =
             (reason: 'add' | 'change' | 'unlink') =>
             (file: string): void => {
-              optionator.#logger?.debug(fileOperation(file, reason));
+              optionator.logger?.debug(fileOperation(file, reason));
 
               (async () => {
-                optionator.vite = await readViteConfig(viteConfigPath, optionator.#logger);
+                optionator.vite = await readViteConfig(viteConfigPath, optionator.logger);
                 void optionator.readOptions();
               })();
             };
@@ -105,12 +113,11 @@ export class Optionator implements AsyncDisposable {
           optionator.watcher.add(watcher);
         }
 
-        optionator.vite = await readViteConfig(viteConfigPath, optionator.#logger);
+        optionator.vite = await readViteConfig(viteConfigPath, optionator.logger);
       }
     }
 
     optionator.#options = optionator.compileOptions();
-    optionator.#logger = optionator.buildLogger();
 
     await optionator.readOptions();
     return optionator;
@@ -120,8 +127,6 @@ export class Optionator implements AsyncDisposable {
     this.top = top;
     this.baseLogger = baseLogger;
     this.#options = this.compileOptions();
-
-    this.#logger = this.buildLogger();
   }
 
   private compileOptions(): Options {
@@ -211,21 +216,6 @@ export class Optionator implements AsyncDisposable {
       this.#options = options;
       this.eventTarget.dispatchEvent(new Event('change'));
     }
-    this.#logger = this.buildLogger();
-  }
-
-  private buildLogger(): Logger {
-    return {
-      trace: loggerOutput('trace', this.#options.logLevel, this.baseLogger.trace),
-      debug: loggerOutput('debug', this.#options.logLevel, this.baseLogger.debug),
-      info: loggerOutput('info', this.#options.logLevel, this.baseLogger.info),
-      warn: loggerOutput('warn', this.#options.logLevel, this.baseLogger.warn),
-      error: loggerOutput('error', this.#options.logLevel, this.baseLogger.error),
-    };
-  }
-
-  public get logger(): Logger {
-    return this.#logger;
   }
 
   public get options(): Options {
@@ -254,7 +244,7 @@ export class Optionator implements AsyncDisposable {
     return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
-  public onDidChange(listener: () => void): void {
+  public onChange(listener: () => void): void {
     this.listeners.add(listener);
     this.eventTarget.addEventListener('change', listener);
   }

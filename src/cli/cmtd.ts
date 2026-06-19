@@ -71,7 +71,7 @@ if (import.meta.main) {
         );
         await using ignorer = await FileIgnorer.create({
           root,
-          logger: optionator.logger,
+          logger: optionator,
           watch: action === 'watch',
         });
 

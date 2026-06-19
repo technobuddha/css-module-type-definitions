@@ -2,7 +2,7 @@
 
 /** @type import('\@technobuddha/project/build').Builds */
 const config = {
-  default: {
+  compile: {
     steps: [
       {
         display: 'Prepare',
@@ -28,6 +28,11 @@ const config = {
         display: 'assets',
         command: 'cp assets/icon/cmtd.png assets/extension/.vscodeignore assets/extension/* out',
       },
+    ],
+  },
+  default: {
+    steps: [
+      { build: 'compile' },
       {
         display: 'Webpack',
         command: 'webpack --mode=production',
@@ -36,11 +41,6 @@ const config = {
         display: 'package',
         command: 'cd out && vsce package',
       }
-    ],
-  },
-  compile: {
-    steps: [
-      { build: 'default' },
     ]
   },
   publish: {

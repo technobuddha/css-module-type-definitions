@@ -12,7 +12,7 @@ import { FileWatcherController } from './controllers/file-watcher-controller.ts'
 export async function activate(context: ExtensionContext): Promise<void> {
   window.showInformationMessage('css-module-type-definitions is now activating');
 
-  const watcher = await FileWatcherController.create();
+  const watcher = await FileWatcherController.create({ logger: config });
   context.subscriptions.push(
     config,
     watcher,

@@ -1,19 +1,28 @@
 import { fileExists } from '@technobuddha/library';
 import { RelativePattern, Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { type Logger, readViteConfig, VITE_EXTENSIONS, type ViteCss } from '../../common/index.ts';
+import {
+  type Logger,
+  type LoggerController,
+  readViteConfig,
+  VITE_EXTENSIONS,
+  type ViteCss,
+} from '../../common/index.ts';
 
 import { VSDisposable } from './vs-disposable.ts';
 
 type ViteWatcherOptions = {
   folder: WorkspaceFolder;
-  logger: Logger;
+  logger: LoggerController;
 };
 
 export class ViteWatcher extends VSDisposable {
   public folder: WorkspaceFolder;
-  public logger: Logger;
   public config: ViteCss | undefined;
+  readonly #logger: LoggerController;
+  protected get logger(): Logger {
+    return this.#logger.logger;
+  }
 
   public static async create({ folder, logger }: ViteWatcherOptions): Promise<ViteWatcher> {
     const watcher = new ViteWatcher({ folder, logger });
@@ -25,7 +34,7 @@ export class ViteWatcher extends VSDisposable {
   private constructor({ folder, logger }: ViteWatcherOptions) {
     super();
     this.folder = folder;
-    this.logger = logger;
+    this.#logger = logger;
 
     const watcher = workspace.createFileSystemWatcher(
       new RelativePattern(folder, `vite.config.{${VITE_EXTENSIONS.join(',')}}`),

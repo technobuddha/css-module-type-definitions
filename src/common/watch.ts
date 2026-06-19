@@ -65,7 +65,7 @@ export async function watch({ root, optionator, ignorer }: UpdateOptions): Promi
           .catch(noop);
       });
 
-    optionator.onDidChange(() => {
+    optionator.onChange(() => {
       void update({ optionator, ignorer });
     });
   });

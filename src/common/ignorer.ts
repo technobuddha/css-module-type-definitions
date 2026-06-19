@@ -2,90 +2,68 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { toError } from '@technobuddha/library';
+import { execPromise, toError } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import ignore, { type Ignore } from 'ignore';
-import ini from 'ini';
-import untildify from 'untildify';
 
 import { fileOperation } from './file-operation.ts';
-import { type Logger } from './logger.ts';
+import { type Logger, type LoggerController } from './logger.ts';
 
 type IgnorerOptions = {
   root: string;
-  logger: Logger;
+  logger: LoggerController;
   watch: boolean;
 };
 
 export abstract class Ignorer<T> implements AsyncDisposable {
-  readonly #gitLocalConfigFilename: string;
-  readonly #gitGlobalConfigFilename: string;
-  readonly #gitSystemConfigFilename: string;
-  #gitGlobalExcludesFilename: string | undefined;
   readonly #gitLocalExcludeFilename: string;
-  readonly #watcher: FSWatcher | undefined;
+  #gitGlobalExcludesFilename: string | undefined;
+  #localIgnore: Ignore | undefined;
+  #globalIgnore: Ignore | undefined;
+  #watcher: FSWatcher | undefined;
+  #interval: ReturnType<typeof setInterval> | undefined;
 
   protected readonly root: string;
-  protected readonly logger: Logger;
-
-  protected globalIgnore: Ignore | undefined;
-  protected repoIgnore: Ignore | undefined;
+  readonly #logger: LoggerController;
+  protected get logger(): Logger {
+    return this.#logger.logger;
+  }
 
   protected static async init<T>(ignorer: Ignorer<T>): Promise<void> {
-    await ignorer.getGlobalExcludesFilename();
-    await ignorer.loadRepoIgnore();
+    await ignorer.#getGlobalExcludesFilename();
+    await ignorer.#loadRepoIgnore();
   }
 
   protected constructor({ root, logger, watch }: IgnorerOptions) {
     this.root = path.resolve(root);
-
-    this.#gitLocalConfigFilename = path.resolve(root, '.git', 'config');
-    this.#gitGlobalConfigFilename = path.resolve(os.homedir(), '.gitconfig');
-    this.#gitSystemConfigFilename = path.resolve('/etc', 'gitconfig');
+    this.#logger = logger;
 
     this.#gitLocalExcludeFilename = path.resolve(root, '.git', 'info', 'exclude');
 
-    this.logger = logger;
-
     if (watch) {
-      const watcher = chokidar.watch(
-        [
-          this.#gitLocalExcludeFilename,
-          this.#gitLocalConfigFilename,
-          this.#gitGlobalConfigFilename,
-          this.#gitSystemConfigFilename,
-        ],
-        {
-          ignoreInitial: true,
-          atomic: true,
-        },
-      );
+      const watcher = chokidar.watch(this.#gitLocalExcludeFilename, {
+        ignoreInitial: true,
+        atomic: true,
+      });
 
       const respond =
         (action: 'add' | 'change' | 'unlink') =>
         (file: string): void => {
           (async () => {
             switch (file) {
-              case this.#gitLocalConfigFilename:
-              case this.#gitGlobalConfigFilename:
-              case this.#gitSystemConfigFilename: {
-                this.logger.debug(fileOperation(file, action));
-                await this.getGlobalExcludesFilename();
-                break;
-              }
-
               case this.#gitLocalExcludeFilename: {
-                await this.loadRepoIgnore(action);
+                await this.#loadRepoIgnore(action);
                 break;
               }
 
               case this.#gitGlobalExcludesFilename: {
-                await this.loadGlobalIgnore(action);
+                await this.#loadGlobalIgnore(action);
                 break;
               }
 
               // no default
             }
+            this.onChange();
           })();
         };
 
@@ -94,44 +72,38 @@ export abstract class Ignorer<T> implements AsyncDisposable {
       watcher.on('unlink', respond('unlink'));
 
       this.#watcher = watcher;
+
+      this.#interval = setInterval(() => {
+        void this.#getGlobalExcludesFilename();
+      }, 10000);
     }
   }
 
-  protected abstract toFilename(file: T): string;
+  protected abstract onChange(): void;
+
+  public abstract isIgnored(file: T): boolean;
+  public abstract findUnignoredFiles(glob: string): Promise<T[]>;
 
   protected ignorable(): Ignore {
     const ig = ignore();
-    if (this.globalIgnore) {
-      ig.add(this.globalIgnore);
+    if (this.#globalIgnore) {
+      ig.add(this.#globalIgnore);
     }
-    if (this.repoIgnore) {
-      ig.add(this.repoIgnore);
+    if (this.#localIgnore) {
+      ig.add(this.#localIgnore);
     }
     return ig;
   }
 
-  public abstract isIgnored(file: T): boolean;
-
-  public abstract findUnignoredFiles(glob: string): Promise<T[]>;
-
-  private async getGlobalExcludesFilename(): Promise<void> {
-    const globalExcludesFilename = await fs
-      .readFile(this.#gitLocalConfigFilename, 'utf-8')
-      .then(parseConfig)
-      .catch(async () =>
-        fs
-          .readFile(this.#gitGlobalConfigFilename, 'utf-8')
-          .then(parseConfig)
-          .catch(async () =>
-            fs
-              .readFile(this.#gitSystemConfigFilename, 'utf-8')
-              .then(parseConfig)
-              .catch(() =>
-                process.env.XDG_CONFIG_HOME ?
-                  path.join(process.env.XDG_CONFIG_HOME, 'git', 'ignore')
-                : path.join(process.env.HOME ?? os.homedir(), '.config', 'git', 'ignore'),
-              ),
-          ),
+  async #getGlobalExcludesFilename(): Promise<void> {
+    const globalExcludesFilename = await execPromise('git config get core.excludesFile', {
+      cwd: this.root,
+    })
+      .then(({ stdout }) => stdout.trim())
+      .catch(() =>
+        process.env.XDG_CONFIG_HOME ?
+          path.join(process.env.XDG_CONFIG_HOME, 'git', 'ignore')
+        : path.join(process.env.HOME ?? os.homedir(), '.config', 'git', 'ignore'),
       );
 
     if (this.#gitGlobalExcludesFilename !== globalExcludesFilename) {
@@ -143,49 +115,45 @@ export abstract class Ignorer<T> implements AsyncDisposable {
 
       this.#watcher?.add(globalExcludesFilename);
 
-      await this.loadGlobalIgnore();
+      await this.#loadGlobalIgnore();
     }
   }
 
-  private async loadGlobalIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
-    this.globalIgnore = undefined;
+  async #loadGlobalIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
+    this.#globalIgnore = undefined;
 
     if (this.#gitGlobalExcludesFilename) {
-      this.logger.info(fileOperation(this.#gitGlobalExcludesFilename, action ?? 'configuration'));
+      this.logger.debug(fileOperation(this.#gitGlobalExcludesFilename, action ?? 'configuration'));
 
       return fs
         .readFile(this.#gitGlobalExcludesFilename, 'utf-8')
         .then((content) => {
-          this.globalIgnore = ignore().add(content);
+          this.#globalIgnore = ignore().add(content);
         })
         .catch((e) => {
-          if (e.code === 'ENOENT') {
-            this.globalIgnore = ignore();
-          } else {
+          if (e.code !== 'ENOENT') {
             this.logger.error(toError(e));
           }
         });
     }
   }
 
-  private async loadRepoIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
-    return fs
-      .readFile(this.#gitLocalExcludeFilename, 'utf-8')
-      .then((content) => {
-        this.logger.info(fileOperation(this.#gitLocalExcludeFilename, action ?? 'configuration'));
-        this.repoIgnore = ignore().add(content);
-      })
-      .catch((e) => {
-        const error = toError(e);
-        if (e.code === 'ENOENT') {
-          if (action === 'unlink') {
-            this.logger.info(fileOperation(this.#gitLocalExcludeFilename, action));
+  async #loadRepoIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
+    this.#localIgnore = undefined;
+
+    if (this.#gitLocalExcludeFilename) {
+      this.logger.debug(fileOperation(this.#gitLocalExcludeFilename, action ?? 'configuration'));
+      return fs
+        .readFile(this.#gitLocalExcludeFilename, 'utf-8')
+        .then((content) => {
+          this.#localIgnore = ignore().add(content);
+        })
+        .catch((e) => {
+          if (e.code !== 'ENOENT') {
+            this.logger.error(toError(e));
           }
-          this.repoIgnore = ignore();
-        } else {
-          this.logger.error(error);
-        }
-      });
+        });
+    }
   }
 
   public async dispose(): Promise<void> {
@@ -194,13 +162,11 @@ export abstract class Ignorer<T> implements AsyncDisposable {
 
   public async [Symbol.asyncDispose](): Promise<void> {
     await this.#watcher?.close();
-  }
-}
+    this.#watcher = undefined;
 
-function parseConfig(content: string): string {
-  const { excludesFile } = ini.parse(content).core;
-  if (excludesFile) {
-    return untildify(excludesFile);
+    if (this.#interval) {
+      clearInterval(this.#interval);
+      this.#interval = undefined;
+    }
   }
-  throw new Error('Cannot find excludesFile, falling into default');
 }

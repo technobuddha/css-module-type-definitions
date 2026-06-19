@@ -1,6 +1,7 @@
-import path from 'node:path';
-
 import { RelativePattern, workspace } from 'vscode';
+
+import { fileOperation } from '../../common/file-operation.ts';
+import { type Logger, type LoggerController } from '../../common/index.ts';
 
 import { deleteTypes } from '../helpers/delete-types.ts';
 import { generateTypes } from '../helpers/generate-types.ts';
@@ -8,13 +9,25 @@ import { generateTypes } from '../helpers/generate-types.ts';
 import { config } from './configuration-controller.ts';
 import { VSDisposable } from './vs-disposable.ts';
 
+type FileWatcherControllerOptions = {
+  logger: LoggerController;
+};
+
 export class FileWatcherController extends VSDisposable {
-  public static async create(): Promise<FileWatcherController> {
-    return new FileWatcherController();
+  readonly #logger: LoggerController;
+  protected get logger(): Logger {
+    return this.#logger.logger;
   }
 
-  private constructor() {
+  public static async create({
+    logger,
+  }: FileWatcherControllerOptions): Promise<FileWatcherController> {
+    return new FileWatcherController({ logger });
+  }
+
+  private constructor({ logger }: FileWatcherControllerOptions) {
     super();
+    this.#logger = logger;
     this.loadOptions();
     this.listenForChanges();
   }
@@ -22,7 +35,7 @@ export class FileWatcherController extends VSDisposable {
   private listenForChanges(): void {
     config.onDidChange(
       async () => {
-        config.logger.info('Configuration changed, reloading options and file watchers');
+        this.logger.info('Configuration changed, reloading options and file watchers');
         await this.dispose();
         this.loadOptions();
         this.listenForChanges();
@@ -39,28 +52,25 @@ export class FileWatcherController extends VSDisposable {
       this.disposables.push(
         watcher,
         watcher.onDidChange(async (uri) => {
-          config.logger.info(`didChanged: ${uri.toString(true)}`);
+          this.logger.debug(fileOperation(uri.fsPath, 'change'));
           const options = config.options(folder);
 
           if (!config.isIgnored(uri)) {
-            await generateTypes(uri, { options, logger: config.logger });
-            config.logger.info(`Updated types for ${path.basename(uri.fsPath)}`);
+            await generateTypes(uri, { options, logger: this.logger });
           }
         }),
         watcher.onDidCreate(async (uri) => {
-          config.logger.info(`didCreate: ${uri.toString(true)}`);
+          this.logger.debug(fileOperation(uri.fsPath, 'add'));
           const options = config.options(folder);
 
           if (!config.isIgnored(uri)) {
-            await generateTypes(uri, { options, logger: config.logger });
-            config.logger.info(`Created types for ${path.basename(uri.fsPath)}`);
+            await generateTypes(uri, { options, logger: this.logger });
           }
         }),
         watcher.onDidDelete(async (uri) => {
-          config.logger.info(`didDelete: ${uri.toString(true)}`);
+          this.logger.debug(fileOperation(uri.fsPath, 'unlink'));
           if (!config.isIgnored(uri)) {
             await deleteTypes(uri);
-            config.logger.info(`Deleted types for ${path.basename(uri.fsPath)}`);
           }
         }),
       );

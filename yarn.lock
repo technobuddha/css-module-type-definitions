@@ -2158,16 +2158,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/project@npm:1.0.0-98":
-  version: 1.0.0-98
-  resolution: "@technobuddha/project@npm:1.0.0-98"
+"@technobuddha/library@npm:2.1.0-146":
+  version: 2.1.0-146
+  resolution: "@technobuddha/library@npm:2.1.0-146"
+  checksum: 10c0/ec14427ae5c5f1870d2550748b72429692ec04ebd3062594dd2211fd0ab9cdfbb51e30e7a000a30937c033254a03e97ac6d0d768a4cba683c0ea3bafd67eb8f9
+  languageName: node
+  linkType: hard
+
+"@technobuddha/project@npm:1.0.0-99":
+  version: 1.0.0-99
+  resolution: "@technobuddha/project@npm:1.0.0-99"
   dependencies:
     "@commander-js/extra-typings": "npm:15.0.0"
     "@cspell/cspell-types": "npm:10.0.1"
     "@dotenvx/dotenvx": "npm:1.71.2"
     "@eslint-community/eslint-plugin-eslint-comments": "npm:4.7.2"
     "@eslint/config-helpers": "npm:0.6.0"
-    "@technobuddha/library": "npm:2.1.0-143"
+    "@technobuddha/library": "npm:2.1.0-146"
     "@types/eslint": "npm:9.6.1"
     "@types/ignore-walk": "npm:4.0.3"
     "@types/mustache": "npm:^4.2.6"
@@ -2203,7 +2210,7 @@ __metadata:
     eslint-plugin-react-web-api: "npm:5.8.18"
     eslint-plugin-react-x: "npm:5.8.18"
     eslint-plugin-simple-import-sort: "npm:13.0.0"
-    eslint-plugin-technobuddha: "npm:2.0.0-29"
+    eslint-plugin-technobuddha: "npm:2.0.0-31"
     eslint-plugin-unicorn: "npm:65.0.1"
     globals: "npm:17.6.0"
     husky: "npm:9.1.7"
@@ -2233,7 +2240,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/2a42d7b7c0b085a0121ce636a7ecb69ce192f89a73aa2d500df640999244d58bec7b68d7c1d47572798176a255d1431ef057104024d0d4c0b97239d8e47c4e1e
+  checksum: 10c0/cf391817dc6f638ea0a4b5e68a9fd6d6e72e49e248c0adff3d0e1823da93c6f67fb7e25555ed15eb8b550ee5f836a4213bcbfcf99c620453ed3bc500785f632f
   languageName: node
   linkType: hard
 
@@ -2302,13 +2309,6 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/eb7efafaf25b3de7c07a6298e551d123fee303a468466f0798f958b0a0b3e41009e535430c5f0051ab4ad62aebfd6ba93e9463f2c39b29bc9e0e51c53173f43e
-  languageName: node
-  linkType: hard
-
-"@types/ini@npm:4.1.1":
-  version: 4.1.1
-  resolution: "@types/ini@npm:4.1.1"
-  checksum: 10c0/a060753a39f8bd73b615186018f7aded0eeb5698c0cb00e2f92ae495aa44b6351260e27f938891eeb304e28c2d42036bac5793a4e2031eff1df1a47de8cc8a97
   languageName: node
   linkType: hard
 
@@ -2403,6 +2403,13 @@ __metadata:
   version: 1.120.0
   resolution: "@types/vscode@npm:1.120.0"
   checksum: 10c0/a0ae0878f6eb071f868220aa0f454f0a1c1753597268c5f7d6f7e87d53380fc7c3ff0ab172b7ff82c4ff38a5c29c959b9a6768178b0d18844c86600e84cb4cfd
+  languageName: node
+  linkType: hard
+
+"@types/which@npm:3.0.4":
+  version: 3.0.4
+  resolution: "@types/which@npm:3.0.4"
+  checksum: 10c0/036e4cb243ebfd5cf4893be2ab3b9a60a22368811c1f1c78fb8fc70cadc274024282d04b8d7c0948268372600003252d84e2d3a5e064014a543a5da235c5989d
   languageName: node
   linkType: hard
 
@@ -4266,14 +4273,14 @@ __metadata:
   resolution: "css-module-type-definitions@workspace:."
   dependencies:
     "@cspell/cspell-types": "npm:10.0.1"
-    "@technobuddha/library": "npm:2.1.0-143"
-    "@technobuddha/project": "npm:1.0.0-98"
-    "@types/ini": "npm:4.1.1"
+    "@technobuddha/library": "npm:2.1.0-146"
+    "@technobuddha/project": "npm:1.0.0-99"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:25.9.3"
     "@types/postcss-import": "npm:^14.0.3"
     "@types/stylus": "npm:^0.48.43"
     "@types/vscode": "npm:1.120.0"
+    "@types/which": "npm:3.0.4"
     "@vitejs/devtools": "npm:0.3.1"
     chalk: "npm:5.6.2"
     chokidar: "npm:5.0.0"
@@ -4283,7 +4290,6 @@ __metadata:
     glob: "npm:13.0.6"
     husky: "npm:9.1.7"
     ignore: "npm:7.0.5"
-    ini: "npm:7.0.0"
     less: "npm:4.6.4"
     magic-string: "npm:0.30.21"
     postcss: "npm:^8.5.15"
@@ -4299,12 +4305,12 @@ __metadata:
     tsx: "npm:4.22.4"
     type-fest: "npm:5.7.0"
     typescript: "npm:6.0.3"
-    untildify: "npm:6.0.0"
     vite: "npm:8.0.16"
     vite-plugin-inspect: "npm:11.4.1"
     vscode-uri: "npm:3.1.0"
     webpack: "npm:5.107.1"
     webpack-cli: "npm:7.0.2"
+    which: "npm:7.0.0"
   bin:
     cmtd: dist/cli/cmtd.js
   languageName: unknown
@@ -5445,16 +5451,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-technobuddha@npm:2.0.0-29":
-  version: 2.0.0-29
-  resolution: "eslint-plugin-technobuddha@npm:2.0.0-29"
+"eslint-plugin-technobuddha@npm:2.0.0-31":
+  version: 2.0.0-31
+  resolution: "eslint-plugin-technobuddha@npm:2.0.0-31"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@microsoft/tsdoc-config": "npm:0.18.1"
     "@technobuddha/library": "npm:2.1.0-143"
     eslint: "npm:10.4.1"
     get-tsconfig: "npm:4.14.0"
-  checksum: 10c0/81737c2a5e1787b049de17a46bc797412fc37bd82d577ba93982b4d574d3f99bf0dba461a1b2caddbb05529216c23f834ec14edaa753fbab347ec87fac94fbd8
+  checksum: 10c0/e8b87bb1b780505009d8d8a3c1176506b238896c4196671896e4269a9d1a9460c1494a53462a201a6fad96220f3d290e2dbdf90d157647258e992cd6178b86af
   languageName: node
   linkType: hard
 
@@ -6389,13 +6395,6 @@ __metadata:
   version: 6.0.0
   resolution: "ini@npm:6.0.0"
   checksum: 10c0/9a7f55f306e2b25b41ae67c8b526e8f4673f057b70852b9025816ef4f15f07bf1ba35ed68ea4471ff7b31718f7ef1bc50d709f8d03cb012e10a3135eb99c7206
-  languageName: node
-  linkType: hard
-
-"ini@npm:7.0.0":
-  version: 7.0.0
-  resolution: "ini@npm:7.0.0"
-  checksum: 10c0/7520cae38bd5587e1cbca4637bb5fc0e157f38e0816522756456010ef703772d0018f9f4987cb9977bf3b10c1feccaad7800744dd1f5d85fb435e58a1baa9754
   languageName: node
   linkType: hard
 
@@ -10200,13 +10199,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"untildify@npm:6.0.0":
-  version: 6.0.0
-  resolution: "untildify@npm:6.0.0"
-  checksum: 10c0/0a1ed4f3e3322b9e09340152a40e4068b9f0cf5aa343d8a040e5fa14275d0c83ffc874484facb0687becf659cfe8c6dcaf04e36ea116212c83613602004a1e4f
-  languageName: node
-  linkType: hard
-
 "unzipper@npm:0.12.3":
   version: 0.12.3
   resolution: "unzipper@npm:0.12.3"
@@ -10719,6 +10711,17 @@ __metadata:
     gopd: "npm:^1.2.0"
     has-tostringtag: "npm:^1.0.2"
   checksum: 10c0/16fcdada95c8afb821cd1117f0ab50b4d8551677ac08187f21d4e444530913c9ffd2dac634f0c1183345f96344b69280f40f9a8bc52164ef409e555567c2604b
+  languageName: node
+  linkType: hard
+
+"which@npm:7.0.0":
+  version: 7.0.0
+  resolution: "which@npm:7.0.0"
+  dependencies:
+    isexe: "npm:^4.0.0"
+  bin:
+    node-which: bin/which.js
+  checksum: 10c0/ca0b54f198f78bbc4b7c02e34bda8d335cb352e0adb4cbca1c37b1a957af3a879a82c4c27ca6525bc942f548d8b64f816ef6528360af9f3de55ffb9b979b620d
   languageName: node
   linkType: hard
 

@@ -2,11 +2,11 @@ import path from 'node:path';
 
 import { type Uri, workspace } from 'vscode';
 
+import { fileOperation } from '../../common/file-operation.ts';
+
 import { config } from '../controllers/configuration-controller.ts';
 
 export async function deleteTypes(uri: Uri): Promise<void> {
-  config.logger.info(`deleteTypes(${uri.fsPath})`);
-
   const folder = workspace.getWorkspaceFolder(uri);
   if (folder) {
     const options = config.options(folder);
@@ -23,7 +23,7 @@ export async function deleteTypes(uri: Uri): Promise<void> {
         const generatedUri = uri.with({ path: path.join(dir, file) });
         try {
           await workspace.fs.delete(generatedUri).then(() => {
-            config.logger.debug(`Deleted generated file: ${generatedUri.fsPath}`);
+            config.logger.debug(fileOperation(generatedUri.fsPath, 'deleted'));
           });
         } catch {}
       }

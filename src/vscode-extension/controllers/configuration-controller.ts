@@ -10,7 +10,13 @@ import {
 } from 'vscode';
 import { type URI, Utils } from 'vscode-uri';
 
-import { defaultOptions, type Logger, normalizeOptions, type Options } from '../../common/index.ts';
+import {
+  defaultOptions,
+  type Logger,
+  type LoggerController,
+  normalizeOptions,
+  type Options,
+} from '../../common/index.ts';
 
 import { SETTINGS_PREFIX } from '../constants.ts';
 import { createLogger } from '../create-logger.ts';
@@ -25,7 +31,7 @@ function toFilename(filename: string | URI): string {
   return typeof filename === 'string' ? filename : filename.fsPath;
 }
 
-export class ConfigurationController extends VSDisposable {
+export class ConfigurationController extends VSDisposable implements LoggerController {
   public readonly logger: Logger = createLogger();
   protected readonly onDidChangeEmitter = new EventEmitter<ConfigurationChangeEvent>();
   protected readonly folderOptions: Map<WorkspaceFolder, Options> = new Map();
@@ -75,7 +81,7 @@ export class ConfigurationController extends VSDisposable {
 
       for (const folder of workspace.workspaceFolders) {
         if (!this.folderVite.has(folder)) {
-          const watcher = await ViteWatcher.create({ folder, logger: this.logger });
+          const watcher = await ViteWatcher.create({ folder, logger: this });
           this.folderVite.set(folder, watcher);
         }
       }
@@ -91,7 +97,7 @@ export class ConfigurationController extends VSDisposable {
         if (!this.folderIgnores.has(folder)) {
           this.folderIgnores.set(
             folder,
-            await UriIgnorer.create({ folder, logger: this.logger, watch: true }),
+            await UriIgnorer.create({ folder, watch: true, logger: this }),
           );
         }
       }
@@ -187,15 +193,8 @@ export class ConfigurationController extends VSDisposable {
   }
 
   public isIgnored(file: URI): boolean {
-    this.logger.warn(`Checking if file is ignored: ${file.toString(true)}`);
-
     const ws = workspace.getWorkspaceFolder(file);
     if (ws) {
-      this.logger.warn(`Found workspace folder for file: ${ws.name}`);
-      this.logger.warn(`Ignorer exists for workspace folder: ${this.folderIgnores.has(ws)}`);
-      this.logger.warn(
-        `Checking if file is ignored by ignorer: ${this.folderIgnores.get(ws)?.isIgnored(file)}`,
-      );
       return this.folderIgnores.get(ws)?.isIgnored(file) ?? false;
     }
     return false;

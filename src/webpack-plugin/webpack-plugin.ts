@@ -17,7 +17,7 @@ export class CMTDWebpackPlugin implements WebpackPluginInstance {
         const optionator = await Optionator.create(this.#options, {
           watch: true,
         });
-        const ignorer = await FileIgnorer.create({ root, logger: optionator.logger, watch: true });
+        const ignorer = await FileIgnorer.create({ root, logger: optionator, watch: true });
 
         void watch({ root, optionator, ignorer });
       })();

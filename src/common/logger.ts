@@ -29,6 +29,10 @@ export interface Logger {
   error: (error: string | Error, ...message: string[]) => void;
 }
 
+export interface LoggerController {
+  get logger(): Logger;
+}
+
 export const defaultLogger: Logger = {
   trace: outln,
   debug: outln,
