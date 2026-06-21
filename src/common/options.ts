@@ -43,6 +43,10 @@ export interface Options {
   };
 }
 
+export function defineOptions(options: PartialOptions): PartialOptions {
+  return options;
+}
+
 export type PartialOptions = {
   logLevel?: Options['logLevel'];
   preprocessor?: Partial<Options['preprocessor']>;
@@ -64,7 +68,7 @@ export const defaultOptions = Object.freeze<Options>({
     exportGlobals: true,
     generateScopedName: '[name]__[local]___[hash:base64:5]',
     hashPrefix: empty,
-    localsConvention: undefined,
+    localsConvention: 'camelCase', // TODO the "default" should be undefined,
     dtsHeader: empty,
     dtsFooter: empty,
     generateDtsOnSave: true,

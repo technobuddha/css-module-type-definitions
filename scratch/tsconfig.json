@@ -5,6 +5,6 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../tsconfig.base.json",
   "compilerOptions": { "lib": ["esnext", "dom"], "types": ["vite/client"] },
-  "include": ["*.ts", "*.d.*.ts"],
+  "include": ["*.d.*.ts", "*.ts"],
   "exclude": ["eslint.config.js"]
 }

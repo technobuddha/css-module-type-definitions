@@ -76,7 +76,7 @@ const config = {
   },
   ignoreWarnings: [
     {
-      module: /src[\\/]vscode-extension[\\/]controllers[\\/]configuration-controller\.ts$/,
+      module: /src[\\/]vscode-extension[\\/]controllers[\\/]workspace-controller\.ts$/,
       message: /Critical dependency: the request of a dependency is an expression/
     },
     {

@@ -1,12 +1,16 @@
 import { commands, type Disposable, window, workspace } from 'vscode';
 
-import { config } from '../controllers/configuration-controller.ts';
+import { type WorkspaceController } from '../controllers/workspace-controller.ts';
 
-export function commandShowTypeFiles(): Disposable {
+type CommandShowTypesFilesOptions = {
+  controller: WorkspaceController;
+};
+
+export function commandShowTypeFiles({ controller }: CommandShowTypesFilesOptions): Disposable {
   return commands.registerCommand('cmtd.typeFiles.show', async () => {
     const wsConfig = workspace.getConfiguration();
     window.showInformationMessage('Type files will now be shown in the explorer.');
-    config.logger.debug(JSON.stringify(wsConfig.get('cmtd.showTypeFiles')));
+    controller.logger.debug(JSON.stringify(wsConfig.get('cmtd.showTypeFiles')));
     wsConfig.update('cmtd.showTypeFiles', true);
     wsConfig.update('files.exclude', undefined);
   });

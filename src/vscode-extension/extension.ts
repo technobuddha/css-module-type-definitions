@@ -6,20 +6,19 @@ import {
   commandShowTypeFiles,
   commandUpdateTypes,
 } from './commands/index.ts';
-import { config } from './controllers/configuration-controller.ts';
-import { FileWatcherController } from './controllers/file-watcher-controller.ts';
+import { WorkspaceController } from './controllers/workspace-controller.ts';
 
 export async function activate(context: ExtensionContext): Promise<void> {
   window.showInformationMessage('css-module-type-definitions is now activating');
 
-  const watcher = await FileWatcherController.create({ logger: config });
+  const controller = await WorkspaceController.create();
+
   context.subscriptions.push(
-    config,
-    watcher,
-    commandDeleteTypes(),
-    commandUpdateTypes(),
-    commandShowTypeFiles(),
-    commandHideTypeFiles(),
+    controller,
+    commandDeleteTypes({ controller }),
+    commandUpdateTypes({ controller }),
+    commandShowTypeFiles({ controller }),
+    commandHideTypeFiles({ controller }),
   );
 }
 

@@ -4,7 +4,9 @@
       .snake_case {
         .UPPERCASE {
           .lowercase {
-            color: red;
+            .SCREAMING_SNAKE_CASE {
+              color: red;
+            }
           }
         }
       }

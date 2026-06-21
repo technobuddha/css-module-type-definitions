@@ -5,6 +5,6 @@
 import { lint } from '@technobuddha/project';
 
 export default lint(
-  { files: ['**/*.ts'], typescript: true },
   { files: ['*.d.*.ts'], typescript: true },
+  { files: ['**/*.ts'], typescript: true },
 );

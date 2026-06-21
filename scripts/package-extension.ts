@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 
 import { type PackageJson } from 'type-fest';
 
-import { defaultOptions, type Options } from '../src/common/index.ts';
+// import { defaultOptions, type Options } from '../src/common/index.ts';
 import { LOGLEVELS } from '../src/common/logger.ts';
 
 if (import.meta.main) {
@@ -87,89 +87,6 @@ if (import.meta.main) {
               type: 'boolean',
               default: true,
               description: 'Whether to show type files in the explorer.',
-            },
-            'cmtd.cssModules.scopeBehaviour': {
-              type: 'string',
-              enum: ['global', 'local'],
-              enumDescriptions: [
-                'Treat all classes as globally scoped.',
-                'Treat all classes as locally scoped.',
-              ],
-              default: defaultOptions.cssModules.scopeBehaviour,
-              description: 'Generating scoped names',
-            },
-            'cmtd.cssModules.exportGlobals': {
-              type: 'boolean',
-              default: defaultOptions.cssModules.exportGlobals,
-              description: 'Export global classes along with the local ones.',
-            },
-            'cmtd.cssModules.generateScopedName': {
-              display: 'display',
-              displayName: 'displayName',
-              title: 'title',
-              type: 'string',
-              default: defaultOptions.cssModules.generateScopedName as Extract<
-                Options['cssModules']['generateScopedName'],
-                string
-              >,
-              description: 'Generating scoped names with a custom template. See',
-            },
-            'cmtd.cssModules.hashPrefix': {
-              type: 'string',
-              default: defaultOptions.cssModules.hashPrefix,
-              description: 'Prefix for the hash in generated scoped names.',
-            },
-            'cmtd.cssModules.localsConvention': {
-              type: 'string',
-              enum: ['camelCase', 'camelCaseOnly', 'dashes', 'dashesOnly'],
-              default: defaultOptions.cssModules.localsConvention as Extract<
-                Options['cssModules']['localsConvention'],
-                string
-              >,
-              description: 'Generating scoped names',
-            },
-            'cmtd.cssModules.globalModulePaths': {
-              type: 'array',
-              items: {
-                type: 'string',
-                title: 'inner objects',
-              },
-              default: defaultOptions.cssModules.globalModulePaths.map((re) => re.source),
-            },
-            'cmtd.cssModules.extensions': {
-              type: 'array',
-              default: defaultOptions.cssModules.extensions,
-              items: {
-                type: 'string',
-                title: 'File extension',
-              },
-              description: 'File extensions for CSS module files.',
-            },
-            'cmtd.cssModules.modulePattern': {
-              type: 'string',
-              default: defaultOptions.cssModules.modulePattern,
-              description:
-                'Glob pattern to identify CSS module files. This pattern is used to determine which CSS files should have corresponding .d.ts files generated.',
-            },
-            'cmtd.cssModules.dtsHeader': {
-              type: 'string',
-              default: defaultOptions.cssModules.dtsHeader,
-              description:
-                'Custom header comment to include at the top of generated .d.ts files. This can be used to disable specific linting rules or provide additional context for the generated type definitions.',
-              editPresentation: 'multilineText',
-            },
-            'cmtd.cssModules.dtsFooter': {
-              type: 'string',
-              default: defaultOptions.cssModules.dtsFooter,
-              description:
-                'Custom footer comment to include at the bottom of generated .d.ts files. This can be used to disable specific linting rules or provide additional context for the generated type definitions.',
-              editPresentation: 'multilineText',
-            },
-            'cmtd.cssModules.generateDtsOnSave': {
-              type: 'boolean',
-              default: defaultOptions.cssModules.generateDtsOnSave,
-              description:
-                'Whether to automatically generate .d.ts files for CSS modules when saving the corresponding CSS file.',
             },
           },
         },

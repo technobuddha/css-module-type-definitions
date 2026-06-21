@@ -1,7 +1,6 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { dynamicImport, fileExists, noop, toRelativePath } from '@technobuddha/library';
+import { fileExists } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
   type ResolvedConfig,
@@ -9,27 +8,14 @@ import {
   type UserConfig,
 } from 'vite';
 
-import { type Logger } from './logger.ts';
+import { reImport } from './reimport.ts';
 
 export type ViteCss = Partial<
   Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { modules?: CSSModulesOptions }
 >;
 
-export async function readViteConfig(file: string, logger?: Logger): Promise<ViteCss | undefined> {
-  const { ext, dir } = path.parse(file);
-  const tmpname = path.resolve(path.join(dir, `vite${Date.now()}${Math.random()}.${ext}`));
-
-  return fs
-    .cp(file, tmpname, { force: true })
-    .then(async () =>
-      dynamicImport<UserConfig>(toRelativePath(tmpname)).then((viteConfig) => {
-        if (viteConfig?.css?.modules) {
-          logger?.trace(`Vite: ${JSON.stringify(viteConfig.css.modules)}`);
-        }
-        return transformViteConfig(viteConfig);
-      }),
-    )
-    .finally(() => void fs.rm(tmpname, { force: true }).catch(noop));
+export async function readViteConfig(file: string): Promise<ViteCss | undefined> {
+  return reImport<UserConfig>(file).then(transformViteConfig);
 }
 
 export async function locateViteConfigurationFile(root: string): Promise<string | undefined> {

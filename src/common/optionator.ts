@@ -8,13 +8,14 @@ import { type ResolvedConfig, type UserConfig } from 'vite';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController, loggerOutput, stdioLogger } from './logger.ts';
 import { defaultOptions, normalizeOptions, type Options, type PartialOptions } from './options.ts';
+import { locateCMTDConfigurationFile } from './read-cmtd-config.ts';
 import {
   locateViteConfigurationFile,
   readViteConfig,
   transformViteConfig,
   type ViteCss,
 } from './read-vite-config.ts';
-import { locateVSCodeConfigrationFile, readVSCodeSettings } from './read-vscode-settings.ts';
+import { reImport } from './reimport.ts';
 
 type OptionatorOptions = {
   watch?: boolean;
@@ -28,7 +29,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   protected readonly listeners: Set<() => void> = new Set();
   protected readonly baseLogger: Logger;
   protected vite: ViteCss | undefined;
-  protected vscode: Awaited<ReturnType<typeof readVSCodeSettings>> | undefined;
+  protected cmtd: Options | undefined;
   protected readonly watcher: Set<FSWatcher> = new Set();
   #options: Options = defaultOptions;
   public get logger(): Logger {
@@ -48,34 +49,6 @@ export class Optionator implements LoggerController, AsyncDisposable {
     const root = (await locatePackageRoot()) ?? process.cwd();
 
     const optionator = new Optionator(top, logger);
-
-    const vscodeConfigPath = await locateVSCodeConfigrationFile(root);
-    if (vscodeConfigPath) {
-      optionator.logger?.debug(
-        fileOperation(path.relative(root, vscodeConfigPath), 'configuration'),
-      );
-
-      if (watch) {
-        const watcher = chokidar.watch(vscodeConfigPath, {
-          ignoreInitial: true,
-          persistent: true,
-          atomic: true,
-        });
-
-        const respond = (reason: 'add' | 'change' | 'unlink') => (file: string) => {
-          optionator.logger?.debug(fileOperation(file, reason));
-          void optionator.readOptions();
-        };
-
-        watcher.on('add', respond('add'));
-        watcher.on('change', respond('change'));
-        watcher.on('unlink', respond('unlink'));
-
-        optionator.watcher.add(watcher);
-      }
-
-      optionator.vscode = await readVSCodeSettings(vscodeConfigPath, optionator.logger);
-    }
 
     if (vite) {
       optionator.vite = transformViteConfig(vite);
@@ -100,7 +73,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
               optionator.logger?.debug(fileOperation(file, reason));
 
               (async () => {
-                optionator.vite = await readViteConfig(viteConfigPath, optionator.logger);
+                optionator.vite = await readViteConfig(viteConfigPath);
                 void optionator.readOptions();
               })();
             };
@@ -113,8 +86,42 @@ export class Optionator implements LoggerController, AsyncDisposable {
           optionator.watcher.add(watcher);
         }
 
-        optionator.vite = await readViteConfig(viteConfigPath, optionator.logger);
+        optionator.vite = await readViteConfig(viteConfigPath);
       }
+    }
+
+    const cmtdConfigPath = await locateCMTDConfigurationFile(root);
+
+    if (cmtdConfigPath) {
+      optionator.logger?.debug(fileOperation(path.relative(root, cmtdConfigPath), 'configuration'));
+
+      if (watch) {
+        const watcher = chokidar.watch(cmtdConfigPath, {
+          ignoreInitial: true,
+          persistent: true,
+          atomic: true,
+        });
+
+        const respond =
+          (reason: 'add' | 'change' | 'unlink') =>
+          (file: string): void => {
+            optionator.logger?.debug(fileOperation(file, reason));
+
+            (async () => {
+              optionator.cmtd = await reImport<Options>(cmtdConfigPath);
+              void optionator.readOptions();
+            })();
+          };
+
+        watcher
+          .on('add', respond('add'))
+          .on('change', respond('change'))
+          .on('unlink', respond('unlink'));
+
+        optionator.watcher.add(watcher);
+      }
+
+      optionator.cmtd = await reImport<Options>(cmtdConfigPath);
     }
 
     optionator.#options = optionator.compileOptions();
@@ -131,79 +138,84 @@ export class Optionator implements LoggerController, AsyncDisposable {
 
   private compileOptions(): Options {
     return normalizeOptions({
-      logLevel: this.top.logLevel ?? this.vscode?.logLevel ?? defaultOptions.logLevel,
+      logLevel: this.top.logLevel ?? defaultOptions.logLevel,
       preprocessor: {
         less:
           this.top.preprocessor?.less ??
+          this.cmtd?.preprocessor?.less ??
           this.vite?.preprocessorOptions?.less ??
           defaultOptions.preprocessor.less,
         sass:
           this.top.preprocessor?.sass ??
+          this.cmtd?.preprocessor?.sass ??
           this.vite?.preprocessorOptions?.sass ??
           defaultOptions.preprocessor.sass,
         scss:
           this.top.preprocessor?.scss ??
+          this.cmtd?.preprocessor?.scss ??
           this.vite?.preprocessorOptions?.scss ??
           defaultOptions.preprocessor.scss,
         styl:
           this.top.preprocessor?.styl ??
+          this.cmtd?.preprocessor?.styl ??
           this.vite?.preprocessorOptions?.styl ??
           defaultOptions.preprocessor.styl,
         stylus:
           this.top.preprocessor?.stylus ??
+          this.cmtd?.preprocessor?.stylus ??
           this.vite?.preprocessorOptions?.stylus ??
           defaultOptions.preprocessor.stylus,
       },
       cssModules: {
         scopeBehaviour:
           this.top.cssModules?.scopeBehaviour ??
-          this.vscode?.scopeBehaviour ??
+          this.cmtd?.cssModules?.scopeBehaviour ??
           this.vite?.modules?.scopeBehaviour ??
           defaultOptions.cssModules.scopeBehaviour,
         globalModulePaths:
           this.top.cssModules?.globalModulePaths ??
-          this.vscode?.globalModulePaths ??
+          this.cmtd?.cssModules?.globalModulePaths ??
           this.vite?.modules?.globalModulePaths ??
           defaultOptions.cssModules.globalModulePaths,
         exportGlobals:
           this.top.cssModules?.exportGlobals ??
-          this.vscode?.exportGlobals ??
+          this.cmtd?.cssModules?.exportGlobals ??
           this.vite?.modules?.exportGlobals ??
           defaultOptions.cssModules.exportGlobals,
         generateScopedName:
           this.top.cssModules?.generateScopedName ??
-          this.vscode?.generateScopedName ??
+          this.cmtd?.cssModules?.generateScopedName ??
           this.vite?.modules?.generateScopedName ??
           defaultOptions.cssModules.generateScopedName,
         hashPrefix:
           this.top.cssModules?.hashPrefix ??
-          this.vscode?.hashPrefix ??
+          this.cmtd?.cssModules?.hashPrefix ??
           this.vite?.modules?.hashPrefix ??
           defaultOptions.cssModules.hashPrefix,
         localsConvention:
           this.top.cssModules?.localsConvention ??
-          this.vscode?.localsConvention ??
+          this.cmtd?.cssModules?.localsConvention ??
           this.vite?.modules?.localsConvention ??
           defaultOptions.cssModules.localsConvention,
         dtsHeader:
           this.top.cssModules?.dtsHeader ??
-          this.vscode?.dtsHeader ??
+          this.cmtd?.cssModules?.dtsHeader ??
           defaultOptions.cssModules.dtsHeader,
         dtsFooter:
           this.top.cssModules?.dtsFooter ??
-          this.vscode?.dtsFooter ??
+          this.cmtd?.cssModules?.dtsFooter ??
           defaultOptions.cssModules.dtsFooter,
         generateDtsOnSave:
           this.top.cssModules?.generateDtsOnSave ??
-          this.vscode?.generateDtsOnSave ??
+          this.cmtd?.cssModules?.generateDtsOnSave ??
           defaultOptions.cssModules.generateDtsOnSave,
         modulePattern:
           this.top.cssModules?.modulePattern ??
-          this.vscode?.modulePattern ??
+          this.cmtd?.cssModules?.modulePattern ??
           defaultOptions.cssModules.modulePattern,
         extensions:
           this.top.cssModules?.extensions ??
-          this.vscode?.extensions ??
+          this.cmtd?.cssModules?.extensions ??
           defaultOptions.cssModules.extensions,
       },
     });

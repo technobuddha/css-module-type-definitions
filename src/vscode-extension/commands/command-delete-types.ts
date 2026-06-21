@@ -1,16 +1,19 @@
 import { commands, type Disposable, workspace } from 'vscode';
 
-import { config } from '../controllers/configuration-controller.ts';
+import { type WorkspaceController } from '../controllers/workspace-controller.ts';
 
-export function commandDeleteTypes(): Disposable {
+type CommandDeleteTypesOptions = {
+  controller: WorkspaceController;
+};
+
+export function commandDeleteTypes({ controller }: CommandDeleteTypesOptions): Disposable {
   return commands.registerCommand('cmtd.deleteTypes', async () => {
-    const { logger } = config;
     for (const folder of workspace.workspaceFolders ?? []) {
-      await config
-        .findUnignoredFiles(folder, `**/${config.globIsTypeDefinition(folder)}`)
+      await controller
+        .findUnignoredFiles(folder, `**/${controller.globIsTypeDefinition(folder)}`)
         .then(async (uris) => {
           for (const uri of uris) {
-            logger.info(`Deleted file: ${uri.fsPath}`);
+            controller.logger.info(`Deleted file: ${uri.fsPath}`);
             await workspace.fs.delete(uri);
           }
         });

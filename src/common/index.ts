@@ -17,7 +17,6 @@ export {
   transformViteConfig,
   type ViteCss,
 } from './read-vite-config.ts';
-export { locateVSCodeConfigrationFile, readVSCodeSettings } from './read-vscode-settings.ts';
 export { remove } from './remove.ts';
 export { update } from './update.ts';
 export { VITE_EXTENSIONS } from './vite.ts';
