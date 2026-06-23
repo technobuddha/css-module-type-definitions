@@ -1,11 +1,11 @@
 import { toError } from '@technobuddha/library';
 import { type Uri, workspace } from 'vscode';
 
-import { fileOperation, type Logger, type Options } from '../../common/index.ts';
+import { fileOperation, type Logger, type NormalizedOptions } from '../../common/index.ts';
 import { generateTypesFromCss } from '../../css-library/index.ts';
 
 type GenerateTypesOptions = {
-  options: Options;
+  options: NormalizedOptions;
   logger: Logger;
 };
 

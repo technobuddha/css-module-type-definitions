@@ -6,15 +6,16 @@ import { type Disposable, RelativePattern, workspace, type WorkspaceFolder } fro
 import { type URI, Utils } from 'vscode-uri';
 
 import {
+  CONFIG_EXTENSIONS,
   defaultOptions,
   fileOperation,
   Ignorer,
   locateViteConfigurationFile,
   type LoggerController,
+  type NormalizedOptions,
   normalizeOptions,
   type Options,
   readViteConfig,
-  VITE_EXTENSIONS,
   type ViteCss,
 } from '../../common/index.ts';
 import { locateCMTDConfigurationFile, readCMTDConfig } from '../../common/read-cmtd-config.ts';
@@ -54,8 +55,8 @@ export class FolderController extends Ignorer<URI> implements Disposable {
   private viteConfigFile: string | undefined;
   public viteConfig: ViteCss | undefined;
 
-  #options: Options = defaultOptions;
-  public get options(): Options {
+  #options = normalizeOptions(defaultOptions);
+  public get options(): NormalizedOptions {
     return this.#options;
   }
 
@@ -90,7 +91,7 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     this.folder = folder;
 
     const vwatcher = workspace.createFileSystemWatcher(
-      new RelativePattern(folder, `vite.config.{${VITE_EXTENSIONS.join(',')}}`),
+      new RelativePattern(folder, `vite.config.{${CONFIG_EXTENSIONS.join(',')}}`),
     );
 
     const respond = (_action: 'add' | 'change' | 'unlink') => async () => this.loadViteConfig();

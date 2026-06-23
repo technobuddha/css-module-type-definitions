@@ -7,6 +7,13 @@ import {
 
 import { type LogLevel } from './logger.ts';
 
+type LocalsConvention =
+  | 'camelCase'
+  | 'camelCaseOnly'
+  | 'dashes'
+  | 'dashesOnly'
+  | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
+
 export interface Options {
   logLevel: LogLevel;
   preprocessor: {
@@ -26,15 +33,12 @@ export interface Options {
     scopeBehaviour: 'global' | 'local';
     globalModulePaths: RegExp[];
     exportGlobals: boolean;
-    generateScopedName: string | ((name: string, filename: string, css: string) => string);
-    hashPrefix: string;
-    localsConvention:
-      | 'camelCase'
-      | 'camelCaseOnly'
-      | 'dashes'
-      | 'dashesOnly'
-      | ((originalClassName: string, generatedClassName: string, inputFile: string) => string)
+    generateScopedName:
+      | string
+      | ((name: string, filename: string, css: string) => string)
       | undefined;
+    hashPrefix: string;
+    localsConvention: LocalsConvention | 'asIs';
     extensions: string[];
     modulePattern: string;
     dtsHeader: string;
@@ -43,14 +47,18 @@ export interface Options {
   };
 }
 
-export function defineOptions(options: PartialOptions): PartialOptions {
-  return options;
-}
-
 export type PartialOptions = {
   logLevel?: Options['logLevel'];
   preprocessor?: Partial<Options['preprocessor']>;
   cssModules?: Partial<Options['cssModules']>;
+};
+
+type NormalizedCSSModulesOptions = Omit<Options['cssModules'], 'localsConvention'> & {
+  localsConvention?: LocalsConvention;
+};
+
+export type NormalizedOptions = Omit<Options, 'cssModules'> & {
+  cssModules: NormalizedCSSModulesOptions;
 };
 
 export const defaultOptions = Object.freeze<Options>({
@@ -65,10 +73,10 @@ export const defaultOptions = Object.freeze<Options>({
   cssModules: {
     scopeBehaviour: 'local',
     globalModulePaths: [],
-    exportGlobals: true,
-    generateScopedName: '[name]__[local]___[hash:base64:5]',
+    exportGlobals: false,
+    generateScopedName: undefined,
     hashPrefix: empty,
-    localsConvention: 'camelCase', // TODO the "default" should be undefined,
+    localsConvention: 'asIs',
     dtsHeader: empty,
     dtsFooter: empty,
     generateDtsOnSave: true,
@@ -77,11 +85,19 @@ export const defaultOptions = Object.freeze<Options>({
   },
 });
 
-export function normalizeOptions(options: Options): Options {
-  const extensions = cull(options.cssModules.extensions, { emptyStrings: true });
+export function normalizeOptions(options: Options): NormalizedOptions {
+  const nOptions: NormalizedOptions = options as NormalizedOptions;
+
+  const extensions = cull(nOptions.cssModules.extensions, { emptyStrings: true });
   if (extensions.length === 0) {
-    options.cssModules.extensions = defaultOptions.cssModules.extensions;
+    nOptions.cssModules.extensions = defaultOptions.cssModules.extensions;
+  }
+  if (
+    options.cssModules.localsConvention === 'asIs' ||
+    options.cssModules.localsConvention === undefined
+  ) {
+    delete nOptions.cssModules.localsConvention;
   }
 
-  return options;
+  return nOptions;
 }

@@ -4,6 +4,7 @@ import inspect from 'vite-plugin-inspect';
 import { pluginCssModuleTypeDefinitions } from './src/vite-plugin/vite-plugin.ts';
 
 export default defineConfig({
+  root: './scratch',
   server: {
     port: 3000,
   },
@@ -11,7 +12,8 @@ export default defineConfig({
   plugins: [pluginCssModuleTypeDefinitions(), inspect()],
   css: {
     modules: {
-      localsConvention: 'camelCase',
+      //localsConvention: 'camelCase',
+      //generateScopedName: '[name]__[local]___[hash:base64:5]',
     },
   },
 });

@@ -56,8 +56,11 @@ export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
       const respond =
         (action: 'add' | 'change' | 'unlink') =>
         (file: string): void => {
-          this.logger.debug(fileOperation(file, action));
-          void this.gatherGitIgnores().then(() => this.buildIgnored());
+          void this.gatherGitIgnores()
+            .then(() => this.buildIgnored())
+            .then(() => {
+              this.logger.debug(fileOperation(file, action));
+            });
         };
 
       watcher.on('add', respond('add'));

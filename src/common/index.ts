@@ -1,6 +1,7 @@
+export { generateTypes } from '../css-library/generate-types.ts';
+export { CONFIG_EXTENSIONS } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
-export { generateTypes } from './generate-types.ts';
 export { Ignorer } from './ignorer.ts';
 export {
   defaultLogger,
@@ -10,7 +11,13 @@ export {
   LOGLEVELS,
 } from './logger.ts';
 export { Optionator } from './optionator.ts';
-export { defaultOptions, normalizeOptions, type Options, type PartialOptions } from './options.ts';
+export {
+  defaultOptions,
+  type NormalizedOptions,
+  normalizeOptions,
+  type Options,
+  type PartialOptions,
+} from './options.ts';
 export {
   locateViteConfigurationFile,
   readViteConfig,
@@ -19,5 +26,4 @@ export {
 } from './read-vite-config.ts';
 export { remove } from './remove.ts';
 export { update } from './update.ts';
-export { VITE_EXTENSIONS } from './vite.ts';
 export { watch } from './watch.ts';

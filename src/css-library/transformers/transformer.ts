@@ -4,7 +4,7 @@ import { type RawSourceMap } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
 import { type Logger } from '../../common/logger.ts';
-import { type Options } from '../../common/options.ts';
+import { type NormalizedOptions } from '../../common/options.ts';
 
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
@@ -18,7 +18,7 @@ export type TransformerReturn = {
 export type TransformerArguments = {
   filename: string;
   directory: string;
-  options: Options;
+  options: NormalizedOptions;
   compilerOptions: CompilerOptions;
   logger: Logger;
 };

@@ -1,6 +1,10 @@
 /* eslint-disable no-console */
-import css from './main.module.css';
+import all from './all.module.css';
+import main from './main.module.css';
 
-console.log(css.a);
-console.log(css.m);
-console.log(css.z);
+console.log(main.a);
+console.log(main.m);
+console.log(main.z);
+
+console.log(all.camelCase);
+console.log(all.PascalCase);

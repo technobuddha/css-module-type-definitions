@@ -17,7 +17,7 @@ import postcssModules from 'postcss-modules';
 import { SourceMapConsumer, SourceMapGenerator } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
-import { type Logger, type Options } from '../common/index.ts';
+import { type Logger, type NormalizedOptions } from '../common/index.ts';
 
 import { BANNER_MESSAGE } from './constants.ts';
 import { dashes } from './dashes.ts';
@@ -31,7 +31,7 @@ type GenerateTypesFromCssReturn = {
 };
 
 export type GenerateTypesFromCssOptions = {
-  options: Options;
+  options: NormalizedOptions;
   logger: Logger;
   compilerOptions?: CompilerOptions;
 };
@@ -155,7 +155,7 @@ export async function generateTypesFromCss(
 
               const smc = sourceMap ? new SourceMapConsumer(sourceMap) : null;
 
-              for (const [className /*, scoped*/] of Object.entries(classScope)) {
+              for (const [className, scoped] of Object.entries(classScope)) {
                 const offset = classOffsets.get(className);
 
                 if (offset) {
@@ -191,7 +191,7 @@ export async function generateTypesFromCss(
                 }
 
                 dts.push(
-                  `${space.repeat(2)}readonly${space}${quote(className)}:${space}string;`, // ${quote(scoped)};`,
+                  `${space.repeat(2)}readonly${space}${quote(className)}:${space}${quote(scoped)};`,
                 );
               }
 

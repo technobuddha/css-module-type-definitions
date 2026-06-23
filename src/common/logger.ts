@@ -13,14 +13,6 @@ const Ranks: Record<LogLevel, number> = {
   off: 5,
 };
 
-export function loggerOutput<T extends string | Error>(
-  level: LogLevel,
-  other: LogLevel,
-  fn: (message: T) => void,
-): (message: T) => void {
-  return (Ranks[level] ?? 2) >= (Ranks[other] ?? 2) ? fn : noop;
-}
-
 export interface Logger {
   trace: (...message: string[]) => void;
   debug: (...message: string[]) => void;
@@ -50,3 +42,15 @@ export const stdioLogger: Logger = {
   error: (error: string | Error, ...args: string[]) =>
     errln('Error:', space, toError(error).message, ...args),
 };
+
+export function loggerForLevel(baseLogger: Logger, level: LogLevel): Logger {
+  const rank = Ranks[level] ?? 2;
+
+  return {
+    trace: rank <= 0 ? baseLogger.trace : noop,
+    debug: rank <= 1 ? baseLogger.debug : noop,
+    info: rank <= 2 ? baseLogger.info : noop,
+    warn: rank <= 3 ? baseLogger.warn : noop,
+    error: rank <= 4 ? baseLogger.error : noop,
+  };
+}

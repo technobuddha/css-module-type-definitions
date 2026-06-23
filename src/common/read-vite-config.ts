@@ -8,6 +8,7 @@ import {
   type UserConfig,
 } from 'vite';
 
+import { CONFIG_EXTENSIONS } from './constants.ts';
 import { reImport } from './reimport.ts';
 
 export type ViteCss = Partial<
@@ -19,8 +20,8 @@ export async function readViteConfig(file: string): Promise<ViteCss | undefined>
 }
 
 export async function locateViteConfigurationFile(root: string): Promise<string | undefined> {
-  for (const ext of ['js', 'cjs', 'mjs', 'ts', 'cts', 'mts']) {
-    const viteConfigPath = path.resolve(path.join(root, `vite.config.${ext}`));
+  for (const ext of CONFIG_EXTENSIONS) {
+    const viteConfigPath = path.resolve(path.join(root, `vite.config${ext}`));
     if (await fileExists(viteConfigPath)) {
       return viteConfigPath;
     }

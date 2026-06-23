@@ -1,6 +1,6 @@
 import { type Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { type Logger, type LoggerController, type Options } from '../../common/index.ts';
+import { type Logger, type LoggerController, type NormalizedOptions } from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 
@@ -77,7 +77,7 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
     throw new Error(`No controller found for folder: ${folder.name}`);
   }
 
-  public options(folder: WorkspaceFolder): Options {
+  public options(folder: WorkspaceFolder): NormalizedOptions {
     const folderController = this.#folders.get(folder);
     if (folderController) {
       return folderController.options;

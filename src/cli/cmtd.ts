@@ -28,6 +28,7 @@ if (import.meta.main) {
         'dashes',
         'dashesOnly',
         'camelCaseOnly',
+        'asIs',
       ]),
     )
     .option('--extensions <extensions...>', 'File extensions to process')
