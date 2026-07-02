@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+/* eslint-disable require-atomic-updates */
 import fs from 'node:fs/promises';
 
 import { type PackageJson } from 'type-fest';
@@ -11,16 +12,11 @@ if (import.meta.main) {
     .readFile('./package.json', 'utf-8')
     .then(JSON.parse)
     .then(async (packageJson: PackageJson) => {
-      packageJson.type = 'commonjs';
       packageJson.main = './extension.js';
       delete packageJson.types;
       delete packageJson.bin;
       delete packageJson.scripts;
-      delete packageJson.dependencies;
-      packageJson.devDependencies = {
-        '@types/vscode': packageJson.devDependencies?.['@types/vscode'] ?? 'latest',
-      };
-      delete packageJson.resolutions;
+
       delete packageJson.technobuddhaProject;
       delete packageJson.packageManager;
 
@@ -91,6 +87,18 @@ if (import.meta.main) {
           },
         },
       };
+      await fs.writeFile(
+        './dist/vscode-extension/package.json',
+        JSON.stringify(packageJson, null, 2),
+        'utf-8',
+      );
+
+      packageJson.type = 'commonjs';
+      delete packageJson.dependencies;
+      packageJson.devDependencies = {
+        '@types/vscode': packageJson.devDependencies?.['@types/vscode'] ?? 'latest',
+      };
+      delete packageJson.resolutions;
 
       return fs.writeFile('./out/package.json', JSON.stringify(packageJson, null, 2), 'utf-8');
     });

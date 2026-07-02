@@ -4,6 +4,7 @@ import {
   type SassPreprocessorOptions,
   type StylusPreprocessorOptions,
 } from 'vite';
+import { type WorkspaceFolder } from 'vscode';
 
 import { type LogLevel } from './logger.ts';
 
@@ -46,6 +47,10 @@ export interface Options {
     generateDtsOnSave: boolean;
   };
 }
+
+export type OptionsController = {
+  options(folder: WorkspaceFolder): NormalizedOptions;
+};
 
 export type PartialOptions = {
   logLevel?: Options['logLevel'];

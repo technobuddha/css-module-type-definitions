@@ -9,6 +9,9 @@
 
 // prettier-ignore
 type Options = {
+  readonly 'a1': 'options-module_a1_dSEWJ';
+  readonly 'a2': 'options-module_a2_M030-';
+  readonly 'a3': 'options-module_a3_gd3aB';
   readonly 'abmigigous': 'options-module_abmigigous_lRyl-';
   readonly 'local': 'options-module_local_ye3I6';
   readonly 'camelCase': 'options-module_camelCase_8IpK9';

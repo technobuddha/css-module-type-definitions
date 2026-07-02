@@ -32,34 +32,6 @@ type FolderControllerOptions = {
 };
 
 export class FolderController extends Ignorer<URI> implements Disposable {
-  protected readonly disposables: Disposable[] = [];
-
-  public override async dispose(): Promise<void> {
-    await super.dispose();
-    for (const disposable of this.disposables) {
-      await disposable.dispose();
-    }
-    this.disposables.length = 0;
-  }
-  // --- //
-  protected readonly gitIgnores: Map<string, Ignore> = new Map();
-  protected readonly ignored: Map<string, Ignore> = new Map();
-
-  // --- //
-  private readonly folder: WorkspaceFolder;
-  // --- //
-
-  private cmtdConfigFile: string | undefined;
-  private cmtdConfig: Options | undefined;
-
-  private viteConfigFile: string | undefined;
-  public viteConfig: ViteCss | undefined;
-
-  #options = normalizeOptions(defaultOptions);
-  public get options(): NormalizedOptions {
-    return this.#options;
-  }
-
   public static async create({
     folder,
     logger,
@@ -73,7 +45,7 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     await controller.loadViteConfig();
     await controller.loadOptions();
 
-    await Ignorer.init(controller);
+    await super.init(controller);
     await controller.gatherGitIgnores();
     controller.buildIgnored();
 
@@ -86,12 +58,24 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     return controller;
   }
 
+  #options = normalizeOptions(defaultOptions);
+  private readonly folder: WorkspaceFolder;
+  private cmtdConfigFile: string | undefined;
+  private cmtdConfig: Options | undefined;
+  private viteConfigFile: string | undefined;
+
+  protected readonly disposables: Disposable[] = [];
+  protected readonly gitIgnores: Map<string, Ignore> = new Map();
+  protected readonly ignored: Map<string, Ignore> = new Map();
+
+  public viteConfig: ViteCss | undefined;
+
   public constructor({ folder, logger }: FolderControllerOptions) {
     super({ root: folder.uri.fsPath, watch: true, logger });
     this.folder = folder;
 
     const vwatcher = workspace.createFileSystemWatcher(
-      new RelativePattern(folder, `vite.config.{${CONFIG_EXTENSIONS.join(',')}}`),
+      new RelativePattern(folder, `vite.config{${CONFIG_EXTENSIONS.join(',')}}`),
     );
 
     const respond = (_action: 'add' | 'change' | 'unlink') => async () => this.loadViteConfig();
@@ -255,7 +239,7 @@ export class FolderController extends Ignorer<URI> implements Disposable {
   protected buildIgnored(): void {
     this.ignored.clear();
 
-    top: for (const [dir, ignored] of Array.from(this.gitIgnores.entries()).sort(
+    top: for (const [dir, ignored] of Array.from(this.gitIgnores).sort(
       ([a], [b]) => pathDepth(a) - pathDepth(b),
     )) {
       let parent = path.join(dir, '..');
@@ -277,6 +261,10 @@ export class FolderController extends Ignorer<URI> implements Disposable {
 
   protected onChange(): void {
     this.buildIgnored();
+  }
+
+  public get options(): NormalizedOptions {
+    return this.#options;
   }
 
   public isIgnored(file: URI): boolean {
@@ -336,5 +324,13 @@ export class FolderController extends Ignorer<URI> implements Disposable {
 
   public isRelativeCSS(filename: URI): boolean {
     return this.isRelative(filename) && this.isCSS(filename);
+  }
+
+  public override async dispose(): Promise<void> {
+    await super.dispose();
+    for (const disposable of this.disposables) {
+      await disposable.dispose();
+    }
+    this.disposables.length = 0;
   }
 }

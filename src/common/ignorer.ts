@@ -16,7 +16,13 @@ type IgnorerOptions = {
 };
 
 export abstract class Ignorer<T> implements AsyncDisposable {
+  protected static async init<T>(ignorer: Ignorer<T>): Promise<void> {
+    await ignorer.#getGlobalExcludesFilename();
+    await ignorer.#loadRepoIgnore();
+  }
+
   readonly #gitLocalExcludeFilename: string;
+  readonly #logger: LoggerController;
   #gitGlobalExcludesFilename: string | undefined;
   #localIgnore: Ignore | undefined;
   #globalIgnore: Ignore | undefined;
@@ -24,15 +30,6 @@ export abstract class Ignorer<T> implements AsyncDisposable {
   #interval: ReturnType<typeof setInterval> | undefined;
 
   protected readonly root: string;
-  readonly #logger: LoggerController;
-  protected get logger(): Logger {
-    return this.#logger.logger;
-  }
-
-  protected static async init<T>(ignorer: Ignorer<T>): Promise<void> {
-    await ignorer.#getGlobalExcludesFilename();
-    await ignorer.#loadRepoIgnore();
-  }
 
   protected constructor({ root, logger, watch }: IgnorerOptions) {
     this.root = path.resolve(root);
@@ -77,22 +74,6 @@ export abstract class Ignorer<T> implements AsyncDisposable {
         void this.#getGlobalExcludesFilename();
       }, 10000);
     }
-  }
-
-  protected abstract onChange(): void;
-
-  public abstract isIgnored(file: T): boolean;
-  public abstract findUnignoredFiles(glob: string): Promise<T[]>;
-
-  protected ignorable(): Ignore {
-    const ig = ignore();
-    if (this.#globalIgnore) {
-      ig.add(this.#globalIgnore);
-    }
-    if (this.#localIgnore) {
-      ig.add(this.#localIgnore);
-    }
-    return ig;
   }
 
   async #getGlobalExcludesFilename(): Promise<void> {
@@ -154,6 +135,26 @@ export abstract class Ignorer<T> implements AsyncDisposable {
           }
         });
     }
+  }
+
+  protected get logger(): Logger {
+    return this.#logger.logger;
+  }
+
+  protected abstract onChange(): void;
+
+  public abstract isIgnored(file: T): boolean;
+  public abstract findUnignoredFiles(glob: string): Promise<T[]>;
+
+  protected ignorable(): Ignore {
+    const ig = ignore();
+    if (this.#globalIgnore) {
+      ig.add(this.#globalIgnore);
+    }
+    if (this.#localIgnore) {
+      ig.add(this.#localIgnore);
+    }
+    return ig;
   }
 
   public async dispose(): Promise<void> {

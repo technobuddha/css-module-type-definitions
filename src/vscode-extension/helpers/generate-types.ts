@@ -14,6 +14,8 @@ export async function generateTypes(
   { options, logger }: GenerateTypesOptions,
 ): Promise<void> {
   try {
+    logger.info(`Generating types for ${uri.fsPath}`);
+
     return await workspace.fs
       .readFile(uri)
       .then(workspace.decode)
@@ -33,9 +35,14 @@ export async function generateTypes(
                       logger.info(fileOperation(filename, 'updated'));
                     }
                   });
-              } catch {
-                await workspace.fs.writeFile(fileUri, await workspace.encode(content));
-                logger.info(fileOperation(filename, 'created'));
+              } catch (e) {
+                const error = toError(e);
+                if (error.code === 'FileNotFound') {
+                  await workspace.fs.writeFile(fileUri, await workspace.encode(content));
+                  logger.info(fileOperation(filename, 'created'));
+                } else {
+                  logger.error(error, `Failed to read file ${fileUri.fsPath}`);
+                }
               }
             }),
           ).then(() => undefined),

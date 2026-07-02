@@ -22,14 +22,10 @@ type FileIgnorerOptions = {
 };
 
 export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
-  protected readonly gitIgnores: GitIgnore[] = [];
-  protected readonly ignored: Map<string, Ignore> = new Map();
-  #watcher: FSWatcher | undefined;
-
   public static async create({ root, logger, watch }: FileIgnorerOptions): Promise<FileIgnorer> {
     const ignorer = new FileIgnorer({ root, logger, watch });
 
-    await Ignorer.init(ignorer);
+    await super.init(ignorer);
     await ignorer.gatherGitIgnores();
 
     for (const { dir } of ignorer.gitIgnores) {
@@ -40,6 +36,10 @@ export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
 
     return ignorer;
   }
+
+  #watcher: FSWatcher | undefined;
+  protected readonly gitIgnores: GitIgnore[] = [];
+  protected readonly ignored: Map<string, Ignore> = new Map();
 
   protected constructor({ root, logger, watch }: FileIgnorerOptions) {
     super({ root, logger, watch });

@@ -30,15 +30,6 @@ type OptionatorOptions = {
 };
 
 export class Optionator implements LoggerController, AsyncDisposable {
-  readonly #top: PartialOptions = {};
-  readonly #eventTarget: EventTarget = new EventTarget();
-  readonly #listeners: Set<() => void> = new Set();
-  readonly #baseLogger: Logger;
-  #watcher: FSWatcher | undefined;
-  #vite: ViteCss | undefined;
-  #cmtd: Options | undefined;
-  #options = normalizeOptions(defaultOptions);
-
   public static async create(
     top: PartialOptions = {},
     { watch = false, vite, logger = stdioLogger }: OptionatorOptions = {},
@@ -107,40 +98,19 @@ export class Optionator implements LoggerController, AsyncDisposable {
     return optionator;
   }
 
+  readonly #top: PartialOptions = {};
+  readonly #eventTarget: EventTarget = new EventTarget();
+  readonly #listeners: Set<() => void> = new Set();
+  readonly #baseLogger: Logger;
+  #watcher: FSWatcher | undefined;
+  #vite: ViteCss | undefined;
+  #cmtd: Options | undefined;
+  #options = normalizeOptions(defaultOptions);
+
   private constructor(top: PartialOptions, baseLogger: Logger) {
     this.#top = top;
     this.#baseLogger = baseLogger;
     this.#options = this.compileOptions();
-  }
-
-  public get logger(): Logger {
-    return loggerForLevel(this.#baseLogger, this.#options.logLevel);
-  }
-
-  public get options(): NormalizedOptions {
-    return this.#options;
-  }
-
-  public get globIsCss(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
-
-    if (extensions.length === 0) {
-      return modulePattern;
-    } else if (extensions.length === 1) {
-      return `${modulePattern}.${extensions[0]}`;
-    }
-
-    return `${modulePattern}.{${extensions.join(',')}}`;
-  }
-
-  public get globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
-
-    if (extensions.length === 0) {
-      return `${modulePattern}.d{.ts,.ts.map}`;
-    }
-
-    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
   private compileOptions(): NormalizedOptions {
@@ -228,11 +198,6 @@ export class Optionator implements LoggerController, AsyncDisposable {
     });
   }
 
-  public onChange(listener: () => void): void {
-    this.#listeners.add(listener);
-    this.#eventTarget.addEventListener('change', listener);
-  }
-
   private async optionsChanged(): Promise<void> {
     const options = this.compileOptions();
 
@@ -240,6 +205,42 @@ export class Optionator implements LoggerController, AsyncDisposable {
       this.#options = options;
       this.#eventTarget.dispatchEvent(new Event('change'));
     }
+  }
+
+  public get logger(): Logger {
+    return loggerForLevel(this.#baseLogger, this.#options.logLevel);
+  }
+
+  public get options(): NormalizedOptions {
+    return this.#options;
+  }
+
+  public get globIsCss(): string {
+    const { modulePattern, extensions } = this.#options.cssModules;
+
+    if (extensions.length === 0) {
+      return modulePattern;
+    }
+    if (extensions.length === 1) {
+      return `${modulePattern}.${extensions[0]}`;
+    }
+
+    return `${modulePattern}.{${extensions.join(',')}}`;
+  }
+
+  public get globIsTypeDefinition(): string {
+    const { modulePattern, extensions } = this.#options.cssModules;
+
+    if (extensions.length === 0) {
+      return `${modulePattern}.d{.ts,.ts.map}`;
+    }
+
+    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
+  }
+
+  public onChange(listener: () => void): void {
+    this.#listeners.add(listener);
+    this.#eventTarget.addEventListener('change', listener);
   }
 
   public async dispose(): Promise<void> {

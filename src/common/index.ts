@@ -16,6 +16,7 @@ export {
   type NormalizedOptions,
   normalizeOptions,
   type Options,
+  type OptionsController,
   type PartialOptions,
 } from './options.ts';
 export {
@@ -25,5 +26,6 @@ export {
   type ViteCss,
 } from './read-vite-config.ts';
 export { remove } from './remove.ts';
+export { removeInlineSourceMap } from './remove-inline-source-map.ts';
 export { update } from './update.ts';
 export { watch } from './watch.ts';

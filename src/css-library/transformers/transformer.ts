@@ -25,16 +25,10 @@ export type TransformerArguments = {
 
 export async function transformer(
   css: string,
-  { filename, directory, options, compilerOptions, logger }: TransformerArguments,
+  args: TransformerArguments,
 ): Promise<TransformerReturn> {
+  const { filename } = args;
   const { ext } = path.parse(filename);
-  const args = {
-    filename,
-    directory,
-    options,
-    logger,
-    compilerOptions,
-  };
 
   switch (ext) {
     case '.less': {

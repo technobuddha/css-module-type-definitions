@@ -1,16 +1,19 @@
-export interface Offset {
-  /**
-   * zero-based index
-   */
+export type Position = {
   line: number;
-  /**
-   * zero-based index
-   */
   column: number;
-}
+};
 
-export function getPositionOfOffset(text: string, offset: number): Offset {
-  const result: Offset = {
+export type MappedPosition = Position & {
+  source: string;
+};
+
+export type Range = {
+  start: Position;
+  end: Position;
+};
+
+export function getPositionOfOffset(text: string, offset: number): Position {
+  const result: Position = {
     line: 0,
     column: 0,
   };
@@ -28,7 +31,7 @@ export function getPositionOfOffset(text: string, offset: number): Offset {
   return result.column < 0 ? { line: result.line, column: 0 } : result;
 }
 
-export function offsetAdd(base: Offset, delta: Offset): Offset {
+export function positionAdd(base: Position, delta: Position): Position {
   return {
     line: base.line + delta.line,
     column: base.column + delta.column,

@@ -1,3 +1,9 @@
+.a1,
+.a2,
+.a3 {
+  content: 'multiple selectors';
+}
+
 .abmigigous {
   color: red;
 }

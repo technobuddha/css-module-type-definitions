@@ -51,7 +51,7 @@ export async function generateTypes(
     })
     .catch((error) => {
       logger.error(
-        `Error processing file ${file}: ${error instanceof Error ? error : String(error)}`,
+        `Error processing file ${file}: ${Error.isError(error) ? error : String(error)}`,
       );
     });
 }

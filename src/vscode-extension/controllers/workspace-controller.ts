@@ -1,15 +1,21 @@
 import { type Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { type Logger, type LoggerController, type NormalizedOptions } from '../../common/index.ts';
+import {
+  type Logger,
+  type LoggerController,
+  type NormalizedOptions,
+  type OptionsController,
+} from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 
 import { FolderController } from './folder-controller.ts';
 import { VSDisposable } from './vs-disposable.ts';
 
-export class WorkspaceController extends VSDisposable implements LoggerController {
-  public readonly logger: Logger = createLogger();
-  readonly #folders: Map<WorkspaceFolder, FolderController> = new Map();
+export class WorkspaceController
+  extends VSDisposable
+  implements LoggerController, OptionsController
+{
 
   public static async create(): Promise<WorkspaceController> {
     const controller = new WorkspaceController();
@@ -18,6 +24,10 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
 
     return controller;
   }
+
+  readonly #folders: Map<WorkspaceFolder, FolderController> = new Map();
+  public readonly logger: Logger = createLogger();
+
 
   public constructor() {
     super();
@@ -39,7 +49,7 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
 
   private async updateFolders(): Promise<void> {
     if (workspace.workspaceFolders) {
-      for (const [folder, controller] of Array.from(this.#folders.entries())) {
+      for (const [folder, controller] of Array.from(this.#folders)) {
         if (!workspace.workspaceFolders.includes(folder)) {
           await controller.dispose();
           this.#folders.delete(folder);
@@ -89,7 +99,7 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
   public override async dispose(): Promise<void> {
     await super.dispose();
 
-    for (const [folder, controller] of Array.from(this.#folders.entries())) {
+    for (const [folder, controller] of Array.from(this.#folders)) {
       await controller.dispose();
       this.#folders.delete(folder);
     }

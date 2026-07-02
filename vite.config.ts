@@ -11,9 +11,15 @@ export default defineConfig({
   devtools: true,
   plugins: [pluginCssModuleTypeDefinitions(), inspect()],
   css: {
+    preprocessorOptions: {
+      less: {
+        additionalData: '.fubar { color: teal; }',
+      },
+    },
     modules: {
-      //localsConvention: 'camelCase',
-      //generateScopedName: '[name]__[local]___[hash:base64:5]',
+      exportGlobals: true,
+      localsConvention: 'camelCase',
+      generateScopedName: '[name]_[local]_[hash:base64:5]',
     },
   },
 });
