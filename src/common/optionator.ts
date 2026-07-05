@@ -182,10 +182,10 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#top?.cssModules?.dtsFooter ??
           this.#cmtd?.cssModules?.dtsFooter ??
           defaultOptions.cssModules.dtsFooter,
-        generateDtsOnSave:
-          this.#top?.cssModules?.generateDtsOnSave ??
-          this.#cmtd?.cssModules?.generateDtsOnSave ??
-          defaultOptions.cssModules.generateDtsOnSave,
+        generateDts:
+          this.#top?.cssModules?.generateDts ??
+          this.#cmtd?.cssModules?.generateDts ??
+          defaultOptions.cssModules.generateDts,
         modulePattern:
           this.#top?.cssModules?.modulePattern ??
           this.#cmtd?.cssModules?.modulePattern ??
@@ -215,7 +215,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
     return this.#options;
   }
 
-  public get globIsCss(): string {
+  public get globIsCssModule(): string {
     const { modulePattern, extensions } = this.#options.cssModules;
 
     if (extensions.length === 0) {

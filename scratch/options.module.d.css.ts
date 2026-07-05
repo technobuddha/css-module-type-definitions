@@ -9,23 +9,24 @@
 
 // prettier-ignore
 type Options = {
-  readonly 'a1': 'options-module_a1_dSEWJ';
-  readonly 'a2': 'options-module_a2_M030-';
-  readonly 'a3': 'options-module_a3_gd3aB';
-  readonly 'abmigigous': 'options-module_abmigigous_lRyl-';
-  readonly 'local': 'options-module_local_ye3I6';
-  readonly 'camelCase': 'options-module_camelCase_8IpK9';
-  readonly 'PascalCase': 'options-module_PascalCase_MylXC';
-  readonly 'pascalCase': 'options-module_PascalCase_MylXC';
-  readonly 'kebab-case': 'options-module_kebab-case_cFBuN';
-  readonly 'kebabCase': 'options-module_kebab-case_cFBuN';
-  readonly 'snake_case': 'options-module_snake_case_Xgmh6';
-  readonly 'snakeCase': 'options-module_snake_case_Xgmh6';
-  readonly 'UPPERCASE': 'options-module_UPPERCASE_Wed-g';
-  readonly 'uppercase': 'options-module_UPPERCASE_Wed-g';
-  readonly 'lowercase': 'options-module_lowercase_UyJBX';
-  readonly 'SCREAMING_SNAKE_CASE': 'options-module_SCREAMING_SNAKE_CASE_pWNtr';
-  readonly 'screamingSnakeCase': 'options-module_SCREAMING_SNAKE_CASE_pWNtr';
+  readonly 'a1': 'options-module_a1_Df7PT';
+  readonly 'a2': 'options-module_a2_P9GTk';
+  readonly 'a3': 'options-module_a3_WRvHe';
+  readonly 'abmigigous': 'options-module_abmigigous_-mPRD';
+  readonly 'local': 'options-module_local_m-vNK';
+  readonly 'global': 'global';
+  readonly 'camelCase': 'options-module_camelCase_fVi10';
+  readonly 'PascalCase': 'options-module_PascalCase_bAM48';
+  readonly 'pascalCase': 'options-module_PascalCase_bAM48';
+  readonly 'kebab-case': 'options-module_kebab-case_iyYyS';
+  readonly 'kebabCase': 'options-module_kebab-case_iyYyS';
+  readonly 'snake_case': 'options-module_snake_case_3Zal4';
+  readonly 'snakeCase': 'options-module_snake_case_3Zal4';
+  readonly 'UPPERCASE': 'options-module_UPPERCASE_2Y0ua';
+  readonly 'uppercase': 'options-module_UPPERCASE_2Y0ua';
+  readonly 'lowercase': 'options-module_lowercase_jLtgh';
+  readonly 'SCREAMING_SNAKE_CASE': 'options-module_SCREAMING_SNAKE_CASE_eolrA';
+  readonly 'screamingSnakeCase': 'options-module_SCREAMING_SNAKE_CASE_eolrA';
 };
 
 declare const options: Options;

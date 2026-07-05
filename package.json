@@ -41,27 +41,27 @@
   },
   "dependencies": {
     "@technobuddha/library": "2.1.0-154",
-    "@vitejs/devtools": "0.3.1",
+    "@vitejs/devtools": "0.3.4",
     "chalk": "5.6.2",
     "chokidar": "5.0.0",
     "commander": "15.0.0",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "glob": "13.0.6",
     "ignore": "7.0.5",
-    "less": "4.6.4",
+    "less": "4.6.7",
     "magic-string": "0.30.21",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.16",
     "postcss-import": "^16.1.1",
-    "postcss-modules": "6.0.1",
-    "postcss-selector-parser": "7.1.1",
-    "sass": "1.100.0",
+    "postcss-modules": "9.0.0",
+    "postcss-selector-parser": "7.1.4",
+    "sass": "1.101.0",
     "source-map-js": "1.2.1",
     "stylus": "0.64.0",
     "sugarss": "5.0.1",
     "typescript": "6.0.3",
     "vite": "8.1.2",
     "vscode-uri": "3.1.0",
-    "webpack": "5.107.1"
+    "webpack": "5.108.3"
   },
   "devDependencies": {
     "@babel/parser": "8.0.0",
@@ -74,18 +74,18 @@
     "@types/node": "25.9.4",
     "@types/postcss-import": "^14.0.3",
     "@types/stylus": "^0.48.43",
-    "@types/vscode": "1.120.0",
+    "@types/vscode": "1.125.0",
     "closest-match": "1.3.3",
     "cspell": "10.0.1",
     "fast-glob": "3.3.3",
     "husky": "9.1.7",
     "json5": "2.2.3",
-    "ts-loader": "9.5.7",
+    "ts-loader": "9.6.2",
     "tsx": "4.22.4",
     "type-fest": "5.7.0",
     "vite-plugin-inspect": "11.4.1",
     "vscode-css-languageservice": "6.3.10",
-    "webpack-cli": "7.0.2"
+    "webpack-cli": "7.1.0"
   },
   "resolutions": {
     "postcss": "^8.5.10",
@@ -93,7 +93,7 @@
   },
   "engines": {
     "node": ">=25.0.0",
-    "vscode": "^1.120.0"
+    "vscode": "^1.5.0"
   },
   "technobuddhaProject": {
     "created": "2026-05-26T15:54:59.595Z"

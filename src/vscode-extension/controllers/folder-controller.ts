@@ -2,11 +2,10 @@ import path from 'node:path';
 
 import { isWithinDirectory, pathDepth, toError } from '@technobuddha/library';
 import ignore, { type Ignore } from 'ignore';
-import { type Disposable, RelativePattern, workspace, type WorkspaceFolder } from 'vscode';
-import { type URI, Utils } from 'vscode-uri';
+import { type Disposable, RelativePattern, Uri, workspace, type WorkspaceFolder } from 'vscode';
+import { Utils } from 'vscode-uri';
 
 import {
-  CONFIG_EXTENSIONS,
   defaultOptions,
   fileOperation,
   Ignorer,
@@ -19,10 +18,7 @@ import {
   type ViteCss,
 } from '../../common/index.ts';
 import { locateCMTDConfigurationFile, readCMTDConfig } from '../../common/read-cmtd-config.ts';
-
-// import { SETTINGS_PREFIX } from '../constants.ts';
-import { deleteTypes } from '../helpers/delete-types.ts';
-import { generateTypes } from '../helpers/generate-types.ts';
+import { type CssInfo, generateTypesFromCss } from '../../css-library/generate-types-from-css.ts';
 
 const reIsRelative = new RegExp(`^\\.{1,2}${path.sep}`, 'v');
 
@@ -31,7 +27,7 @@ type FolderControllerOptions = {
   logger: LoggerController;
 };
 
-export class FolderController extends Ignorer<URI> implements Disposable {
+export class FolderController extends Ignorer<Uri> implements Disposable {
   public static async create({
     folder,
     logger,
@@ -59,6 +55,7 @@ export class FolderController extends Ignorer<URI> implements Disposable {
   }
 
   #options = normalizeOptions(defaultOptions);
+  readonly #types: Map<string, CssInfo> = new Map();
   private readonly folder: WorkspaceFolder;
   private cmtdConfigFile: string | undefined;
   private cmtdConfig: Options | undefined;
@@ -74,63 +71,65 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     super({ root: folder.uri.fsPath, watch: true, logger });
     this.folder = folder;
 
-    const vwatcher = workspace.createFileSystemWatcher(
-      new RelativePattern(folder, `vite.config{${CONFIG_EXTENSIONS.join(',')}}`),
-    );
+    const watcher = workspace.createFileSystemWatcher(new RelativePattern(folder, '**/*'));
 
-    const respond = (_action: 'add' | 'change' | 'unlink') => async () => this.loadViteConfig();
+    const respond = (action: 'add' | 'change' | 'unlink') => async (uri: Uri) => {
+      if (this.isIgnored(uri)) {
+        return;
+      }
 
-    const gitWatcher = workspace.createFileSystemWatcher(
-      new RelativePattern(folder, '**/.gitignore'),
-    );
+      if (uri.fsPath === this.viteConfigFile) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        await this.loadViteConfig();
+        await this.loadOptions();
+        await this.getAllTypes();
+        return;
+      }
 
-    const pattern = `**/${this.globIsCss()}`;
-    const cssWatcher = workspace.createFileSystemWatcher(new RelativePattern(folder, pattern));
+      if (uri.fsPath === this.cmtdConfigFile) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        await this.loadCMTDConfig();
+        await this.loadOptions();
+        await this.getAllTypes();
+        return;
+      }
+
+      if (Utils.basename(uri) === '.gitignore') {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        if (action === 'unlink') {
+          this.removeGitIgnore(uri);
+        } else {
+          await this.readGitIgnore(uri);
+        }
+        this.buildIgnored();
+        return;
+      }
+
+      if (this.isCssModule(uri)) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        if (action === 'unlink') {
+          await this.deleteTypes(uri);
+        } else {
+          await this.getTypes(uri, false);
+        }
+        return;
+      }
+
+      if (this.isCss(uri)) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        for (const [file, { includedFiles }] of this.#types) {
+          if (includedFiles.has(uri.fsPath)) {
+            await this.getTypes(Uri.parse(file), false);
+          }
+        }
+      }
+    };
 
     this.disposables.push(
-      vwatcher,
-      vwatcher.onDidCreate(respond('add')),
-      vwatcher.onDidChange(respond('change')),
-      vwatcher.onDidDelete(respond('unlink')),
-
-      gitWatcher,
-      gitWatcher.onDidChange(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'change'));
-        await this.readGitIgnore(uri);
-        this.buildIgnored();
-      }),
-      gitWatcher.onDidCreate(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'add'));
-        await this.readGitIgnore(uri);
-        this.buildIgnored();
-      }),
-      gitWatcher.onDidDelete(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'unlink'));
-        this.removeGitIgnore(uri);
-        this.buildIgnored();
-      }),
-
-      cssWatcher,
-      cssWatcher.onDidChange(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'change'));
-        const options = this.#options;
-        if (options.cssModules.generateDtsOnSave && this.isCSS(uri) && !this.isIgnored(uri)) {
-          await generateTypes(uri, { options, logger: this.logger });
-        }
-      }),
-      cssWatcher.onDidCreate(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'add'));
-        const options = this.#options;
-        if (options.cssModules.generateDtsOnSave && this.isCSS(uri) && !this.isIgnored(uri)) {
-          await generateTypes(uri, { options, logger: this.logger });
-        }
-      }),
-      cssWatcher.onDidDelete(async (uri) => {
-        this.logger.debug(fileOperation(uri.fsPath, 'unlink'));
-        if (this.#options.cssModules.generateDtsOnSave && this.isCSS(uri) && !this.isIgnored(uri)) {
-          await deleteTypes(uri, { logger: this.logger });
-        }
-      }),
+      watcher,
+      watcher.onDidCreate(respond('add')),
+      watcher.onDidChange(respond('change')),
+      watcher.onDidDelete(respond('unlink')),
     );
   }
 
@@ -199,9 +198,8 @@ export class FolderController extends Ignorer<URI> implements Disposable {
           defaultOptions.cssModules.localsConvention,
         dtsHeader: this.cmtdConfig?.cssModules?.dtsHeader ?? defaultOptions.cssModules.dtsHeader,
         dtsFooter: this.cmtdConfig?.cssModules?.dtsFooter ?? defaultOptions.cssModules.dtsFooter,
-        generateDtsOnSave:
-          this.cmtdConfig?.cssModules?.generateDtsOnSave ??
-          defaultOptions.cssModules.generateDtsOnSave,
+        generateDts:
+          this.cmtdConfig?.cssModules?.generateDts ?? defaultOptions.cssModules.generateDts,
         modulePattern:
           this.cmtdConfig?.cssModules?.modulePattern ?? defaultOptions.cssModules.modulePattern,
         extensions: this.cmtdConfig?.cssModules?.extensions ?? defaultOptions.cssModules.extensions,
@@ -210,8 +208,8 @@ export class FolderController extends Ignorer<URI> implements Disposable {
 
     return undefined;
   }
-  // --- //
-  private async readGitIgnore(file: URI): Promise<void> {
+
+  private async readGitIgnore(file: Uri): Promise<void> {
     try {
       const dir = path.dirname(workspace.asRelativePath(file, false));
       const content = await workspace.fs.readFile(file).then(workspace.decode);
@@ -221,7 +219,7 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     }
   }
 
-  private removeGitIgnore(file: URI): void {
+  private removeGitIgnore(file: Uri): void {
     const dir = path.dirname(workspace.asRelativePath(file, false));
     this.gitIgnores.delete(dir);
   }
@@ -267,7 +265,122 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     return this.#options;
   }
 
-  public isIgnored(file: URI): boolean {
+  public async getTypes(uri: Uri, cache = true): Promise<CssInfo | undefined> {
+    if (cache && this.#types.has(uri.fsPath)) {
+      return this.#types.get(uri.fsPath)!;
+    }
+
+    const { logger, options } = this;
+
+    if (this.isCssModule(uri) && !this.isIgnored(uri)) {
+      try {
+        const result = await workspace.fs
+          .readFile(uri)
+          .then(workspace.decode)
+          .then(async (content) => generateTypesFromCss(content, uri.fsPath, { options, logger }));
+
+        if (result) {
+          if (options.cssModules.generateDts) {
+            const { files } = result;
+            await Promise.all(
+              Object.entries(files).map(async ([filename, content]) => {
+                const fileUri = uri.with({ path: filename });
+
+                try {
+                  await workspace.fs
+                    .readFile(fileUri)
+                    .then(workspace.decode)
+                    .then(async (existingContent) => {
+                      if (existingContent !== content) {
+                        await workspace.fs.writeFile(fileUri, await workspace.encode(content));
+                        logger.info(fileOperation(filename, 'updated'));
+                      }
+                    });
+                } catch (e) {
+                  const error = toError(e);
+                  if (error.code === 'FileNotFound') {
+                    await workspace.fs.writeFile(fileUri, await workspace.encode(content));
+                    logger.info(fileOperation(filename, 'created'));
+                  } else {
+                    logger.error(error, `Failed to read file ${fileUri.fsPath}`);
+                  }
+                }
+              }),
+            );
+          }
+
+          this.#types.set(uri.fsPath, result);
+          return result;
+        }
+        this.#types.delete(uri.fsPath);
+        return undefined;
+      } catch (e) {
+        logger.error(toError(e));
+      }
+    }
+    return undefined;
+  }
+
+  public async getAllTypes(): Promise<void> {
+    const { logger, options } = this;
+
+    const typedefs = new Set(
+      (await this.findUnignoredFiles(`**/${this.globIsTypeDefinition()}`)).map((uri) => uri.fsPath),
+    );
+
+    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+      for (const uri of uris) {
+        const result = await this.getTypes(uri, false);
+        if (result && options.cssModules.generateDts) {
+          for (const file of Object.keys(result.files)) {
+            typedefs.delete(file);
+          }
+        }
+      }
+    });
+
+    for (const pathname of typedefs) {
+      await workspace.fs.delete(Uri.parse(pathname));
+      logger.info(fileOperation(pathname, 'deleted'));
+    }
+  }
+
+  public async deleteTypes(uri: Uri): Promise<void> {
+    const { dir, name, ext } = path.parse(uri.fsPath);
+
+    this.#types.delete(uri.fsPath);
+
+    for (const file of [
+      `${name}.d${ext}.ts`,
+      `${name}${ext}.d.ts`,
+      `${name}${ext}.map`,
+      `${name}.d${ext}.ts.map`,
+      `${name}${ext}.d.ts.map`,
+    ]) {
+      const generatedUri = uri.with({ path: path.join(dir, file) });
+      try {
+        await workspace.fs.delete(generatedUri).then(() => {
+          this.logger.debug(fileOperation(generatedUri.fsPath, 'deleted'));
+        });
+      } catch {}
+    }
+  }
+
+  public async deleteAllTypes(): Promise<void> {
+    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+      for (const uri of uris) {
+        await this.deleteTypes(uri);
+      }
+    });
+    await this.findUnignoredFiles(`**/${this.globIsTypeDefinition()}`).then(async (uris) => {
+      for (const uri of uris) {
+        await workspace.fs.delete(uri);
+        this.logger.info(fileOperation(uri.fsPath, 'deleted'));
+      }
+    });
+  }
+
+  public isIgnored(file: Uri): boolean {
     const filepath = workspace.asRelativePath(file, false);
     let parent = path.dirname(filepath);
 
@@ -281,8 +394,8 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     return false;
   }
 
-  public async findUnignoredFiles(pattern: string): Promise<URI[]> {
-    const result: URI[] = [];
+  public async findUnignoredFiles(pattern: string): Promise<Uri[]> {
+    const result: Uri[] = [];
 
     for (const file of await workspace.findFiles(new RelativePattern(this.folder, pattern))) {
       if (!this.isIgnored(file)) {
@@ -292,10 +405,18 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     return result;
   }
 
-  // --- //
-
   public globIsCss(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
+    const { extensions } = this.options.cssModules;
+
+    if (extensions.length === 1) {
+      return `*.${extensions[0]}`;
+    }
+
+    return `*.{${extensions.join(',')}}`;
+  }
+
+  public globIsCssModule(): string {
+    const { modulePattern, extensions } = this.options.cssModules;
 
     if (extensions.length === 1) {
       return `${modulePattern}.${extensions[0]}`;
@@ -305,16 +426,16 @@ export class FolderController extends Ignorer<URI> implements Disposable {
   }
 
   public globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
+    const { modulePattern, extensions } = this.options.cssModules;
 
     return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }
 
-  public isRelative(filename: string | URI): boolean {
+  public isRelative(filename: string | Uri): boolean {
     return reIsRelative.test(typeof filename === 'string' ? filename : filename.fsPath);
   }
 
-  public isCSS(filename: URI): boolean {
+  public isCss(filename: Uri): boolean {
     const folder = workspace.getWorkspaceFolder(filename);
     if (folder) {
       return path.matchesGlob(Utils.basename(filename), this.globIsCss());
@@ -322,8 +443,16 @@ export class FolderController extends Ignorer<URI> implements Disposable {
     return false;
   }
 
-  public isRelativeCSS(filename: URI): boolean {
-    return this.isRelative(filename) && this.isCSS(filename);
+  public isCssModule(filename: Uri): boolean {
+    const folder = workspace.getWorkspaceFolder(filename);
+    if (folder) {
+      return path.matchesGlob(Utils.basename(filename), this.globIsCssModule());
+    }
+    return false;
+  }
+
+  public isRelativeCSS(filename: Uri): boolean {
+    return this.isRelative(filename) && this.isCssModule(filename);
   }
 
   public override async dispose(): Promise<void> {

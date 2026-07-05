@@ -38,7 +38,7 @@ export async function watch({ root, optionator, ignorer }: UpdateOptions): Promi
           if (stats?.isFile()) {
             return (
               ignorer.isIgnored(rPath) ||
-              !path.matchesGlob(path.basename(rPath), optionator.globIsCss)
+              !path.matchesGlob(path.basename(rPath), optionator.globIsCssModule)
             );
           }
 

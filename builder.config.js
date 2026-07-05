@@ -38,6 +38,10 @@ const config = {
         command: 'webpack --mode=production',
       },
       {
+        display: 'install',
+        command: 'cd out && npm install',
+      },
+      {
         display: 'package',
         command: 'cd out && vsce package',
       }

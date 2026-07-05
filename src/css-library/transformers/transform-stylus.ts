@@ -25,10 +25,9 @@ export async function transformStylus(
           }
 
           const sourceMap = (styl as unknown as { sourcemap: RawSourceMap }).sourcemap;
-          // TODO move all the @imports to the top of the file and adjust the sourceMap accordingly.
-
           resolve({
             css,
+            includedFiles: new Set(styl.deps()),
             sourceMap,
           });
         });

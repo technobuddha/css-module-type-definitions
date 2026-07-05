@@ -22,7 +22,7 @@ if (import.meta.main) {
 
       // engines...
       packageJson.engines ??= {};
-      packageJson.engines.vscode = '^1.120.0';
+      packageJson.engines.vscode = '^1.125.0';
 
       packageJson.displayName = 'CSS Module Type Definitions';
       packageJson.preview = true;
@@ -94,7 +94,10 @@ if (import.meta.main) {
       );
 
       packageJson.type = 'commonjs';
-      delete packageJson.dependencies;
+      packageJson.dependencies = Object.fromEntries(
+        Object.entries(packageJson.dependencies ?? {}).filter(([key]) => key === 'stylus'),
+      );
+      //delete packageJson.dependencies;
       packageJson.devDependencies = {
         '@types/vscode': packageJson.devDependencies?.['@types/vscode'] ?? 'latest',
       };

@@ -16,7 +16,6 @@ export {
   type NormalizedOptions,
   normalizeOptions,
   type Options,
-  type OptionsController,
   type PartialOptions,
 } from './options.ts';
 export {

@@ -5,7 +5,6 @@ import postcss, { AtRule, type Node, Rule } from 'postcss';
 import postcssImport from 'postcss-import';
 import selectorParser from 'postcss-selector-parser';
 import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
-import { type CompilerOptions } from 'typescript';
 
 import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
 
@@ -21,20 +20,22 @@ type ClassPosition = {
 type ExtractClassRangesFromCssArguments = {
   options: NormalizedOptions;
   file: string;
-  compilerOptions?: CompilerOptions;
   logger: Logger;
 };
 
 export type ExtractedCss = {
-  css: string;
+  snippet: string;
   source: string;
   start: Position;
 };
-type ExtractClassRangesFromCssReturn = {
+
+export type ExtractClassRangesFromCssReturn = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  classes: Map<string, ExtractedCss>;
+  classes: Map<string, ExtractedCss[]>;
+  includedFiles: Set<string>;
 };
+
 /**
  * Extracts exported class-like identifiers and their source offsets from CSS content.
  *
@@ -63,7 +64,7 @@ type ExtractClassRangesFromCssReturn = {
  */
 export async function extractClassRangesFromCss(
   css: string,
-  { file, options, compilerOptions = {}, logger }: ExtractClassRangesFromCssArguments,
+  { file, options, logger }: ExtractClassRangesFromCssArguments,
 ): Promise<ExtractClassRangesFromCssReturn> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
@@ -72,24 +73,29 @@ export async function extractClassRangesFromCss(
     filename,
     directory,
     options,
-    compilerOptions,
     logger,
-  }).then(async ({ css, sourceMap }) =>
-    postcss()
-      .use(postcssImport({ root: directory }))
-      .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
-      .then(({ css, map }) => {
-        const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home' });
-        const smc = sourceMap ? new SourceMapConsumer(sourceMap) : undefined;
+  }).then(
+    async ({ css, sourceMap, includedFiles }) =>
+      postcss()
+        .use(postcssImport({ root: directory }))
+        .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
+        .then(({ css, map, messages }) => {
+          const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home' });
+          const smc = sourceMap ? new SourceMapConsumer(sourceMap) : undefined;
 
-        const lines = splitLines(css);
-        const classes: Map<string, ExtractedCss> = new Map();
+          const lines = splitLines(css);
+          const classes: Map<string, ExtractedCss[]> = new Map();
 
-        postcss()
-          .process(css, { from: path.basename(filename) })
-          .root.walk((node) => {
-            for (const { name } of walkNode(node, logger)) {
-              if (!classes.has(name)) {
+          for (const message of messages) {
+            if (message.type === 'dependency' && typeof message.file === 'string') {
+              includedFiles.add(message.file);
+            }
+          }
+
+          postcss()
+            .process(css, { from: path.basename(filename) })
+            .root.walk((node) => {
+              for (const { name } of walkNode(node, logger)) {
                 let source = path.relative(directory, file);
                 let start: Position = {
                   line: node.source?.start?.line ?? 1,
@@ -109,17 +115,21 @@ export async function extractClassRangesFromCss(
                   start = { line: mp.line, column: mp.column };
                 }
 
-                classes.set(name, {
-                  css: unindent(clip),
-                  source,
-                  start,
-                });
+                classes.set(name, [
+                  ...(classes.get(name) ?? ([] as ExtractedCss[])),
+                  {
+                    snippet: unindent(clip),
+                    source,
+                    start,
+                  },
+                ]);
               }
-            }
-          });
+            });
 
-        return { css, sourceMap, classes };
-      }),
+          return { css, sourceMap, classes, includedFiles };
+        }),
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // .catch((e) => logger.error(toError(e)) as any),
   );
 }
 

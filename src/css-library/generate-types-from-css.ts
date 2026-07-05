@@ -21,9 +21,10 @@ import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../c
 import { BANNER_MESSAGE } from './constants.ts';
 import { extractClassRangesFromCss, type ExtractedCss } from './extract-class-ranges-from-css.ts';
 
-type GenerateTypesFromCssReturn = {
+export type CssInfo = {
   files: Record<string, string>;
-  classes: Map<string, ExtractedCss>;
+  classes: Map<string, ExtractedCss[]>;
+  includedFiles: Set<string>;
 };
 
 export type GenerateTypesFromCssOptions = {
@@ -35,15 +36,15 @@ export type GenerateTypesFromCssOptions = {
 export async function generateTypesFromCss(
   css: string,
   filepath: string,
-  { options, logger, compilerOptions = {} }: GenerateTypesFromCssOptions,
-): Promise<GenerateTypesFromCssReturn> {
-  const filename = path.resolve(filepath);
+  { options, logger }: GenerateTypesFromCssOptions,
+): Promise<CssInfo> {
+  const file = path.resolve(filepath);
   // const directory = path.dirname(filename);
 
   const { cssModules } = options;
 
-  return extractClassRangesFromCss(css, { file: filename, options, compilerOptions, logger }).then(
-    async ({ css, classes }) => {
+  return extractClassRangesFromCss(css, { file, options, logger }).then(
+    async ({ css, classes, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
@@ -55,7 +56,7 @@ export async function generateTypesFromCss(
           }),
         )
         .process(removeInlineSourceMap(css), {
-          from: filename,
+          from: file,
           map: { inline: false },
         })
         .then(() => {
@@ -66,7 +67,7 @@ export async function generateTypesFromCss(
           }
 
           for (const classNames of Object.values(scopeClass)) {
-            let extracted: ExtractedCss | undefined;
+            let extracted: ExtractedCss[] | undefined;
             for (const className of classNames) {
               const e = classes.get(className);
               if (e) {
@@ -82,7 +83,7 @@ export async function generateTypesFromCss(
             }
           }
 
-          const parsed = path.parse(filename);
+          const parsed = path.parse(file);
 
           let variable = camelCase(parsed.name.replace(/\.module$/v, empty));
           let classname = pascalCase(variable);
@@ -104,7 +105,7 @@ export async function generateTypesFromCss(
             `${space.repeat(0)}type ${classname} = {`,
           ];
 
-          const { dir, name, ext } = path.parse(filename);
+          const { dir, name, ext } = path.parse(file);
           const dtsFile = `${name}.d${ext}.ts`;
           const mapFile = `${dtsFile}.map`;
 
@@ -113,43 +114,16 @@ export async function generateTypesFromCss(
             sourceRoot: empty,
           });
 
-          // const smc1 = sourceMap1 ? new SourceMapConsumer(sourceMap1) : null;
-          // const smc2 = sourceMap2 ? new SourceMapConsumer(sourceMap2) : null;
+          const classEntries = Array.from(
+            classes,
+            ([className, extracted]) => [className, extracted[0]] as const,
+          ).sort(([, a], [, b]) => a.start.line - b.start.line || a.start.column - b.start.column);
 
-          type MappedClass = {
-            source: string;
-            line: number;
-            column: number;
-          };
-          const mappedClasses = new Map<string, MappedClass>(
-            classes.entries().map(([className, extracted]) => {
-              const { source, start } = extracted;
-
-              // if (smc2) {
-              //   try {
-              //     start = originalPosition(smc2, start, logger);
-              //     // source = path.relative(dir, originalSource(smc2, start));
-              //   } catch (e) {
-              //     logger.error(toError(e));
-              //   }
-              // }
-
-              // if (smc1) {
-              //   try {
-              //     start = originalPosition(smc1, start, logger);
-              //   } catch (e) {
-              //     logger.error(toError(e));
-              //   }
-              // }
-
-              return [className, { source, ...start }];
-            }),
-          );
-
-          for (const [className, extracted] of Array.from(mappedClasses).sort(
-            ([, a], [, b]) => a.line - b.line || a.column - b.column,
-          )) {
-            const { source, line, column } = extracted;
+          for (const [className, extracted] of classEntries) {
+            const {
+              source,
+              start: { line, column },
+            } = extracted;
 
             smg.addMapping({
               source,
@@ -184,10 +158,11 @@ export async function generateTypesFromCss(
               [path.resolve(dir, mapFile)]: JSON.stringify(smg.toJSON()),
             },
             classes,
+            includedFiles,
           };
         })
         .catch((error) => {
-          logger.error(error);
+          logger.error(toError(error));
           throw toError(error);
         });
     },

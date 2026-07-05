@@ -1,7 +1,6 @@
 import path from 'node:path';
 
 import { type RawSourceMap } from 'source-map-js';
-import { type CompilerOptions } from 'typescript';
 
 import { type Logger } from '../../common/logger.ts';
 import { type NormalizedOptions } from '../../common/options.ts';
@@ -12,6 +11,7 @@ import { transformStylus } from './transform-stylus.ts';
 
 export type TransformerReturn = {
   css: string;
+  includedFiles: Set<string>;
   sourceMap?: RawSourceMap;
 };
 
@@ -19,7 +19,6 @@ export type TransformerArguments = {
   filename: string;
   directory: string;
   options: NormalizedOptions;
-  compilerOptions: CompilerOptions;
   logger: Logger;
 };
 
@@ -52,7 +51,7 @@ export async function transformer(
     }
 
     default: {
-      return { css };
+      return { css, includedFiles: new Set() };
     }
   }
 }

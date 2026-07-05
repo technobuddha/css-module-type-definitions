@@ -4,9 +4,14 @@ import { searchParentSync } from '@technobuddha/library';
 import ts from 'typescript';
 import { type Position, type TextDocument, Uri } from 'vscode';
 
-type ClickInfo = {
+type ClassInfo = {
   importUri: Uri;
   className: string;
+  variableName: string;
+};
+
+type ImportInfo = {
+  importUri: Uri;
   variableName: string;
 };
 
@@ -295,7 +300,46 @@ export class TSExtractor {
     return current;
   }
 
-  public async getClickInfo(): Promise<ClickInfo | null> {
+  private getVariableNameBeforeDot(
+    offset: number,
+  ): { variableName: string; identifierOffset: number } | null {
+    const sourceText = this.#document.getText();
+
+    let dotOffset = offset - 1;
+    while (dotOffset >= 0 && /\s/v.test(sourceText[dotOffset])) {
+      dotOffset--;
+    }
+
+    if (dotOffset < 0 || sourceText[dotOffset] !== '.') {
+      return null;
+    }
+
+    let endOffset = dotOffset - 1;
+    while (endOffset >= 0 && /\s/v.test(sourceText[endOffset])) {
+      endOffset--;
+    }
+
+    if (endOffset < 0) {
+      return null;
+    }
+
+    const identifierPart = /[$_\u{200C}\u{200D}\p{ID_Continue}]/v;
+    const identifier = /^[$_\p{ID_Start}][$_\u{200C}\u{200D}\p{ID_Continue}]*$/v;
+
+    let startOffset = endOffset;
+    while (startOffset >= 0 && identifierPart.test(sourceText[startOffset])) {
+      startOffset--;
+    }
+
+    const variableName = sourceText.slice(startOffset + 1, endOffset + 1);
+    if (!identifier.test(variableName)) {
+      return null;
+    }
+
+    return { variableName, identifierOffset: endOffset };
+  }
+
+  public async getClassInfo(): Promise<ClassInfo | null> {
     const startPosition = this.sourceFile.getPositionOfLineAndCharacter(
       this.#position.line,
       this.#position.character,
@@ -336,6 +380,44 @@ export class TSExtractor {
               }
             }
           }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public async getImportInfo(): Promise<ImportInfo | null> {
+    const offset = this.sourceFile.getPositionOfLineAndCharacter(
+      this.#position.line,
+      this.#position.character,
+    );
+
+    const variable = this.getVariableNameBeforeDot(offset);
+    if (!variable) {
+      return null;
+    }
+
+    const { variableName, identifierOffset } = variable;
+    const node = this.findDeepestNodeAtPosition(identifierOffset);
+
+    if (!node || !ts.isIdentifier(node) || node.text !== variableName) {
+      return null;
+    }
+
+    const symbol = this.typeChecker.getSymbolAtLocation(node);
+    if (!symbol?.declarations) {
+      return null;
+    }
+
+    for (const declaration of symbol.declarations) {
+      const importModule = this.getImportModuleFromDeclaration(declaration);
+
+      if (importModule) {
+        const importUri = await this.resolveImportPath(importModule);
+
+        if (importUri) {
+          return { importUri, variableName };
         }
       }
     }

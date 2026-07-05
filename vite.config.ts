@@ -11,11 +11,6 @@ export default defineConfig({
   devtools: true,
   plugins: [pluginCssModuleTypeDefinitions(), inspect()],
   css: {
-    preprocessorOptions: {
-      less: {
-        additionalData: '.fubar { color: teal; }',
-      },
-    },
     modules: {
       exportGlobals: true,
       localsConvention: 'camelCase',

@@ -13,7 +13,7 @@ export async function update({ optionator, ignorer }: UpdateOptions): Promise<vo
   );
 
   await ignorer
-    .findUnignoredFiles(`**/${optionator.globIsCss}`)
+    .findUnignoredFiles(`**/${optionator.globIsCssModule}`)
     .then(async (files) =>
       Promise.all(
         files.map(async (file) =>

@@ -14,7 +14,6 @@ export async function transformLess(
   { filename, directory, options }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const additionalData = options.preprocessor?.less?.additionalData;
-  // TODO sourceMap with additionalData
 
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     less
@@ -24,12 +23,13 @@ export async function transformLess(
         sourceMap: {},
         ...options,
       })
-      .then(({ css, map }) => {
+      .then(({ css, map, imports }) => {
         const sourceMap = map ? JSON.parse(map) : undefined;
 
         return {
           css: removeInlineSourceMap(css),
           sourceMap: fixSourceMap(sourceMap, { directory, relativeTo: 'directory' }),
+          includedFiles: new Set(imports),
         };
       })
       .catch((error: Less.RenderError) => {

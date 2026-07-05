@@ -137,11 +137,11 @@ export abstract class Ignorer<T> implements AsyncDisposable {
     }
   }
 
-  protected get logger(): Logger {
+  protected abstract onChange(): void;
+
+  public get logger(): Logger {
     return this.#logger.logger;
   }
-
-  protected abstract onChange(): void;
 
   public abstract isIgnored(file: T): boolean;
   public abstract findUnignoredFiles(glob: string): Promise<T[]>;

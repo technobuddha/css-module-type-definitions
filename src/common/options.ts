@@ -4,7 +4,6 @@ import {
   type SassPreprocessorOptions,
   type StylusPreprocessorOptions,
 } from 'vite';
-import { type WorkspaceFolder } from 'vscode';
 
 import { type LogLevel } from './logger.ts';
 
@@ -13,6 +12,8 @@ type LocalsConvention =
   | 'camelCaseOnly'
   | 'dashes'
   | 'dashesOnly'
+  | 'all'
+  | 'none'
   | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
 
 export interface Options {
@@ -35,22 +36,16 @@ export interface Options {
     globalModulePaths: RegExp[];
     exportGlobals: boolean;
     generateScopedName:
-      | string
-      | ((name: string, filename: string, css: string) => string)
-      | undefined;
+      string | ((name: string, filename: string, css: string) => string) | undefined;
     hashPrefix: string;
-    localsConvention: LocalsConvention | 'asIs';
+    localsConvention: LocalsConvention;
     extensions: string[];
     modulePattern: string;
     dtsHeader: string;
     dtsFooter: string;
-    generateDtsOnSave: boolean;
+    generateDts: boolean;
   };
 }
-
-export type OptionsController = {
-  options(folder: WorkspaceFolder): NormalizedOptions;
-};
 
 export type PartialOptions = {
   logLevel?: Options['logLevel'];
@@ -81,27 +76,21 @@ export const defaultOptions = Object.freeze<Options>({
     exportGlobals: false,
     generateScopedName: undefined,
     hashPrefix: empty,
-    localsConvention: 'asIs',
+    localsConvention: 'none',
     dtsHeader: empty,
     dtsFooter: empty,
-    generateDtsOnSave: true,
+    generateDts: true,
     extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
     modulePattern: '*.module',
   },
 });
 
 export function normalizeOptions(options: Options): NormalizedOptions {
-  const nOptions: NormalizedOptions = options as NormalizedOptions;
+  const nOptions: NormalizedOptions = options;
 
   const extensions = cull(nOptions.cssModules.extensions, { emptyStrings: true });
   if (extensions.length === 0) {
     nOptions.cssModules.extensions = defaultOptions.cssModules.extensions;
-  }
-  if (
-    options.cssModules.localsConvention === 'asIs' ||
-    options.cssModules.localsConvention === undefined
-  ) {
-    delete nOptions.cssModules.localsConvention;
   }
 
   return nOptions;
