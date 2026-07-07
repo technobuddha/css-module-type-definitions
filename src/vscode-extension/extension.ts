@@ -11,6 +11,7 @@ import {
   CMTDDefinitionProvider,
   CMTDHoverProvider,
   CMTDSelectorsCompletionProvider,
+  CSSReferenceProvider,
 } from './providers/index.ts';
 
 const codeSelector = [
@@ -41,8 +42,11 @@ export async function activate(context: ExtensionContext): Promise<void> {
       codeSelector,
       new CMTDSelectorsCompletionProvider({ workspaceController }),
       '.',
-      "'",
       '[',
+    ),
+    languages.registerReferenceProvider(
+      codeSelector,
+      new CSSReferenceProvider({ workspaceController }),
     ),
   );
 

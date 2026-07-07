@@ -40,7 +40,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-154",
+    "@technobuddha/library": "2.1.0-156",
     "@vitejs/devtools": "0.3.4",
     "chalk": "5.6.2",
     "chokidar": "5.0.0",
@@ -59,7 +59,7 @@
     "stylus": "0.64.0",
     "sugarss": "5.0.1",
     "typescript": "6.0.3",
-    "vite": "8.1.2",
+    "vite": "8.1.3",
     "vscode-uri": "3.1.0",
     "webpack": "5.108.3"
   },
@@ -68,7 +68,7 @@
     "@babel/traverse": "8.0.0",
     "@babel/types": "8.0.0",
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-107",
+    "@technobuddha/project": "1.0.0-109",
     "@types/json5": "2.2.0",
     "@types/less": "3.0.8",
     "@types/node": "25.9.4",
@@ -81,8 +81,8 @@
     "husky": "9.1.7",
     "json5": "2.2.3",
     "ts-loader": "9.6.2",
-    "tsx": "4.22.4",
-    "type-fest": "5.7.0",
+    "tsx": "4.23.0",
+    "type-fest": "5.8.0",
     "vite-plugin-inspect": "11.4.1",
     "vscode-css-languageservice": "6.3.10",
     "webpack-cli": "7.1.0"

@@ -10,7 +10,7 @@ import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { TSExtractor } from './ts-extractor.ts';
+import { TSExtractor } from './helpers/ts-extractor.ts';
 
 type CMTDDefinitionProviderOptions = {
   workspaceController: WorkspaceController;

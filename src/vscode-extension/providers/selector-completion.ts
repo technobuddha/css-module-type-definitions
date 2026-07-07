@@ -1,4 +1,4 @@
-import { empty } from '@technobuddha/library';
+import { empty, isJsVariable } from '@technobuddha/library';
 import {
   type CancellationToken,
   type CompletionContext,
@@ -15,7 +15,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { TSExtractor } from './ts-extractor.ts';
+import { TSExtractor } from './helpers/ts-extractor.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -39,11 +39,10 @@ export class CMTDSelectorsCompletionProvider implements CompletionItemProvider {
     }
 
     const folderController = this.#workspaceController.folderController(document.uri);
-    if (folderController) {
+    if (folderController && !folderController.options.cssModules.generateDts) {
       const tse = new TSExtractor(document, position);
 
       const importInfo = await tse.getImportInfo();
-
       if (importInfo) {
         const { importUri } = importInfo;
 
@@ -70,16 +69,10 @@ function toCompletionItem(
   position: Position,
 ): CompletionItem {
   const completionItem = new CompletionItem(label, CompletionItemKind.Keyword);
-
   if (triggerKind === CompletionTriggerKind.TriggerCharacter && triggerCharacter) {
     switch (triggerCharacter) {
       case '[': {
-        completionItem.insertText = `'${label}'`;
-        break;
-      }
-
-      case "'": {
-        completionItem.insertText = label;
+        completionItem.insertText = `'${label}']`;
         break;
       }
 
@@ -93,7 +86,7 @@ function toCompletionItem(
             empty,
           ),
         ];
-        completionItem.insertText = label.includes('-') ? `['${label}']` : `.${label}`;
+        completionItem.insertText = isJsVariable(label) ? `.${label}` : `['${label}']`;
         break;
       }
 

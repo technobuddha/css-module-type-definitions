@@ -4,7 +4,7 @@ import {
   camelCase,
   defaultBanner,
   empty,
-  isValidJsVariable,
+  isJsVariable,
   pascalCase,
   quote,
   space,
@@ -25,6 +25,7 @@ export type CssInfo = {
   files: Record<string, string>;
   classes: Map<string, ExtractedCss[]>;
   includedFiles: Set<string>;
+  aliases: Map<string, string[]>;
 };
 
 export type GenerateTypesFromCssOptions = {
@@ -66,6 +67,13 @@ export async function generateTypesFromCss(
             scopeClass[scoped].push(className);
           }
 
+          const aliases: Map<string, string[]> = new Map();
+          for (const classNames of Object.values(scopeClass)) {
+            for (const className of classNames) {
+              aliases.set(className, classNames);
+            }
+          }
+
           for (const classNames of Object.values(scopeClass)) {
             let extracted: ExtractedCss[] | undefined;
             for (const className of classNames) {
@@ -87,7 +95,7 @@ export async function generateTypesFromCss(
 
           let variable = camelCase(parsed.name.replace(/\.module$/v, empty));
           let classname = pascalCase(variable);
-          if (!isValidJsVariable(variable)) {
+          if (!isJsVariable(variable)) {
             variable = camelCase(parsed.ext.replace(/^\./v, empty));
             classname = pascalCase(variable);
           }
@@ -159,6 +167,7 @@ export async function generateTypesFromCss(
             },
             classes,
             includedFiles,
+            aliases,
           };
         })
         .catch((error) => {

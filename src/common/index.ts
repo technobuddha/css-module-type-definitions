@@ -1,5 +1,5 @@
 export { generateTypes } from '../css-library/generate-types.ts';
-export { CONFIG_EXTENSIONS } from './constants.ts';
+export { CODE_EXTENSIONS, CONFIG_EXTENSIONS } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
 export { Ignorer } from './ignorer.ts';

@@ -1,4 +1,4 @@
-import { empty } from '@technobuddha/library';
+import { empty, splitLines, unindent } from '@technobuddha/library';
 import {
   type CancellationToken,
   type Hover,
@@ -9,7 +9,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { TSExtractor } from './ts-extractor.ts';
+import { TSExtractor } from './helpers/ts-extractor.ts';
 
 export type CMTDHoverProviderOptions = {
   workspaceController: WorkspaceController;
@@ -29,14 +29,11 @@ export class CMTDHoverProvider implements HoverProvider {
   ): Promise<Hover | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
-      const { logger } = folderController;
       const tse = new TSExtractor(document, position);
 
       const clickInfo = await tse.getClassInfo();
       if (clickInfo) {
         const { importUri, className } = clickInfo;
-
-        logger.debug(`HoverProvider: importUri=${importUri}, className=${className}`);
 
         const types = await folderController.getTypes(importUri);
         if (types) {
@@ -44,11 +41,18 @@ export class CMTDHoverProvider implements HoverProvider {
 
           const extracted = classes.get(className);
           if (extracted) {
-            return {
-              contents: extracted.map(({ snippet }, index) =>
-                [index > 0 ? '- - -' : empty, `\`\`\`$css`, snippet, `\`\`\``].join('\n'),
-              ),
-            };
+            const md: string[] = [];
+            let first = true;
+
+            for (const { snippet } of extracted) {
+              if (!first) {
+                md.push('---', empty);
+              }
+              md.push('```css', ...splitLines(unindent(snippet)), '```', empty);
+              first = false;
+            }
+
+            return { contents: [md.join('\n')] };
           }
         }
       }
