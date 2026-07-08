@@ -9,16 +9,17 @@ import {
   defaultOptions,
   fileOperation,
   Ignorer,
+  locateCMTDConfigurationFile,
   locateViteConfigurationFile,
   type LoggerController,
   type NormalizedOptions,
   normalizeOptions,
   type Options,
+  readCMTDConfig,
   readViteConfig,
   type ViteCss,
 } from '../../common/index.ts';
-import { locateCMTDConfigurationFile, readCMTDConfig } from '../../common/read-cmtd-config.ts';
-import { type CssInfo, generateTypesFromCss } from '../../css-library/generate-types-from-css.ts';
+import { type CssInfo, generateTypesFromCss } from '../../css-library/index.ts';
 
 const reIsRelative = new RegExp(`^\\.{1,2}${path.sep}`, 'v');
 

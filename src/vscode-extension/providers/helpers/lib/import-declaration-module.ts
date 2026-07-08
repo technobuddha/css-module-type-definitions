@@ -1,6 +1,6 @@
 import { isImportDeclaration, isStringLiteral, type Node } from 'typescript';
 
-export function getImportDeclarationModule(node: Node): string | null {
+export function importDeclarationModule(node: Node): string | null {
   let current: Node | undefined = node;
 
   while (current) {

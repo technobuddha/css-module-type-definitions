@@ -5,5 +5,5 @@ void main.a;
 void main.m;
 void main.z;
 
-void all;
+void all.camelCase;
 void all.PascalCase;

@@ -10,7 +10,7 @@ import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { TSExtractor } from './helpers/ts-extractor.ts';
+import { getClassInfo } from './helpers/get-class-info.ts';
 
 type CMTDDefinitionProviderOptions = {
   workspaceController: WorkspaceController;
@@ -30,9 +30,7 @@ export class CMTDDefinitionProvider implements DefinitionProvider {
   ): Promise<Location | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController?.options.cssModules.generateDts === false) {
-      const tse = new TSExtractor(document, position);
-
-      const clickInfo = await tse.getClassInfo();
+      const clickInfo = await getClassInfo(document, position);
       if (clickInfo) {
         const { importUri, className } = clickInfo;
 

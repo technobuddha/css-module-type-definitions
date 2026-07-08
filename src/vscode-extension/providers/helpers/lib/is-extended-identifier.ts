@@ -1,3 +1,4 @@
+import { isSurrogateLow } from '@technobuddha/library';
 import { isIdentifierPart, ScriptTarget } from 'typescript';
 
 export function isExtendedIdentifier(sourceText: string, offset: number): boolean {
@@ -7,9 +8,9 @@ export function isExtendedIdentifier(sourceText: string, offset: number): boolea
     return false;
   }
 
-  if (character >= 0xdc00 && character <= 0xdfff && offset > 0) {
+  if (offset > 0 && isSurrogateLow(character)) {
     const previous = sourceText.codePointAt(offset - 1);
-    if (previous !== undefined && previous > 0xffff) {
+    if (previous != null && previous > 0xffff) {
       return isIdentifierPart(previous, ScriptTarget.Latest);
     }
   }

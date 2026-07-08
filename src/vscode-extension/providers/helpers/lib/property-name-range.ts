@@ -2,10 +2,15 @@ import { isStringLiteralLike, type SourceFile } from 'typescript';
 
 import { type AccessExpressionLike, isPropertyAccessExpressionLike } from './expression.ts';
 
-export function getPropertyNameRange(
+type PropertyNameRange = {
+  start: number;
+  end: number;
+};
+
+export function propertyNameRange(
   sourceFile: SourceFile,
   access: AccessExpressionLike,
-): { start: number; end: number } | null {
+): PropertyNameRange | null {
   if (isPropertyAccessExpressionLike(access)) {
     return {
       start: access.name.getStart(sourceFile),

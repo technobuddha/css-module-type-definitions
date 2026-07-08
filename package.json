@@ -68,7 +68,7 @@
     "@babel/traverse": "8.0.0",
     "@babel/types": "8.0.0",
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-109",
+    "@technobuddha/project": "1.0.0-116",
     "@types/json5": "2.2.0",
     "@types/less": "3.0.8",
     "@types/node": "25.9.4",
@@ -112,5 +112,5 @@
     "vite",
     "postcss"
   ],
-  "packageManager": "yarn@4.17.0"
+  "packageManager": "yarn@4.17.1"
 }

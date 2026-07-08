@@ -5,7 +5,7 @@ import {
   type Node,
 } from 'typescript';
 
-export function getImportEqualsModule(node: Node): string | null {
+export function importEqualsModule(node: Node): string | null {
   if (
     isImportEqualsDeclaration(node) &&
     isExternalModuleReference(node.moduleReference) &&

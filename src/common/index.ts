@@ -18,6 +18,7 @@ export {
   type Options,
   type PartialOptions,
 } from './options.ts';
+export { locateCMTDConfigurationFile, readCMTDConfig } from './read-cmtd-config.ts';
 export {
   locateViteConfigurationFile,
   readViteConfig,

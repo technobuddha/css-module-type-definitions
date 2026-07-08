@@ -9,7 +9,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { TSExtractor } from './helpers/ts-extractor.ts';
+import { getClassInfo } from './helpers/get-class-info.ts';
 
 export type CMTDHoverProviderOptions = {
   workspaceController: WorkspaceController;
@@ -29,9 +29,7 @@ export class CMTDHoverProvider implements HoverProvider {
   ): Promise<Hover | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
-      const tse = new TSExtractor(document, position);
-
-      const clickInfo = await tse.getClassInfo();
+      const clickInfo = await getClassInfo(document, position);
       if (clickInfo) {
         const { importUri, className } = clickInfo;
 
