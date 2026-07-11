@@ -30,11 +30,9 @@ export class FolderController extends FolderOptions implements Disposable {
     super({ folder, logger });
 
     this.eventTarget.addEventListener('options', async () => {
-      this.logger.debug('>>>>OPTIONS');
       await this.getAllTypes();
     });
     this.eventTarget.addEventListener('ignored', async () => {
-      this.logger.debug('>>>>IGNORED');
       await this.getAllTypes();
     });
 

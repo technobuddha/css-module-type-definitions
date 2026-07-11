@@ -2,6 +2,12 @@
 
 /** @type import('\@technobuddha/project/build').Builds */
 const config = {
+  default: {
+    steps: [
+      { build: 'compile' },
+      { build: 'bundle' },
+    ]
+  },
   compile: {
     steps: [
       {
@@ -30,9 +36,8 @@ const config = {
       },
     ],
   },
-  default: {
+  bundle: {
     steps: [
-      { build: 'compile' },
       {
         display: 'Webpack',
         command: 'webpack --mode=production',
@@ -49,7 +54,7 @@ const config = {
   },
   publish: {
     steps: [
-      { build: 'default' },
+      { build: 'compile' },
       {
         display: 'Version',
         command: 'yarn version prerelease',
@@ -57,7 +62,8 @@ const config = {
       {
         display: 'Publish',
         command: 'yarn npm publish --access=public',
-      }
+      },
+      { build: 'bundle' }
     ]
   }
 };

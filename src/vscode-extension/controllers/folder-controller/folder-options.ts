@@ -28,17 +28,15 @@ type FolderControllerOptions = {
 };
 
 export class FolderOptions extends FolderIgnorer implements Disposable {
-  public static override async init(controller: FolderIgnorer): Promise<void> {
+  public static override async init(controller: FolderOptions): Promise<void> {
     await super.init(controller);
 
-    if (controller instanceof this) {
-      controller.setCMTDConfigFile(await locateCMTDConfigurationFile(controller.folder.uri.fsPath));
-      controller.setViteConfigFile(await locateViteConfigurationFile(controller.folder.uri.fsPath));
+    controller.setCMTDConfigFile(await locateCMTDConfigurationFile(controller.folder.uri.fsPath));
+    controller.setViteConfigFile(await locateViteConfigurationFile(controller.folder.uri.fsPath));
 
-      await controller.readCMTDConfig();
-      await controller.readViteConfig();
-      controller.#options = controller.loadOptions();
-    }
+    await controller.readCMTDConfig();
+    await controller.readViteConfig();
+    controller.setOptions(controller.buildOptions());
   }
 
   #options = normalizeOptions(defaultOptions);
@@ -74,6 +72,10 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
     this.#viteConfigFile = file;
   }
 
+  private setOptions(options: NormalizedOptions): void {
+    this.#options = options;
+  }
+
   private async readCMTDConfig(): Promise<void> {
     this.#cmtdConfig =
       this.#cmtdConfigFile ? await readCMTDConfig(this.#cmtdConfigFile) : undefined;
@@ -85,14 +87,14 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
   }
 
   private changeOptions(): void {
-    const options = this.loadOptions();
+    const options = this.buildOptions();
     if (!deepEquals(this.#options, options)) {
       this.#options = options;
       this.eventTarget.dispatchEvent('options', { options });
     }
   }
 
-  private loadOptions(): NormalizedOptions {
+  private buildOptions(): NormalizedOptions {
     return normalizeOptions({
       logLevel: defaultOptions.logLevel,
       preprocessor: {
