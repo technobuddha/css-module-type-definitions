@@ -2,6 +2,7 @@ export { generateTypes } from '../css-library/generate-types.ts';
 export { CODE_EXTENSIONS, CONFIG_EXTENSIONS } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
+export { GitConfig } from './git-config.ts';
 export { Ignorer } from './ignorer.ts';
 export {
   defaultLogger,

@@ -1,13 +1,12 @@
-import { type Uri, workspace, type WorkspaceFolder } from 'vscode';
+import { type Disposable, type Uri, workspace, type WorkspaceFolder } from 'vscode';
 
 import { type Logger, type LoggerController } from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 
-import { FolderController } from './folder-controller.ts';
-import { VSDisposable } from './vs-disposable.ts';
+import { FolderController } from './folder-controller/index.ts';
 
-export class WorkspaceController extends VSDisposable implements LoggerController {
+export class WorkspaceController implements Disposable, LoggerController {
   public static async create(): Promise<WorkspaceController> {
     const controller = new WorkspaceController();
 
@@ -16,12 +15,11 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
     return controller;
   }
 
+  protected readonly disposables: Disposable[] = [];
   public readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
   public readonly logger: Logger = createLogger();
 
   public constructor() {
-    super();
-
     this.disposables.push(
       // workspace.onDidChangeConfiguration(async (event) => {
       //   if (event.affectsConfiguration(SETTINGS_PREFIX)) {
@@ -64,8 +62,11 @@ export class WorkspaceController extends VSDisposable implements LoggerControlle
     return undefined;
   }
 
-  public override async dispose(): Promise<void> {
-    await super.dispose();
+  public async dispose(): Promise<void> {
+    for (const disposable of this.disposables) {
+      await disposable.dispose();
+    }
+    this.disposables.length = 0;
 
     for (const [folder, controller] of Array.from(this.folders)) {
       await controller.dispose();
