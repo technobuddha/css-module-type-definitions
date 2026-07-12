@@ -11,11 +11,11 @@ const config = {
   compile: {
     steps: [
       {
-        display: 'Prepare',
+        display: 'prepare',
         command: ['rm -rf ./dist ./out', 'mkdir dist out'],
       },
       {
-        display: 'CMTD',
+        display: 'cmtd',
         command: 'tsc --build src',
       },
       {
@@ -23,23 +23,20 @@ const config = {
         command: './scripts/package-extension.ts',
       },
       {
-        display: 'LICENSE',
-        command: 'cp LICENSE.md out/LICENSE.md',
-      },
-      {
-        display: 'README',
-        command: 'cp README.md out/README.md',
-      },
-      {
         display: 'assets',
-        command: ['cp assets/icon/cmtd.png assets/extension/* out', 'cp assets/icon/cmtd.png dist/vscode-extension'],
+        command: [
+          'cp LICENSE.md out/LICENSE.md',
+          'cp README.md out/README.md',
+          'cp assets/icon/cmtd.png assets/extension/* out',
+          'cp assets/icon/cmtd.png dist/vscode-extension'
+        ],
       },
     ],
   },
   bundle: {
     steps: [
       {
-        display: 'Webpack',
+        display: 'webpack',
         command: 'webpack --mode=production',
       },
       {
@@ -47,7 +44,7 @@ const config = {
         command: 'cd out && npm install',
       },
       {
-        display: 'package',
+        display: 'vsix',
         command: 'cd out && vsce package',
       }
     ]

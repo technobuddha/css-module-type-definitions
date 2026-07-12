@@ -28,10 +28,11 @@ export class FolderIgnorer extends FolderBase implements Disposable {
       await GitConfig.watcher({ root: controller.folder.uri.fsPath, logger: controller }),
     );
 
-    workspace
+    await workspace
       .findFiles(new RelativePattern(controller.folder, '**/.gitignore'))
       .then(async (files) => {
         for (const file of files) {
+          controller.logger.debug(fileOperation(file.fsPath, 'configuration'));
           const dir = path.dirname(workspace.asRelativePath(file, false));
           try {
             const content = await workspace.fs.readFile(file).then(workspace.decode);
@@ -44,11 +45,34 @@ export class FolderIgnorer extends FolderBase implements Disposable {
 
     controller.buildIgnored();
 
-    for (const dir of controller.ignored.keys()) {
-      controller.logger.debug(
-        fileOperation(path.join(controller.folder.uri.fsPath, dir, '.gitignore'), 'configuration'),
-      );
-    }
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(controller.folder, '**/*'),
+    );
+
+    const respond = (action: 'add' | 'change' | 'unlink') => async (uri: Uri) => {
+      if (controller.isIgnored(uri)) {
+        return;
+      }
+      controller.eventTarget.dispatchEvent('watcher', { action, uri });
+    };
+
+    controller.disposables.push(
+      watcher,
+      watcher.onDidCreate(respond('add')),
+      watcher.onDidChange(respond('change')),
+      watcher.onDidDelete(respond('unlink')),
+    );
+
+    controller.eventTarget.addEventListener('watcher', ({ detail: { action, uri } }) => {
+      if (Utils.basename(uri) === '.gitignore') {
+        controller.logger.debug(fileOperation(uri.fsPath, action));
+        if (action === 'unlink') {
+          void controller.removeGitIgnore(uri);
+        } else {
+          void controller.readGitIgnore(uri);
+        }
+      }
+    });
   }
 
   #gitIgnore?: string;
@@ -59,33 +83,6 @@ export class FolderIgnorer extends FolderBase implements Disposable {
 
   public constructor({ folder, logger }: FolderControllerOptions) {
     super({ folder, logger });
-
-    const watcher = workspace.createFileSystemWatcher(new RelativePattern(folder, '**/*'));
-
-    const respond = (action: 'add' | 'change' | 'unlink') => async (uri: Uri) => {
-      if (this.isIgnored(uri)) {
-        return;
-      }
-      this.eventTarget.dispatchEvent('watcher', { action, uri });
-    };
-
-    this.disposables.push(
-      watcher,
-      watcher.onDidCreate(respond('add')),
-      watcher.onDidChange(respond('change')),
-      watcher.onDidDelete(respond('unlink')),
-    );
-
-    this.eventTarget.addEventListener('watcher', ({ detail: { action, uri } }) => {
-      if (Utils.basename(uri) === '.gitignore') {
-        this.logger.debug(fileOperation(uri.fsPath, action));
-        if (action === 'unlink') {
-          void this.removeGitIgnore(uri);
-        } else {
-          void this.readGitIgnore(uri);
-        }
-      }
-    });
   }
 
   private setGitConfig(gitConfig: GitConfig): void {

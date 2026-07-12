@@ -5,10 +5,9 @@ import {
   type ReferenceContext,
   type ReferenceProvider,
   type TextDocument,
+  Uri,
   workspace,
 } from 'vscode';
-
-import { CODE_EXTENSIONS } from '../../common/constants.ts';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
 
@@ -16,7 +15,6 @@ import { findClassUsages } from './helpers/find-class-usages.ts';
 import { getClassInfo } from './helpers/get-class-info.ts';
 import { classReferenceInfo } from './helpers/lib/class-reference-info.ts';
 import { normalizeLocations } from './helpers/lib/normalize-locations.ts';
-import { scanImports } from './helpers/scan-imports.ts';
 
 type CSSReferenceProviderOptions = {
   workspaceController: WorkspaceController;
@@ -51,28 +49,26 @@ export class CSSReferenceProvider implements ReferenceProvider {
           }
         }
 
-        for (const file of await folderController.findUnignoredFiles(
-          `**/*{${CODE_EXTENSIONS.join(',')}}`,
-        )) {
+        await folderController.getAllImports();
+
+        for (const [file, imports] of folderController.imports) {
           if (token.isCancellationRequested) {
             return [];
           }
 
-          for (const imported of await scanImports(file)) {
-            if (imported.fsPath === importUri.fsPath) {
-              for (const usage of await findClassUsages(
-                await workspace.openTextDocument(file),
-                importUri,
-                classNames,
-              )) {
-                if (accessorType === 'element' && usage.accessorType === accessorType) {
-                  continue;
-                }
-
-                locations.push(new Location(file, usage.range));
+          if (imports.some((i) => i.fsPath === importUri.fsPath)) {
+            for (const usage of await findClassUsages(
+              await workspace.openTextDocument(file),
+              importUri,
+              classNames,
+            )) {
+              if (accessorType === 'element' && usage.accessorType === accessorType) {
+                continue;
               }
-              break;
+
+              locations.push(new Location(Uri.file(file), usage.range));
             }
+            break;
           }
         }
 

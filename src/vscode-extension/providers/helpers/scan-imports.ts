@@ -37,63 +37,6 @@ export async function scanImports(code: Uri): Promise<Uri[]> {
   }
 }
 
-//   visit(sourceFile);
-
-//   const searchResult = searchParentSync('tsconfig.json', {
-//     startDirectory: fileDir,
-//     limit: 1,
-//   });
-
-//   if (searchResult.length > 0) {
-//     const tsconfigPath = path.resolve(
-//       path.dirname(filePath),
-//       searchResult[0].dir,
-//       searchResult[0].files[0],
-//     );
-
-//     // Load and parse tsconfig
-//     const configFile = ts.readConfigFile(tsconfigPath, (fileName) => ts.sys.readFile(fileName));
-//     if (configFile.error) {
-//       const errorMessage =
-//         typeof configFile.error.messageText === 'string' ?
-//           configFile.error.messageText
-//         : configFile.error.messageText.messageText;
-//       throw new Error(`Error reading tsconfig: ${errorMessage}`);
-//     }
-
-//     const parsedConfig = ts.parseJsonConfigFileContent(
-//       configFile.config,
-//       ts.sys,
-//       path.dirname(tsconfigPath),
-//     );
-
-//     // Create module resolution host
-//     const compilerOptions = parsedConfig.options;
-
-//     // Resolve each import
-//     const resolvedPaths: string[] = [];
-//     for (const importSpec of imports) {
-//       const resolved = resolveImport(importSpec, compilerOptions);
-
-//       if (resolved != null) {
-//         resolvedPaths.push(resolved);
-//       }
-//     }
-//     return resolvedPaths;
-//   }
-
-//   const resolvedPaths: string[] = [];
-//   for (const importSpec of imports) {
-//     const resolved = resolveImport(importSpec);
-
-//     if (resolved != null) {
-//       resolvedPaths.push(resolved);
-//     }
-//   }
-
-//   return resolvedPaths;
-// }
-
 function resolveImport(importSpec: string, file: Uri): Uri | undefined {
   // Local imports
   if (importSpec.startsWith('node:')) {
@@ -105,28 +48,6 @@ function resolveImport(importSpec: string, file: Uri): Uri | undefined {
   }
 
   return undefined;
-
-  // const importPackage =
-  //   importSpec.startsWith('@') ? delimited(importSpec, '/', 0, 2) : delimited(importSpec, '/', 0);
-
-  // // if (compilerOptions) {
-  // //   const resolved = ts.resolveModuleName(importSpec, file.fsPath, compilerOptions, ts.sys);
-
-  // //   if (resolved.resolvedModule) {
-  // //     if (
-  // //       resolved.resolvedModule.resolvedFileName.includes('node_modules') ||
-  // //       !isWithinDirectory(root, resolved.resolvedModule.resolvedFileName)
-  // //     ) {
-  // //       return importPackage;
-  // //     }
-
-  // //     return toRelativePath(
-  // //       path.relative(path.dirname(filePath), resolved.resolvedModule.resolvedFileName),
-  // //     );
-  // //   }
-  // // }
-
-  // return importPackage;
 }
 
 function* visit(file: Uri, node: Node): Generator<Uri> {

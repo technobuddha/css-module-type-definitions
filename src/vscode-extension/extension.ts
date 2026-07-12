@@ -22,8 +22,6 @@ const codeSelector = [
 ];
 
 export async function activate(context: ExtensionContext): Promise<void> {
-  window.showInformationMessage('css-module-type-definitions is now activating');
-
   const workspaceController = await WorkspaceController.create();
 
   context.subscriptions.push(
@@ -51,6 +49,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
   );
 
   commands.executeCommand('cmtd.updateTypes');
+
+  window.showInformationMessage('css-module-type-definitions is ready');
 }
 
 export function deactivate(): void {
