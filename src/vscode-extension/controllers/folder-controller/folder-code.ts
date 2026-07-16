@@ -12,6 +12,8 @@ type FolderCodeOptions = {
   logger: LoggerController;
 };
 
+const reDts = /(?:\.d\.ts$)|(?:\.d\.[^.]*\.ts$)/v;
+
 export class FolderCode extends FolderCss implements Disposable {
   public readonly imports: Map<string, Uri[]> = new Map();
 
@@ -53,7 +55,9 @@ export class FolderCode extends FolderCss implements Disposable {
   public async getAllImports(): Promise<void> {
     await this.findUnignoredFiles(`**/${this.globIsCode()}`).then(async (uris) => {
       for (const uri of uris) {
-        await this.getImports(uri, false);
+        if (this.isCode(uri)) {
+          await this.getImports(uri, false);
+        }
       }
     });
   }
@@ -71,10 +75,13 @@ export class FolderCode extends FolderCss implements Disposable {
   }
 
   public isCode(uri: Uri): boolean {
-    return CODE_EXTENSIONS.includes(Utils.extname(uri) as (typeof CODE_EXTENSIONS)[number]);
+    return (
+      CODE_EXTENSIONS.includes(Utils.extname(uri) as (typeof CODE_EXTENSIONS)[number]) &&
+      !reDts.test(uri.fsPath)
+    );
   }
 
   public globIsCode(): string {
-    return `*.{${CODE_EXTENSIONS.join(',')}}`;
+    return `*{${CODE_EXTENSIONS.join(',')}}`;
   }
 }

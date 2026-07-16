@@ -1,35 +1,34 @@
+import { empty, splitLines, unindent } from '@technobuddha/library';
 import {
   type CancellationToken,
-  type DefinitionProvider,
-  Location,
-  Position,
+  type Hover,
+  type HoverProvider,
+  type Position,
   type TextDocument,
-  Uri,
 } from 'vscode';
-import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
 import { getClassInfo } from './helpers/get-class-info.ts';
 
-type CMTDDefinitionProviderOptions = {
+export type Arguments = {
   workspaceController: WorkspaceController;
 };
 
-export class CMTDDefinitionProvider implements DefinitionProvider {
+export class CodeHoverProvider implements HoverProvider {
   readonly #workspaceController: WorkspaceController;
 
-  public constructor({ workspaceController }: CMTDDefinitionProviderOptions) {
+  public constructor({ workspaceController }: Arguments) {
     this.#workspaceController = workspaceController;
   }
 
-  public async provideDefinition(
+  public async provideHover(
     document: TextDocument,
     position: Position,
     _token: CancellationToken,
-  ): Promise<Location | null> {
+  ): Promise<Hover | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
-    if (folderController?.options.cssModules.generateDts === false) {
+    if (folderController) {
       const clickInfo = await getClassInfo(document, position);
       if (clickInfo) {
         const { importUri, className } = clickInfo;
@@ -37,13 +36,21 @@ export class CMTDDefinitionProvider implements DefinitionProvider {
         const types = await folderController.getTypes(importUri);
         if (types) {
           const { classes } = types;
+
           const extracted = classes.get(className);
           if (extracted) {
-            const [{ start, source }] = extracted;
+            const md: string[] = [];
+            let first = true;
 
-            const target = Uri.joinPath(Utils.dirname(importUri), source);
+            for (const { snippet } of extracted) {
+              if (!first) {
+                md.push('---', empty);
+              }
+              md.push('```css', ...splitLines(unindent(snippet)), '```', empty);
+              first = false;
+            }
 
-            return new Location(target, new Position(start.line - 1, start.column));
+            return { contents: [md.join('\n')] };
           }
         }
       }

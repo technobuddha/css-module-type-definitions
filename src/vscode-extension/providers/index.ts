@@ -1,4 +1,5 @@
-export { CMTDDefinitionProvider } from './definition-provider.ts';
-export { CMTDHoverProvider } from './hover-provider.ts';
-export { CSSReferenceProvider } from './reference-provider.ts';
-export { CMTDCompletionItemProvider as CMTDSelectorsCompletionProvider } from './completion-provider.ts';
+export { CodeCompletionItemProvider } from './code-completion-provider.ts';
+export { CodeDefinitionProvider } from './code-definition-provider.ts';
+export { CodeHoverProvider } from './code-hover-provider.ts';
+export { CodeReferenceProvider } from './code-reference-provider.ts';
+export { CodeRenameProvider } from './code-rename-provider.ts';

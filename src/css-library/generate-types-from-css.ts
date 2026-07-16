@@ -125,12 +125,16 @@ export async function generateTypesFromCss(
           const classEntries = Array.from(
             classes,
             ([className, extracted]) => [className, extracted[0]] as const,
-          ).sort(([, a], [, b]) => a.start.line - b.start.line || a.start.column - b.start.column);
+          ).sort(([, a], [, b]) => a.location.range.start.line - b.location.range.start.line || a.location.range.start.column - b.location.range.start.column);
 
           for (const [className, extracted] of classEntries) {
             const {
+              location: {
               source,
-              start: { line, column },
+                range: {
+                  start: { line, column },
+                },
+              },
             } = extracted;
 
             smg.addMapping({
@@ -171,7 +175,7 @@ export async function generateTypesFromCss(
           };
         })
         .catch((error) => {
-          logger.error(toError(error));
+          logger.error(toError(error), ' <== From gtcss');
           throw toError(error);
         });
     },

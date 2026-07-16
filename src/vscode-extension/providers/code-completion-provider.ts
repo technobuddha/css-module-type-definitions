@@ -21,7 +21,7 @@ type Arguments = {
   workspaceController: WorkspaceController;
 };
 
-export class CMTDCompletionItemProvider implements CompletionItemProvider {
+export class CodeCompletionItemProvider implements CompletionItemProvider {
   readonly #workspaceController: WorkspaceController;
 
   public constructor({ workspaceController }: Arguments) {

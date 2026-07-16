@@ -32,7 +32,7 @@ export async function generateTypes(
                     logger.info(fileOperation(filename, 'updated'));
                   })
                   .catch((error) => {
-                    logger.error(error);
+                    logger.error(error, ' <== from generateTypes I');
                   });
               }
             })
@@ -43,7 +43,7 @@ export async function generateTypes(
                   logger.info(fileOperation(filename, 'created'));
                 })
                 .catch((error) => {
-                  logger.error(error);
+                  logger.error(error, ' <== from generateTypes II');
                 }),
             );
         }

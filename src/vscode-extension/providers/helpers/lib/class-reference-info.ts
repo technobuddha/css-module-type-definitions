@@ -1,37 +1,44 @@
-import { Location, Position, Uri } from 'vscode';
+import { Location, Position, Range, Uri } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { type CssInfo } from '../../../../css-library/generate-types-from-css.ts';
 
 type ClassReferenceInfo = {
   classNames: Set<string>;
-  declarationLocation: Location | null;
+  declarationLocations: Location[];
 };
 
 export function classReferenceInfo(
   types: CssInfo | undefined,
   importUri: Uri,
   className: string,
-): ClassReferenceInfo {
-  const classNames = new Set<string>([className]);
+): ClassReferenceInfo | null {
   if (types) {
     const extracted = types.classes.get(className);
     if (extracted) {
       const aliases = types.aliases.get(className);
       if (aliases) {
-        for (const alias of aliases) {
-          classNames.add(alias);
-        }
+        return {
+          classNames: new Set(aliases),
+          declarationLocations: extracted.map(
+            ({
+              location: {
+                source,
+                range: { start, end },
+              },
+            }) =>
+              new Location(
+                Uri.joinPath(Utils.dirname(importUri), source),
+                new Range(
+                  new Position(start.line - 1, start.column),
+                  new Position(end.line - 1, end.column),
+                ),
+              ),
+          ),
+        };
       }
-
-      const [{ start, source }] = extracted;
-      const target = Uri.joinPath(Utils.dirname(importUri), source);
-
-      return {
-        classNames,
-        declarationLocation: new Location(target, new Position(start.line - 1, start.column)),
-      };
     }
   }
-  return { classNames, declarationLocation: null };
+
+  return null;
 }

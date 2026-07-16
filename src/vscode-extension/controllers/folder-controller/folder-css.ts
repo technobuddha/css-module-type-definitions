@@ -14,7 +14,7 @@ type FolderCssOptions = {
 };
 
 export class FolderCss extends FolderOptions implements Disposable {
-  readonly #types: Map<string, CssInfo> = new Map();
+  public readonly types: Map<string, CssInfo> = new Map();
 
   public constructor({ folder, logger }: FolderCssOptions) {
     super({ folder, logger });
@@ -39,7 +39,7 @@ export class FolderCss extends FolderOptions implements Disposable {
 
       if (this.isCss(uri)) {
         this.logger.debug(fileOperation(uri.fsPath, action));
-        for (const [file, { includedFiles }] of this.#types) {
+        for (const [file, { includedFiles }] of this.types) {
           if (includedFiles.has(uri.fsPath)) {
             await this.getTypes(Uri.parse(file), false);
           }
@@ -48,9 +48,9 @@ export class FolderCss extends FolderOptions implements Disposable {
     });
   }
 
-  public async getTypes(uri: Uri, cache = true): Promise<CssInfo | undefined> {
-    if (cache && this.#types.has(uri.fsPath)) {
-      return this.#types.get(uri.fsPath)!;
+  public async getTypes(uri: Uri, cache = true, writeFiles = true): Promise<CssInfo | undefined> {
+    if (cache && this.types.has(uri.fsPath)) {
+      return this.types.get(uri.fsPath)!;
     }
 
     const { logger, options } = this;
@@ -63,7 +63,7 @@ export class FolderCss extends FolderOptions implements Disposable {
           .then(async (content) => generateTypesFromCss(content, uri.fsPath, { options, logger }));
 
         if (result) {
-          if (options.cssModules.generateDts) {
+          if (writeFiles && options.cssModules.generateDts) {
             const { files } = result;
             await Promise.all(
               Object.entries(files).map(async ([filename, content]) => {
@@ -92,19 +92,19 @@ export class FolderCss extends FolderOptions implements Disposable {
             );
           }
 
-          this.#types.set(uri.fsPath, result);
+          this.types.set(uri.fsPath, result);
           return result;
         }
-        this.#types.delete(uri.fsPath);
+        this.types.delete(uri.fsPath);
         return undefined;
       } catch (e) {
-        logger.error(toError(e));
+        logger.error(toError(e), ' <== from folder-css');
       }
     }
     return undefined;
   }
 
-  public async getAllTypes(): Promise<void> {
+  public async getAllTypes(cache = false, writeFiles = true): Promise<void> {
     const { logger, options } = this;
 
     const typedefs = new Set(
@@ -113,7 +113,7 @@ export class FolderCss extends FolderOptions implements Disposable {
 
     await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
-        const result = await this.getTypes(uri, false);
+        const result = await this.getTypes(uri, cache, writeFiles);
         if (result && options.cssModules.generateDts) {
           for (const file of Object.keys(result.files)) {
             typedefs.delete(file);
@@ -128,10 +128,18 @@ export class FolderCss extends FolderOptions implements Disposable {
     }
   }
 
+  public async getMissingTypes(): Promise<void> {
+    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+      for (const uri of uris) {
+        await this.getTypes(uri, true, false);
+      }
+    });
+  }
+
   public async deleteTypes(uri: Uri): Promise<void> {
     const { dir, name, ext } = path.parse(uri.fsPath);
 
-    this.#types.delete(uri.fsPath);
+    this.types.delete(uri.fsPath);
 
     for (const file of [
       `${name}.d${ext}.ts`,

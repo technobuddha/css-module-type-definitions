@@ -4,9 +4,9 @@ import { type Position, type TextDocument, type Uri } from 'vscode';
 import { isPropertyAccessExpressionLike } from './lib/expression.ts';
 import { findAccessExpression } from './lib/find-access-expression.ts';
 import { findDeepestNodeAtPosition } from './lib/find-deepest-node-at-position.ts';
-import { importModuleFromDeclaration } from './lib/import-module-from-declaration.ts';
 import { getSourceFile } from './lib/get-source-file.ts';
 import { getTypeChecker } from './lib/get-type-checker.ts';
+import { importModuleFromDeclaration } from './lib/import-module-from-declaration.ts';
 import { resolveImportPath } from './lib/resolve-import-path.ts';
 import { unwrapExpression } from './lib/unwrap-expression.ts';
 

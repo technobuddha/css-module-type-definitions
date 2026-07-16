@@ -8,16 +8,23 @@ import { type Logger } from '../common/index.ts';
 
 import { type MappedPosition, type Position } from './position.ts';
 
+const reBadSource = /^(?:\.\.\/)+;charset=utf-8,/v;
+
 export function originalPosition(
   smc: SourceMapConsumer,
   position: Position,
+  file: string,
   logger: Logger,
 ): MappedPosition {
   try {
-    const { line, column, source } = smc.originalPositionFor({
+    let { line, column, source } = smc.originalPositionFor({
       line: position.line,
       column: position.column,
     });
+
+    if (reBadSource.test(source)) {
+      source = file;
+    }
 
     if (line == null || column == null || source == null) {
       throw new Error(`Position ${position.line}:${position.column} not found.`);
@@ -25,22 +32,14 @@ export function originalPosition(
 
     return { line, column, source };
   } catch (e) {
-    logger.error(toError(e));
+    logger.error(toError(e), ' <== from originalPosition');
     throw e;
   }
 }
 
-export function originalSource(smc: SourceMapConsumer, position: Position): string {
-  const { source } = smc.originalPositionFor({
-    line: position.line,
-    column: position.column,
-  });
-  return source;
-}
-
 type FixSourceMapOptions = {
   directory: string;
-  relativeTo: 'directory' | 'home';
+  relativeTo: string | 'home';
 };
 
 export function fixSourceMap(
