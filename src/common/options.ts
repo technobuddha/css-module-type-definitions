@@ -1,38 +1,97 @@
-import { type DotenvConfigOptions } from '@dotenvx/dotenvx';
+import { cull, empty } from '@technobuddha/library';
 import {
-  type CSSModulesOptions,
   type LessPreprocessorOptions,
   type SassPreprocessorOptions,
   type StylusPreprocessorOptions,
 } from 'vite';
 
-import { type Logger } from '../css-library/logger.ts';
+import { type LogLevel } from './logger.ts';
 
-interface PostcssOptions {
-  excludePlugins?: string[];
-  useConfig?: boolean;
-}
+type LocalsConvention =
+  | 'camelCase'
+  | 'camelCaseOnly'
+  | 'dashes'
+  | 'dashesOnly'
+  | 'all'
+  | 'none'
+  | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
 
 export interface Options {
-  customTemplate?: string;
-  dotenv?: Omit<DotenvConfigOptions, 'path'> & { path?: string };
-  goToDefinition?: boolean;
-  postcss?: PostcssOptions;
-  preprocessor?: {
-    less?: LessPreprocessorOptions;
-    sass?: SassPreprocessorOptions;
-    scss?: SassPreprocessorOptions;
-    styl?: StylusPreprocessorOptions;
-    stylus?: StylusPreprocessorOptions;
+  logLevel: LogLevel;
+  preprocessor: {
+    less: LessPreprocessorOptions;
+    sass: Omit<
+      SassPreprocessorOptions,
+      'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
+    >;
+    scss: Omit<
+      SassPreprocessorOptions,
+      'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
+    >;
+    styl: StylusPreprocessorOptions;
+    stylus: StylusPreprocessorOptions;
   };
-  cssModules?: CSSModulesOptions;
-  cssPattern?: string;
+  cssModules: {
+    scopeBehaviour: 'global' | 'local';
+    globalModulePaths: RegExp[];
+    exportGlobals: boolean;
+    generateScopedName:
+      string | ((name: string, filename: string, css: string) => string) | undefined;
+    hashPrefix: string;
+    localsConvention: LocalsConvention;
+    extensions: string[];
+    modulePattern: string;
+    dtsHeader: string;
+    dtsFooter: string;
+    generateDts: boolean;
+  };
 }
 
-interface CustomTemplateOptions {
-  //classes: CSSExports;
-  filename: string;
-  logger: Logger;
-}
+export type PartialOptions = {
+  logLevel?: Options['logLevel'];
+  preprocessor?: Partial<Options['preprocessor']>;
+  cssModules?: Partial<Options['cssModules']>;
+};
 
-export type CustomTemplate = (dts: string, options: CustomTemplateOptions) => string;
+type NormalizedCSSModulesOptions = Omit<Options['cssModules'], 'localsConvention'> & {
+  localsConvention?: LocalsConvention;
+};
+
+export type NormalizedOptions = Omit<Options, 'cssModules'> & {
+  cssModules: NormalizedCSSModulesOptions;
+};
+
+export const defaultOptions = Object.freeze<Options>({
+  logLevel: 'info',
+  preprocessor: {
+    less: {},
+    sass: {},
+    scss: {},
+    styl: {},
+    stylus: {},
+  },
+  cssModules: {
+    scopeBehaviour: 'local',
+    globalModulePaths: [],
+    exportGlobals: false,
+    generateScopedName: undefined,
+    hashPrefix: empty,
+    localsConvention: 'none',
+    dtsHeader: empty,
+    dtsFooter: empty,
+    generateDts: true,
+    extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
+    modulePattern: '*.module',
+  },
+});
+
+export function normalizeOptions(options: Options): NormalizedOptions {
+  const nOptions: NormalizedOptions = options;
+
+  const extensions = cull(nOptions.cssModules.extensions, { emptyStrings: true });
+  if (extensions.length === 0) {
+    nOptions.cssModules.extensions = defaultOptions.cssModules.extensions;
+  }
+
+  return nOptions;
+}

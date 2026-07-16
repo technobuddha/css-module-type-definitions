@@ -1,0 +1,45 @@
+.a1,
+.a2,
+.a3 {
+  content: 'multiple selectors';
+}
+
+.abmigigous {
+  color: red;
+}
+
+:local(.local) {
+  color: red;
+}
+
+:global(.global) {
+  color: red;
+}
+
+.camelCase {
+  color: red;
+}
+
+.PascalCase {
+  color: red;
+}
+
+.kebab-case {
+  color: red;
+}
+
+.snake_case {
+  color: red;
+}
+
+.UPPERCASE {
+  color: red;
+}
+
+.lowercase {
+  color: red;
+}
+
+.SCREAMING_SNAKE_CASE {
+  color: red;
+}

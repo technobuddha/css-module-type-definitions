@@ -1,13 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "css-module-type-definitions",
-  "description": "Generate Type Definitions for CSS Modules",
-  "version": "2.0.0-4",
+  "version": "2.0.0-13",
+  "description": "All-in-one Solution for using CSS Modules and TypeScript",
   "stableVersion": "1.99.6",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/vscode-extension/extension.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "cmtd": "dist/cli/cmtd.js"
+  },
   "author": {
     "name": "Phil Hill",
     "email": "phil@technobuddha.com",
@@ -22,6 +25,9 @@
     "url": "https://github.com/technobuddha/css-module-type-definitions/issues"
   },
   "scripts": {
+    "x": "tsx src/cli/cmtd.ts update",
+    "vscode:prepublish": "yarn run compile",
+    "compile": "build compile",
     "dev": "build dev",
     "build": "build default",
     "start": "build dev",
@@ -34,60 +40,77 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@dotenvx/dotenvx": "1.65.0",
-    "@technobuddha/library": "2.1.0-122",
-    "less": "4.6.4",
+    "@technobuddha/library": "2.1.0-161",
+    "@vitejs/devtools": "0.3.4",
+    "chalk": "5.6.2",
+    "chokidar": "5.0.0",
+    "commander": "15.0.0",
+    "esbuild": "0.28.1",
+    "glob": "13.0.6",
+    "ignore": "7.0.5",
+    "less": "4.6.7",
     "magic-string": "0.30.21",
-    "postcss": "^8.5.10",
-    "postcss-comment": "2.0.0",
+    "postcss": "^8.5.16",
     "postcss-import": "^16.1.1",
-    "postcss-modules": "6.0.1",
-    "postcss-modules-local-by-default": "^4.2.0",
-    "postcss-modules-scope": "^3.2.1",
-    "prettier": "3.8.3",
-    "sass": "1.99.0",
+    "postcss-modules": "9.0.0",
+    "postcss-selector-parser": "7.1.4",
+    "sass": "1.101.0",
     "source-map-js": "1.2.1",
-    "string-extract-class-names": "8.1.3",
     "stylus": "0.64.0",
-    "tsconfig-paths": "4.2.0",
+    "sugarss": "5.0.1",
     "typescript": "6.0.3",
-    "vite": "8.0.11"
+    "vite": "8.1.3",
+    "vscode-uri": "3.1.0",
+    "webpack": "5.108.3"
   },
   "devDependencies": {
-    "@cspell/cspell-types": "10.0.0",
-    "@technobuddha/project": "1.0.0-62",
+    "@babel/parser": "8.0.0",
+    "@babel/traverse": "8.0.0",
+    "@babel/types": "8.0.0",
+    "@cspell/cspell-types": "10.0.1",
+    "@technobuddha/project": "1.0.0-121",
+    "@types/json5": "2.2.0",
     "@types/less": "3.0.8",
-    "@types/node": "25.6.2",
+    "@types/node": "25.9.4",
     "@types/postcss-import": "^14.0.3",
-    "@types/postcss-modules-local-by-default": "^4.0.2",
-    "@types/postcss-modules-scope": "^3.0.4",
-    "@types/stylus": "^0",
-    "@vitest/coverage-v8": "4.1.5",
-    "cspell": "10.0.0",
+    "@types/stylus": "^0.48.43",
+    "@types/vscode": "1.125.0",
+    "closest-match": "1.3.3",
+    "cspell": "10.0.1",
+    "fast-glob": "3.3.3",
     "husky": "9.1.7",
-    "jsdom": "29.1.1",
-    "tsx": "4.21.0",
-    "vitest": "4.1.5"
+    "json5": "2.2.3",
+    "ts-loader": "9.6.2",
+    "tsx": "4.23.0",
+    "type-fest": "5.8.0",
+    "vite-plugin-inspect": "11.4.1",
+    "vscode-css-languageservice": "6.3.10",
+    "webpack-cli": "7.1.0"
   },
   "resolutions": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "ip-address": "^10.1.1"
   },
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=25.0.0",
+    "vscode": "^1.5.0"
   },
   "technobuddhaProject": {
-    "created": "2025-09-03T21:35:23.139Z"
+    "created": "2026-05-26T15:54:59.595Z"
   },
   "keywords": [
     "css",
     "scss",
     "sass",
     "less",
+    "styl",
+    "stylus",
     "module",
     "typescript",
+    "type definitions",
     "webpack",
     "vite",
     "postcss"
   ],
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.17.1"
 }

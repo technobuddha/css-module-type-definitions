@@ -14,13 +14,18 @@ type GetSourceArguments = {
   sep?: string;
 };
 
+type GetSourceReturn = {
+  content: string;
+  map?: RawSourceMap;
+};
+
 export async function getSource({
   source,
   filename,
   additionalData,
   sourceMap = false,
   sep = empty,
-}: GetSourceArguments): Promise<{ content: string; map?: RawSourceMap }> {
+}: GetSourceArguments): Promise<GetSourceReturn> {
   if (additionalData) {
     if (typeof additionalData === 'function') {
       const content = await additionalData(source, filename);
@@ -33,7 +38,6 @@ export async function getSource({
           content: content.content,
           map: {
             file: filename,
-            // sourceRoot: magicMap.sourceRoot,
             version: (content.map.version ?? 3).toString(),
             sources: (content.map.sources ?? []).filter((s) => s != null),
             names: content.map.names ?? [],
@@ -54,10 +58,9 @@ export async function getSource({
       const magicMap = ms.generateMap({ hires: 'boundary' });
 
       const map: RawSourceMap = {
-        file: filename, //magicMap.file,
-        // sourceRoot: magicMap.sourceRoot,
+        file: filename,
         version: magicMap.version.toString(),
-        sources: [filename], //magicMap.sources,
+        sources: [filename],
         names: magicMap.names,
         sourcesContent: magicMap.sourcesContent,
         mappings: magicMap.mappings,

@@ -1,65 +1,57 @@
 import path from 'node:path';
 
-import { type CompilerOptions } from 'typescript';
+import { type RawSourceMap } from 'source-map-js';
 
-import { type Options } from '../../common/options.ts';
+import { type Logger } from '../../common/logger.ts';
+import { type NormalizedOptions } from '../../common/options.ts';
 
-import { type Logger } from '../logger.ts';
-
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
 import { transformStylus } from './transform-stylus.ts';
-import { type TransformerReturn } from './transformer-return.ts';
 
-type TransformerArguments = {
+export type TransformerReturn = {
+  css: string;
+  includedFiles: Set<string>;
+  sourceMap?: RawSourceMap;
+};
+
+export type TransformerArguments = {
   filename: string;
   directory: string;
-  options?: Options;
-  compilerOptions: CompilerOptions;
-  logger?: Logger;
+  options: NormalizedOptions;
+  logger: Logger;
 };
 
 export async function transformer(
   css: string,
-  { filename, directory, options = {}, compilerOptions, logger }: TransformerArguments,
+  args: TransformerArguments,
 ): Promise<TransformerReturn> {
+  const { filename } = args;
   const { ext } = path.parse(filename);
-  const { preprocessor } = options;
 
-  const result =
-    ext === '.less' ?
-      transformLess(css, {
-        filename,
-        directory,
-        options: preprocessor?.less,
-        logger,
-      })
-    : ext === '.sass' ?
-      transformSass(css, {
-        filename,
-        directory,
-        options: preprocessor?.sass,
-        compilerOptions,
-      })
-    : ext === '.scss' ?
-      transformSass(css, {
-        filename,
-        directory,
-        options: preprocessor?.scss,
-        compilerOptions,
-      })
-    : ext === '.styl' ?
-      transformStylus(css, {
-        filename,
-        options: preprocessor?.styl ?? preprocessor?.stylus,
-      })
-    : ext === '.stylus' ?
-      transformStylus(css, {
-        filename,
-        options: preprocessor?.stylus ?? preprocessor?.styl,
-      })
-    : { css, classOffsets: extractClassOffsetsFromCss(css, { filename }) };
+  switch (ext) {
+    case '.less': {
+      return transformLess(css, args);
+    }
 
-  return result;
+    case '.sass': {
+      return transformSass(css, args);
+    }
+
+    case '.scss': {
+      return transformSass(css, args);
+    }
+
+    case '.styl': {
+      return transformStylus(css, args);
+    }
+
+    case '.stylus': {
+      return transformStylus(css, args);
+    }
+
+    default: {
+      return { css, includedFiles: new Set() };
+    }
+  }
 }

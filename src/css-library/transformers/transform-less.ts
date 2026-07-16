@@ -1,29 +1,19 @@
 import path from 'node:path';
 
-import { empty } from '@technobuddha/library';
 import less from 'less';
 
-import { type Options } from '../../common/index.ts';
+import { removeInlineSourceMap } from '../../common/index.ts';
 
-import { type Logger } from '../logger.ts';
+import { fixSourceMap } from '../source-map.ts';
 
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
-import { type TransformerReturn } from './transformer-return.ts';
-
-type TransformLessArguments = {
-  filename: string;
-  directory: string;
-  options?: NonNullable<Options['preprocessor']>['less'];
-  logger?: Logger;
-};
+import { type TransformerArguments, type TransformerReturn } from './transformer.ts';
 
 export async function transformLess(
   source: string,
-  { filename, directory, options = {} }: TransformLessArguments,
+  { filename, directory, options }: TransformerArguments,
 ): Promise<TransformerReturn> {
-  const { additionalData } = options;
-  // TODO sourceMap with additionalData
+  const additionalData = options.preprocessor?.less?.additionalData;
 
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     less
@@ -33,13 +23,17 @@ export async function transformLess(
         sourceMap: {},
         ...options,
       })
+      .then(({ css, map, imports }) => {
+        const sourceMap = map ? JSON.parse(map) : undefined;
+
+        return {
+          css: removeInlineSourceMap(css),
+          sourceMap: fixSourceMap(sourceMap, { directory, relativeTo: 'directory' }),
+          includedFiles: new Set(imports),
+        };
+      })
       .catch((error: Less.RenderError) => {
         throw new Error(error.message);
-      })
-      .then(({ css, map }) => ({
-        css: css.replace(/\/\*# sourceMapping.*$/mv, empty),
-        sourceMap: map ? JSON.parse(map) : undefined,
-        classOffsets: extractClassOffsetsFromCss(css, { filename, less: true }),
-      })),
+      }),
   );
 }

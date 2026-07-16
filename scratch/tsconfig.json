@@ -1,0 +1,10 @@
+// 🚨
+// 🚨 CHANGES TO THIS FILE WILL BE OVERRIDDEN
+// 🚨
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "lib": ["esnext", "dom"], "types": ["vite/client"] },
+  "include": ["*.d.*.ts", "*.ts"],
+  "exclude": ["eslint.config.js"]
+}

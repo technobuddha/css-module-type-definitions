@@ -1,0 +1,39 @@
+.camelCase {
+  content: 'camelCase';
+}
+.PascalCase {
+  content: 'PascalCase';
+}
+.kebab-case {
+  content: 'kebab-case';
+}
+.snake_case {
+  content: 'snake_case';
+}
+.UPPERCASE {
+  content: 'UPPERCASE';
+}
+.lowercase {
+  content: 'lowercase';
+}
+.SCREAMING_SNAKE_CASE {
+  content: 'SCREAMING_SNAKE_CASE';
+}
+.👻 {
+  content: '👻';
+}
+.x👻 {
+  content: 'x👻';
+}
+.x👻x {
+  content: 'x👻x';
+}
+.X👻 {
+  content: 'X👻';
+}
+.x👻X {
+  content: 'x👻X';
+}
+.X👻x {
+  content: 'X👻x';
+}

@@ -7,11 +7,10 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "composite": true,
     "lib": ["esnext"],
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.config.js", "*.config.ts", "*.setup.ts"],
+  "include": ["*.config.js", "*.config.ts", "*.js"],
   "exclude": ["eslint.config.js"]
 }

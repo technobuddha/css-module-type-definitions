@@ -1,30 +1,22 @@
 import { type RawSourceMap } from 'source-map-js';
 import stylus from 'stylus';
 
-import { type Options } from '../../common/options.ts';
+import { fixSourceMap } from '../source-map.ts';
 
-import { type Logger } from '../logger.ts';
-
-import { extractClassOffsetsFromCss } from './extract-class-offsets-from-css.ts';
 import { getSource } from './get-source.ts';
-import { type TransformerReturn } from './transformer-return.ts';
-
-type TransformStylusArguments = {
-  filename: string;
-  options?: NonNullable<Options['preprocessor']>['sass'];
-  logger?: Logger;
-};
+import { type TransformerArguments, type TransformerReturn } from './transformer.ts';
 
 export async function transformStylus(
   source: string,
-  { options = {}, filename }: TransformStylusArguments,
+  { options, filename, directory }: TransformerArguments,
 ): Promise<TransformerReturn> {
-  const { additionalData } = options;
+  const { additionalData, ...stylusOptions } =
+    options.preprocessor?.styl ?? options.preprocessor?.stylus ?? {};
 
   return getSource({ source, filename, additionalData }).then(
     async ({ content }) =>
       new Promise<TransformerReturn>((resolve, reject) => {
-        const styl = stylus(content, options)
+        const styl = stylus(content, stylusOptions)
           .set('filename', filename)
           .set('sourcemap', { comment: false });
 
@@ -34,10 +26,14 @@ export async function transformStylus(
             return;
           }
 
+          const sourceMap = fixSourceMap(
+            (styl as unknown as { sourcemap: RawSourceMap }).sourcemap,
+            { directory, relativeTo: 'home' },
+          );
           resolve({
             css,
-            sourceMap: (styl as unknown as { sourcemap: RawSourceMap }).sourcemap,
-            classOffsets: extractClassOffsetsFromCss(css, { filename }),
+            includedFiles: new Set(styl.deps()),
+            sourceMap,
           });
         });
       }),
