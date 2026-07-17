@@ -13,13 +13,13 @@ import {
 } from '@technobuddha/library';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
-import { SourceMapGenerator } from 'source-map-js';
 import { type CompilerOptions } from 'typescript';
 
 import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
 
 import { BANNER_MESSAGE } from './constants.ts';
 import { extractClassRangesFromCss, type ExtractedCss } from './extract-class-ranges-from-css.ts';
+import { SourceMapGenerator } from './source-map.ts';
 
 export type CssInfo = {
   files: Record<string, string>;
@@ -117,20 +117,21 @@ export async function generateTypesFromCss(
           const dtsFile = `${name}.d${ext}.ts`;
           const mapFile = `${dtsFile}.map`;
 
-          const smg = new SourceMapGenerator({
-            file: dtsFile,
-            sourceRoot: empty,
-          });
+          const smg = new SourceMapGenerator({ file: dtsFile, logger });
 
           const classEntries = Array.from(
             classes,
             ([className, extracted]) => [className, extracted[0]] as const,
-          ).sort(([, a], [, b]) => a.location.range.start.line - b.location.range.start.line || a.location.range.start.column - b.location.range.start.column);
+          ).sort(
+            ([, a], [, b]) =>
+              a.location.range.start.line - b.location.range.start.line ||
+              a.location.range.start.column - b.location.range.start.column,
+          );
 
           for (const [className, extracted] of classEntries) {
             const {
               location: {
-              source,
+                source,
                 range: {
                   start: { line, column },
                 },
@@ -140,7 +141,7 @@ export async function generateTypesFromCss(
             smg.addMapping({
               source,
               generated: {
-                line: dts.length + 1, // account for the line we're about to add
+                line: dts.length,
                 column: 11, // length of {space.repeat(2)}readonly{space}{quote},
               },
               original: { line, column },
@@ -167,7 +168,7 @@ export async function generateTypesFromCss(
           return {
             files: {
               [path.resolve(dir, dtsFile)]: dts.join('\n'),
-              [path.resolve(dir, mapFile)]: JSON.stringify(smg.toJSON()),
+              [path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
             },
             classes,
             includedFiles,

@@ -1,7 +1,6 @@
-import { type RawSourceMap } from 'source-map-js';
 import stylus from 'stylus';
 
-import { fixSourceMap } from '../source-map.ts';
+import { fixSourceMap, type RawSourceMap } from '../source-map.ts';
 
 import { getSource } from './get-source.ts';
 import { type TransformerArguments, type TransformerReturn } from './transformer.ts';

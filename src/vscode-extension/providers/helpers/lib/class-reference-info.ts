@@ -1,7 +1,7 @@
 import { Location, Position, Range, Uri } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { type CssInfo } from '../../../../css-library/generate-types-from-css.ts';
+import { type CssInfo } from '../../../../css-library/index.ts';
 
 type ClassReferenceInfo = {
   classNames: Set<string>;
@@ -30,8 +30,8 @@ export function classReferenceInfo(
               new Location(
                 Uri.joinPath(Utils.dirname(importUri), source),
                 new Range(
-                  new Position(start.line - 1, start.column),
-                  new Position(end.line - 1, end.column),
+                  new Position(start.line, start.column),
+                  new Position(end.line, end.column),
                 ),
               ),
           ),

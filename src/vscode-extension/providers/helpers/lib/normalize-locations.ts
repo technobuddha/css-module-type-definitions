@@ -1,65 +1,50 @@
-import { type Location } from 'vscode';
+import { SerializedSet } from '@technobuddha/library';
+import { Location, Position, Range, Uri } from 'vscode';
 
 import { canonicalPath } from './cononical-path.ts';
-import { isDuplicateLocation } from './is-duplicate-location.ts';
-import { preferLocation } from './prefer-location.ts';
+
+type SerializableLocation = {
+  uri: string;
+  range: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+};
 
 export function normalizeLocations(locations: Location[]): Location[] {
-  const unique = new Map<string, { canonicalPath: string; location: Location }>();
-
-  for (const location of locations) {
-    const cp = canonicalPath(location.uri.fsPath);
-    const key = [
-      cp,
-      location.range.start.line,
-      location.range.start.character,
-      location.range.end.line,
-      location.range.end.character,
-    ].join(':');
-
-    unique.set(key, { canonicalPath: cp, location });
-  }
-
-  const sorted = unique
-    .values()
-    .toArray()
-    .sort((left, right) => {
-      if (left.canonicalPath !== right.canonicalPath) {
-        return left.canonicalPath.localeCompare(right.canonicalPath);
-      }
-
-      if (left.location.range.start.line !== right.location.range.start.line) {
-        return left.location.range.start.line - right.location.range.start.line;
-      }
-
-      if (left.location.range.start.character !== right.location.range.start.character) {
-        return left.location.range.start.character - right.location.range.start.character;
-      }
-
-      if (left.location.range.end.line !== right.location.range.end.line) {
-        return left.location.range.end.line - right.location.range.end.line;
-      }
-
-      return left.location.range.end.character - right.location.range.end.character;
-    });
-
-  const deduped: Location[] = [];
-  let previousCanonicalPath: string | null = null;
-
-  for (const { canonicalPath, location } of sorted) {
-    const previous = deduped.at(-1);
-    if (
-      previous &&
-      previousCanonicalPath === canonicalPath &&
-      isDuplicateLocation(previous, location)
-    ) {
-      deduped[deduped.length - 1] = preferLocation(previous, location);
-      continue;
-    }
-
-    deduped.push(location);
-    previousCanonicalPath = canonicalPath;
-  }
-
-  return deduped;
+  return Array.from(
+    new SerializedSet<SerializableLocation>(
+      locations.map((location) => ({
+        uri: canonicalPath(location.uri.fsPath),
+        range: {
+          start: {
+            line: location.range.start.line,
+            character: location.range.start.character,
+          },
+          end: {
+            line: location.range.end.line,
+            character: location.range.end.character,
+          },
+        },
+      })),
+    ),
+  )
+    .sort(
+      (a, b) =>
+        a.uri.localeCompare(b.uri) ||
+        a.range.start.line - b.range.start.line ||
+        a.range.start.character - b.range.start.character ||
+        a.range.end.line - b.range.end.line ||
+        a.range.end.character - b.range.end.character,
+    )
+    .map(
+      (loc) =>
+        new Location(
+          Uri.file(loc.uri),
+          new Range(
+            new Position(loc.range.start.line, loc.range.start.character),
+            new Position(loc.range.end.line, loc.range.end.character),
+          ),
+        ),
+    );
 }

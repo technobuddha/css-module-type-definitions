@@ -38,7 +38,7 @@ export function positionOfOffset(text: string, offset: number): Position {
 
 export function offsetOfPosition(text: string, position: Position): number {
   let offset = 0;
-  let line = 1;
+  let line = 0;
   let column = 0;
 
   for (const char of text) {

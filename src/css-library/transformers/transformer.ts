@@ -1,9 +1,8 @@
 import path from 'node:path';
 
-import { type RawSourceMap } from 'source-map-js';
+import { type Logger, type NormalizedOptions } from '../../common/index.ts';
 
-import { type Logger } from '../../common/logger.ts';
-import { type NormalizedOptions } from '../../common/options.ts';
+import { type RawSourceMap } from '../source-map.ts';
 
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';

@@ -1,6 +1,7 @@
 import {
   type CancellationToken,
   type Position,
+  type Range,
   type RenameProvider,
   type TextDocument,
   Uri,
@@ -23,6 +24,20 @@ export class CodeRenameProvider implements RenameProvider {
 
   public constructor(options: Arguments) {
     this.#workspaceController = options.workspaceController;
+  }
+
+  public async prepareRename(
+    document: TextDocument,
+    position: Position,
+    _token: CancellationToken,
+  ): Promise<Range | null> {
+    const folderController = this.#workspaceController.folderController(document.uri);
+    if (folderController) {
+      const { logger } = folderController;
+
+      logger.debug(`prepareRename: ${document.uri.fsPath}:${position.line}:${position.character}`);
+    }
+    return null;
   }
 
   public async provideRenameEdits(

@@ -5,7 +5,6 @@ import { empty, re, splitLines, unindent, zipperMerge } from '@technobuddha/libr
 import postcss, { AtRule, type Node, Rule } from 'postcss';
 import postcssImport from 'postcss-import';
 import selectorParser from 'postcss-selector-parser';
-import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
 
 import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
 
@@ -16,7 +15,7 @@ import {
   positionAdd,
   positionOfOffset,
 } from './position.ts';
-import { fixSourceMap, originalPosition } from './source-map.ts';
+import { fixSourceMap, type RawSourceMap, SourceMapConsumer } from './source-map.ts';
 import { transformer } from './transformers/transformer.ts';
 
 type ClassPosition = {
@@ -24,7 +23,7 @@ type ClassPosition = {
   offset: Position;
 };
 
-type ExtractClassRangesFromCssArguments = {
+type Arguments = {
   options: NormalizedOptions;
   file: string;
   logger: Logger;
@@ -72,7 +71,7 @@ const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
  */
 export async function extractClassRangesFromCss(
   css: string,
-  { file, options, logger }: ExtractClassRangesFromCssArguments,
+  { file, options, logger }: Arguments,
 ): Promise<ExtractClassRangesFromCssReturn> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
@@ -103,8 +102,9 @@ export async function extractClassRangesFromCss(
           ),
         );
 
+        const source = path.relative(directory, file);
         const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home' });
-        const smc = sourceMap ? new SourceMapConsumer(sourceMap) : undefined;
+        const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
         const classes: Map<string, ExtractedCss[]> = new Map();
@@ -113,93 +113,92 @@ export async function extractClassRangesFromCss(
           .process(css, { from: path.basename(filename) })
           .root.walk((node) => {
             for (const { name } of walkNode(node, logger)) {
-              const source = path.relative(directory, file);
+              // postcss's Position is 1-based, but we use 0-based
+
               const start: Position = {
-                line: node.source?.start?.line ?? 1,
+                line: (node.source?.start?.line ?? 1) - 1,
                 column: (node.source?.start?.column ?? 1) - 1,
               };
 
               const end: Position = {
-                line: node.source?.end?.line ?? 1,
+                line: (node.source?.end?.line ?? 1) - 1,
                 column: (node.source?.end?.column ?? 1) - 1,
               };
 
               classes.set(name, [
                 ...(classes.get(name) ?? []),
                 {
-                  snippet: unindent(lines.slice(start.line - 1, end.line).join('\n')),
+                  snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
                   location: { source, range: { start, end } },
                 },
               ]);
             }
           });
 
-        if (smc) {
-          for (const [className, extracted] of Array.from(classes)) {
-            const extractedCss: ExtractedCss[] = [];
-            let prevSource: string | undefined;
-            let prevStart: Position | undefined;
-            let skip = 0;
+        for (const [className, extracted] of Array.from(classes)) {
+          const extractedCss: ExtractedCss[] = [];
+          let prevSource: string | undefined;
+          let prevStart: Position | undefined;
+          let skip = 0;
 
-            for (let {
-              snippet,
-              location: {
-                source,
-                range: { start, end },
-              },
-            } of extracted.sort(
-              (a, b) =>
-                a.location.range.start.line - b.location.range.start.line ||
-                a.location.range.start.column - b.location.range.start.column,
-            )) {
-              if (
-                prevSource === source &&
-                prevStart?.line === start.line &&
-                prevStart?.column === start.column
-              ) {
-                skip++;
-              } else {
-                skip = 0;
-                prevSource = source;
-                prevStart = start;
-              }
-
-              const {
-                source: opSource,
-                line: opLine,
-                column: opColumn,
-              } = originalPosition(smc, start, source, logger);
-              source = opSource;
-              start = { line: opLine, column: opColumn };
-
-              const sourcePath = path.resolve(directory, source);
-              const content = sources.get(sourcePath)!;
-              if (content) {
-                let offset = offsetOfPosition(content, start);
-
-                let nameOffset = 0;
-                for (let i = 0; i <= skip; ++i) {
-                  const pos = content
-                    .slice(offset + nameOffset)
-                    .search(re`\.${className}${reEndOfSelector}`);
-                  if (pos >= 0) {
-                    offset += pos + nameOffset;
-                    nameOffset = className.length + 2; // +2 for the dot and the character after the class name
-                  } else {
-                    break;
-                  }
-                }
-
-                const poo = positionOfOffset(content, offset);
-                start = { line: poo.line + 1, column: poo.column };
-                end = { line: start.line, column: start.column + className.length + 1 };
-              } else {
-                logger.warn(`Source file ${file} (${source})`);
-              }
-              extractedCss.push({ snippet, location: { source, range: { start, end } } });
+          for (let {
+            snippet,
+            location: {
+              source,
+              range: { start, end },
+            },
+          } of extracted.sort(
+            (a, b) =>
+              a.location.range.start.line - b.location.range.start.line ||
+              a.location.range.start.column - b.location.range.start.column,
+          )) {
+            if (
+              prevSource === source &&
+              prevStart?.line === start.line &&
+              prevStart?.column === start.column
+            ) {
+              skip++;
+            } else {
+              skip = 0;
+              prevSource = source;
+              prevStart = start;
             }
-            classes.set(className, extractedCss);
+
+            const {
+              source: opSource,
+              line: opLine,
+              column: opColumn,
+            } = smc.originalPosition(start);
+            source = opSource;
+            start = { line: opLine, column: opColumn };
+
+            const sourcePath = path.resolve(directory, source);
+            const content = sources.get(sourcePath)!;
+            if (content) {
+              let offset = offsetOfPosition(content, start);
+
+              let nameOffset = 0;
+              for (let i = 0; i <= skip; ++i) {
+                const pos = content
+                  .slice(offset + nameOffset)
+                  .search(re`\.${className}${reEndOfSelector}`);
+                if (pos >= 0) {
+                  offset += pos + nameOffset;
+                  nameOffset = className.length + 2;
+                } else {
+                  break;
+                }
+              }
+
+              const poo = positionOfOffset(content, offset);
+              start = { line: poo.line, column: poo.column };
+              end = { line: start.line, column: start.column + className.length + 1 };
+            } else {
+              logger.warn(`Source file ${file} (${source})`);
+            }
+            extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }
+          classes.set(className, extractedCss);
         }
 
         return { css, sourceMap, classes, includedFiles };

@@ -2,38 +2,97 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { empty, toError } from '@technobuddha/library';
-import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
+import {
+  type RawSourceMap,
+  SourceMapConsumer as JSSourceMapConsumer,
+  SourceMapGenerator as JSSourceMapGenerator,
+} from 'source-map-js';
 
 import { type Logger } from '../common/index.ts';
 
 import { type MappedPosition, type Position } from './position.ts';
 
+// source-map-js uses line base-1 column base-0, so we need to both base-0;
+
 const reBadSource = /^(?:\.\.\/)+;charset=utf-8,/v;
 
-export function originalPosition(
-  smc: SourceMapConsumer,
-  position: Position,
-  file: string,
-  logger: Logger,
-): MappedPosition {
-  try {
-    let { line, column, source } = smc.originalPositionFor({
-      line: position.line,
-      column: position.column,
+type SMCArguments = {
+  sourceMap?: RawSourceMap;
+  source: string;
+  logger: Logger;
+};
+
+export class SourceMapConsumer {
+  readonly #smc: JSSourceMapConsumer | undefined;
+  readonly #source: string;
+  readonly #logger: Logger;
+
+  public constructor({ sourceMap, source, logger }: SMCArguments) {
+    this.#smc = sourceMap ? new JSSourceMapConsumer(sourceMap) : undefined;
+    this.#source = source;
+    this.#logger = logger;
+  }
+
+  public originalPosition(position: Position): MappedPosition {
+    if (this.#smc) {
+      try {
+        let { line, column, source } = this.#smc.originalPositionFor({
+          line: position.line + 1,
+          column: position.column,
+        });
+
+        if (reBadSource.test(source)) {
+          source = this.#source;
+        }
+
+        if (line == null || column == null || source == null) {
+          throw new Error(`Position ${position.line}:${position.column} not found.`);
+        }
+
+        return { line: line - 1, column, source };
+      } catch (e) {
+        this.#logger.error(toError(e), ' <== from originalPosition');
+        throw e;
+      }
+    }
+    return { line: position.line, column: position.column, source: this.#source };
+  }
+}
+
+type SMGArguments = {
+  file: string;
+  logger: Logger;
+};
+
+type AddMappingArguments = {
+  source: string;
+  generated: Position;
+  original: Position;
+};
+
+export class SourceMapGenerator {
+  readonly #smg: JSSourceMapGenerator;
+
+  public constructor({ file }: SMGArguments) {
+    this.#smg = new JSSourceMapGenerator({ file, sourceRoot: empty });
+  }
+
+  public addMapping({ source, generated, original }: AddMappingArguments): void {
+    this.#smg.addMapping({
+      source,
+      generated: {
+        line: generated.line + 1,
+        column: generated.column,
+      },
+      original: {
+        line: original.line + 1,
+        column: original.column,
+      },
     });
+  }
 
-    if (reBadSource.test(source)) {
-      source = file;
-    }
-
-    if (line == null || column == null || source == null) {
-      throw new Error(`Position ${position.line}:${position.column} not found.`);
-    }
-
-    return { line, column, source };
-  } catch (e) {
-    logger.error(toError(e), ' <== from originalPosition');
-    throw e;
+  public sourceMap(): RawSourceMap {
+    return this.#smg.toJSON();
   }
 }
 
@@ -73,7 +132,7 @@ export function dumpSourceMap(sourceMap: RawSourceMap | undefined): string {
   const output: string[] = [];
 
   if (sourceMap) {
-    const smc = new SourceMapConsumer(sourceMap);
+    const smc = new JSSourceMapConsumer(sourceMap);
 
     smc.eachMapping((m) => {
       output.push(
@@ -83,3 +142,5 @@ export function dumpSourceMap(sourceMap: RawSourceMap | undefined): string {
   }
   return output.join('\n');
 }
+
+export { type RawSourceMap } from 'source-map-js';

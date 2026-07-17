@@ -42,7 +42,7 @@ export class CodeHoverProvider implements HoverProvider {
             const md: string[] = [];
             let first = true;
 
-            for (const { snippet } of extracted) {
+            for (const snippet of new Set(extracted.map((e) => e.snippet))) {
               if (!first) {
                 md.push('---', empty);
               }

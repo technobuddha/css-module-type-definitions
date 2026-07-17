@@ -1,8 +1,9 @@
 import { empty } from '@technobuddha/library';
 import MagicString from 'magic-string';
-import { type RawSourceMap } from 'source-map-js';
 
 import { type Options } from '../../common/index.ts';
+
+import { type RawSourceMap } from '../source-map.ts';
 
 type AdditionalData = NonNullable<NonNullable<Options['preprocessor']>['less']>['additionalData'];
 
