@@ -9,7 +9,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { getClassInfo } from './helpers/get-class-info.ts';
+import { getLocalInfo } from './helpers/get-local-info.ts';
 
 export type Arguments = {
   workspaceController: WorkspaceController;
@@ -29,15 +29,15 @@ export class CodeHoverProvider implements HoverProvider {
   ): Promise<Hover | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
-      const clickInfo = await getClassInfo(document, position);
-      if (clickInfo) {
-        const { importUri, className } = clickInfo;
+      const localInfo = await getLocalInfo(document, position);
+      if (localInfo) {
+        const { importUri, localName } = localInfo;
 
-        const types = await folderController.getTypes(importUri);
+        const types = await folderController.getCssInformation(importUri);
         if (types) {
-          const { classes } = types;
+          const { locals: classes } = types;
 
-          const extracted = classes.get(className);
+          const extracted = classes.get(localName);
           if (extracted) {
             const md: string[] = [];
             let first = true;

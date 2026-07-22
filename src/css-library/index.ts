@@ -1,2 +1,4 @@
+export { type CssInfo } from './css-info.ts';
 export { dashes } from './dashes.ts';
-export { type CssInfo, generateTypesFromCss } from './generate-types-from-css.ts';
+export { type CssLocation } from './extract-class-ranges-from-css.ts';
+export { generateTypesFromCss } from './generate-types-from-css.ts';

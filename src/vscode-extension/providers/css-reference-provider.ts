@@ -12,7 +12,6 @@ import {
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
 
-import { findClassUsages } from './helpers/find-class-usages.ts';
 import { normalizeLocations } from './helpers/lib/normalize-locations.ts';
 
 type Arguments = {
@@ -48,34 +47,33 @@ export class CssReferenceProvider implements ReferenceProvider {
         if (className.startsWith('.')) {
           className = className.slice(1);
 
-          await folderController.getMissingTypes();
-
           const importers =
             folderController.isCssModule(document.uri) ?
               [document.uri]
-            : folderController.types
-                .entries()
-                .filter(([, types]) => types.includedFiles.has(document.uri.fsPath))
-                .map(([importer]) => Uri.file(importer))
-                .toArray();
+            : await folderController.getMissingCssInformation().then((imports) =>
+                imports
+                  .entries()
+                  .filter(([, types]) => types.includedFiles.has(document.uri.fsPath))
+                  .map(([importer]) => Uri.file(importer))
+                  .toArray(),
+              );
+
           for (const importer of importers) {
-            const types = await folderController.getTypes(importer);
-            if (types) {
-              const { aliases } = types;
+            const info = await folderController.getCssInformation(importer);
+            if (info) {
+              const { classLocal } = info;
 
-              if (aliases.has(className)) {
-                const alternates = new Set(aliases.get(className));
+              if (classLocal.has(className)) {
+                const alternates = new Set(classLocal.get(className));
 
-                await folderController.getAllImports();
-
-                for (const [file, imports] of folderController.imports) {
+                for (const [file, imports] of await folderController.allImports()) {
                   if (token.isCancellationRequested) {
                     return [];
                   }
 
                   if (imports.some((i) => i.fsPath === importer.fsPath)) {
                     const textDocument = await workspace.openTextDocument(file);
-                    const usages = await findClassUsages(textDocument, importer, alternates);
+                    const usages = await info.localUsages(textDocument, importer, alternates);
 
                     for (const usage of usages) {
                       locations.push(new Location(Uri.file(file), usage.range));

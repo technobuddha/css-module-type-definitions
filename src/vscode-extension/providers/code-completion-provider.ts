@@ -41,9 +41,9 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const types = await folderController.getTypes(importUri);
+          const types = await folderController.getCssInformation(importUri);
           if (types) {
-            const { classes } = types;
+            const { locals: classes } = types;
 
             return new CompletionList(
               Array.from(classes.keys(), (key) =>

@@ -15,7 +15,7 @@ type FolderCodeOptions = {
 const reDts = /(?:\.d\.ts$)|(?:\.d\.[^.]*\.ts$)/v;
 
 export class FolderCode extends FolderCss implements Disposable {
-  public readonly imports: Map<string, Uri[]> = new Map();
+  protected readonly imports: Map<string, Uri[]> = new Map();
 
   public constructor({ folder, logger }: FolderCodeOptions) {
     super({ folder, logger });
@@ -52,7 +52,7 @@ export class FolderCode extends FolderCss implements Disposable {
     return undefined;
   }
 
-  public async getAllImports(): Promise<void> {
+  public async allImports(): Promise<ReadonlyMap<string, Uri[]>> {
     await this.findUnignoredFiles(`**/${this.globIsCode()}`).then(async (uris) => {
       for (const uri of uris) {
         if (this.isCode(uri)) {
@@ -60,6 +60,7 @@ export class FolderCode extends FolderCss implements Disposable {
         }
       }
     });
+    return this.imports;
   }
 
   public deleteImports(uri: Uri): void {

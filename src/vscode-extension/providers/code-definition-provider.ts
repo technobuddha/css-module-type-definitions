@@ -10,7 +10,7 @@ import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-import { getClassInfo } from './helpers/get-class-info.ts';
+import { getLocalInfo } from './helpers/get-local-info.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -30,16 +30,23 @@ export class CodeDefinitionProvider implements DefinitionProvider {
   ): Promise<Location | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController?.options.cssModules.generateDts === false) {
-      const clickInfo = await getClassInfo(document, position);
-      if (clickInfo) {
-        const { importUri, className } = clickInfo;
+      const localInfo = await getLocalInfo(document, position);
+      if (localInfo) {
+        const { importUri, localName } = localInfo;
 
-        const types = await folderController.getTypes(importUri);
+        const types = await folderController.getCssInformation(importUri);
         if (types) {
-          const { classes } = types;
-          const extracted = classes.get(className);
+          const { locals: classes } = types;
+          const extracted = classes.get(localName);
           if (extracted) {
-            const [{ location: { source, range: { start } } }] = extracted;
+            const [
+              {
+                location: {
+                  source,
+                  range: { start },
+                },
+              },
+            ] = extracted;
 
             const target = Uri.joinPath(Utils.dirname(importUri), source);
 

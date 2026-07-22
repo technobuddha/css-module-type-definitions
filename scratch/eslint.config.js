@@ -4,7 +4,4 @@
 // @ts-check
 import { lint } from '@technobuddha/project';
 
-export default lint(
-  { files: ['*.d.*.ts'], typescript: true },
-  { files: ['**/*.ts'], typescript: true },
-);
+export default lint({ files: ['**/*.ts'], typescript: true });

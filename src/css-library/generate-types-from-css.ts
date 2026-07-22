@@ -18,15 +18,10 @@ import { type CompilerOptions } from 'typescript';
 import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
 
 import { BANNER_MESSAGE } from './constants.ts';
-import { extractClassRangesFromCss, type ExtractedCss } from './extract-class-ranges-from-css.ts';
+import { type CssInfo } from './css-info.ts';
+import { dashes } from './dashes.ts';
+import { type CssLocation, extractClassRangesFromCss } from './extract-class-ranges-from-css.ts';
 import { SourceMapGenerator } from './source-map.ts';
-
-export type CssInfo = {
-  files: Record<string, string>;
-  classes: Map<string, ExtractedCss[]>;
-  includedFiles: Set<string>;
-  aliases: Map<string, string[]>;
-};
 
 export type GenerateTypesFromCssOptions = {
   options: NormalizedOptions;
@@ -40,12 +35,10 @@ export async function generateTypesFromCss(
   { options, logger }: GenerateTypesFromCssOptions,
 ): Promise<CssInfo> {
   const file = path.resolve(filepath);
-  // const directory = path.dirname(filename);
-
   const { cssModules } = options;
 
   return extractClassRangesFromCss(css, { file, options, logger }).then(
-    async ({ css, classes, includedFiles }) => {
+    async ({ css, classes: locals, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
@@ -61,38 +54,58 @@ export async function generateTypesFromCss(
           map: { inline: false },
         })
         .then(() => {
-          const scopeClass: Record<string, string[]> = {};
-          for (const [className, scoped] of Object.entries(classScope)) {
-            scopeClass[scoped] ??= [];
-            scopeClass[scoped].push(className);
+          const classLocal: Map<string, Set<string>> = new Map();
+          for (const className of locals.keys()) {
+            if (!classLocal.has(className)) {
+              switch (cssModules.localsConvention) {
+                case 'camelCase': {
+                  classLocal.set(className, new Set([className, camelCase(className)]));
+                  break;
+                }
+                case 'camelCaseOnly': {
+                  classLocal.set(className, new Set([camelCase(className)]));
+                  break;
+                }
+                case 'dashes': {
+                  classLocal.set(className, new Set([className, dashes(className)]));
+                  break;
+                }
+                case 'dashesOnly': {
+                  classLocal.set(className, new Set([dashes(className)]));
+                  break;
+                }
+                case 'all': {
+                  classLocal.set(
+                    className,
+                    new Set([className, camelCase(className), dashes(className)]),
+                  );
+                  break;
+                }
+                case 'none':
+                case undefined:
+                default: {
+                  classLocal.set(className, new Set([className]));
+                  break;
+                }
+              }
+            }
           }
 
-          const aliases: Map<string, string[]> = new Map();
-          for (const classNames of Object.values(scopeClass)) {
-            for (const className of classNames) {
-              aliases.set(className, classNames);
+          const localClass: Map<string, Set<string>> = new Map();
+          for (const [className, set] of classLocal) {
+            for (const alias of set) {
+              localClass.set(alias, (localClass.get(alias) ?? new Set()).add(className));
             }
           }
 
-          for (const classNames of Object.values(scopeClass)) {
-            let extracted: ExtractedCss[] | undefined;
-            for (const className of classNames) {
-              const e = classes.get(className);
-              if (e) {
-                extracted ??= e;
-              }
-            }
-            if (extracted) {
-              for (const className of classNames) {
-                classes.set(className, extracted);
-              }
-            } else {
-              logger.warn(`No extracted range found for class names: ${classNames.join(', ')}`);
+          const extractedCss: Map<string, CssLocation[]> = new Map();
+          for (const [className, set] of classLocal) {
+            for (const alias of set) {
+              extractedCss.set(alias, locals.get(className) ?? []);
             }
           }
 
           const parsed = path.parse(file);
-
           let variable = camelCase(parsed.name.replace(/\.module$/v, empty));
           let classname = pascalCase(variable);
           if (!isJsVariable(variable)) {
@@ -120,7 +133,7 @@ export async function generateTypesFromCss(
           const smg = new SourceMapGenerator({ file: dtsFile, logger });
 
           const classEntries = Array.from(
-            classes,
+            extractedCss,
             ([className, extracted]) => [className, extracted[0]] as const,
           ).sort(
             ([, a], [, b]) =>
@@ -170,9 +183,10 @@ export async function generateTypesFromCss(
               [path.resolve(dir, dtsFile)]: dts.join('\n'),
               [path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
             },
-            classes,
+            locals,
             includedFiles,
-            aliases,
+            classLocal,
+            localClass,
           };
         })
         .catch((error) => {

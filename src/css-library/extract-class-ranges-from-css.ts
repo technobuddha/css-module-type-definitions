@@ -29,7 +29,7 @@ type Arguments = {
   logger: Logger;
 };
 
-export type ExtractedCss = {
+export type CssLocation = {
   snippet: string;
   location: Location;
 };
@@ -37,7 +37,7 @@ export type ExtractedCss = {
 export type ExtractClassRangesFromCssReturn = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  classes: Map<string, ExtractedCss[]>;
+  classes: Map<string, CssLocation[]>;
   includedFiles: Set<string>;
 };
 
@@ -107,7 +107,7 @@ export async function extractClassRangesFromCss(
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
-        const classes: Map<string, ExtractedCss[]> = new Map();
+        const classes: Map<string, CssLocation[]> = new Map();
 
         postcss()
           .process(css, { from: path.basename(filename) })
@@ -136,7 +136,7 @@ export async function extractClassRangesFromCss(
           });
 
         for (const [className, extracted] of Array.from(classes)) {
-          const extractedCss: ExtractedCss[] = [];
+          const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
           let prevStart: Position | undefined;
           let skip = 0;

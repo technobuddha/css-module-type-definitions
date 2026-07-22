@@ -11,9 +11,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
 
-import { findClassUsages } from './helpers/find-class-usages.ts';
-import { getClassInfo } from './helpers/get-class-info.ts';
-import { classReferenceInfo } from './helpers/lib/class-reference-info.ts';
+import { getLocalInfo } from './helpers/get-local-info.ts';
 import { normalizeLocations } from './helpers/lib/normalize-locations.ts';
 
 type CSSReferenceProviderOptions = {
@@ -35,60 +33,58 @@ export class CodeReferenceProvider implements ReferenceProvider {
   ): Promise<Location[]> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
-      const classInfo = await getClassInfo(document, position);
-      if (classInfo) {
-        const { importUri, className, accessorType } = classInfo;
+      const localInfo = await getLocalInfo(document, position);
+      if (localInfo) {
+        const { importUri, localName, accessorType } = localInfo;
         const locations: Location[] = [];
 
-        // TODO Add references to the .dts file (if exists) for aliases
+        // TODO Add references to the .dts file (if exists) for classLocal
 
-        const types = await folderController.getTypes(importUri);
-        const cri = classReferenceInfo(types, importUri, className);
-        if (cri) {
-          const { classNames, declarationLocations } = cri;
-
-          if (context.includeDeclaration) {
-            for (const declarationLocation of declarationLocations) {
-              locations.push(declarationLocation);
-            }
-          }
-
-          await folderController.getAllImports();
-
-          for (const [file, imports] of folderController.imports) {
-            if (token.isCancellationRequested) {
-              return [];
+        const info = await folderController.getCssInformation(importUri);
+        if (info) {
+          const cssLocations = info.cssLocations(localName, importUri);
+          if (cssLocations) {
+            if (context.includeDeclaration) {
+              for (const cssLocation of cssLocations.values()) {
+                locations.push(...cssLocation);
+              }
             }
 
-            if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-              for (const usage of await findClassUsages(
-                await workspace.openTextDocument(file),
-                importUri,
-                classNames,
-              )) {
-                if (accessorType === 'element' && usage.accessorType === accessorType) {
-                  continue;
+            for (const [file, imports] of await folderController.allImports()) {
+              if (token.isCancellationRequested) {
+                return [];
+              }
+
+              if (imports.some((i) => i.fsPath === importUri.fsPath)) {
+                for (const usage of await info.localUsages(
+                  await workspace.openTextDocument(file),
+                  importUri,
+                  info.localNames(cssLocations.keys()),
+                )) {
+                  if (accessorType === 'element' && usage.accessorType === accessorType) {
+                    continue;
+                  }
+
+                  locations.push(new Location(Uri.file(file), usage.range));
                 }
-
-                locations.push(new Location(Uri.file(file), usage.range));
               }
             }
           }
+
+          const normalizedLocations = normalizeLocations(locations);
+
+          if (!context.includeDeclaration) {
+            return normalizedLocations.filter((location) => {
+              if (location.uri.fsPath !== document.uri.fsPath) {
+                return true;
+              }
+
+              return !location.range.contains(position);
+            });
+          }
+
+          return normalizedLocations;
         }
-
-        const normalizedLocations = normalizeLocations(locations);
-
-        if (!context.includeDeclaration) {
-          return normalizedLocations.filter((location) => {
-            if (location.uri.fsPath !== document.uri.fsPath) {
-              return true;
-            }
-
-            return !location.range.contains(position);
-          });
-        }
-
-        return normalizedLocations;
       }
     }
 

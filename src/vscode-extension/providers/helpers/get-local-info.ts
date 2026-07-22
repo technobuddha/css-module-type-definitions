@@ -10,17 +10,17 @@ import { importModuleFromDeclaration } from './lib/import-module-from-declaratio
 import { resolveImportPath } from './lib/resolve-import-path.ts';
 import { unwrapExpression } from './lib/unwrap-expression.ts';
 
-type ClassInfo = {
+type LocalInfo = {
   importUri: Uri;
-  className: string;
+  localName: string;
   variableName: string;
   accessorType: 'property' | 'element';
 };
 
-export async function getClassInfo(
+export async function getLocalInfo(
   document: TextDocument,
   position?: Position,
-): Promise<ClassInfo | null> {
+): Promise<LocalInfo | null> {
   if (position) {
     const sourceFile = getSourceFile(document);
     const typeChecker = getTypeChecker(document, sourceFile);
@@ -42,15 +42,15 @@ export async function getClassInfo(
           if (isIdentifier(expression)) {
             const variableName = expression.text;
 
-            const className =
+            const localName =
               isPropertyAccessExpressionLike(access) ? access.name.text
               : access.argumentExpression && isStringLiteralLike(access.argumentExpression) ?
                 access.argumentExpression.text
               : null;
-            const accessorType: ClassInfo['accessorType'] =
+            const accessorType: LocalInfo['accessorType'] =
               isPropertyAccessExpressionLike(access) ? 'property' : 'element';
 
-            if (className) {
+            if (localName) {
               const symbol = typeChecker.getSymbolAtLocation(expression);
               if (symbol?.declarations) {
                 for (const declaration of symbol.declarations) {
@@ -60,7 +60,7 @@ export async function getClassInfo(
                     const importUri = await resolveImportPath(document.uri.fsPath, importModule);
 
                     if (importUri) {
-                      return { importUri, className, variableName, accessorType };
+                      return { importUri, localName, variableName, accessorType };
                     }
                   }
                 }
