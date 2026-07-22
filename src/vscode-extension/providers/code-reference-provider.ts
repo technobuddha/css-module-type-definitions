@@ -10,9 +10,8 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-
-import { getLocalInfo } from './helpers/get-local-info.ts';
-import { normalizeLocations } from './helpers/lib/normalize-locations.ts';
+import { getLocalInfo } from '../helpers/get-local-info.ts';
+import { normalizeLocations } from '../helpers/normalize-locations.ts';
 
 type CSSReferenceProviderOptions = {
   workspaceController: WorkspaceController;

@@ -10,14 +10,14 @@ import { Utils } from 'vscode-uri';
 
 import { type CssInfo, type CssLocation } from '../../../css-library/index.ts';
 
-import { createRange } from '../../providers/helpers/lib/create-range.ts';
+import { createRange } from '../../helpers/create-range.ts';
 import {
   isElementAccessExpressionLike,
   isPropertyAccessExpressionLike,
-} from '../../providers/helpers/lib/expression.ts';
-import { getSourceFile } from '../../providers/helpers/lib/get-source-file.ts';
-import { importBindingNames } from '../../providers/helpers/lib/import-binding-names.ts';
-import { unwrapExpression } from '../../providers/helpers/lib/unwrap-expression.ts';
+} from '../../helpers/expression.ts';
+import { getSourceFile } from '../../helpers/get-source-file.ts';
+import { importBindingNames } from '../../helpers/import-binding-names.ts';
+import { unwrapExpression } from '../../helpers/unwrap-expression.ts';
 
 type ClassUsage = {
   range: Range;

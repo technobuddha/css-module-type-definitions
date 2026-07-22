@@ -8,8 +8,7 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-
-import { getLocalInfo } from './helpers/get-local-info.ts';
+import { getLocalInfo } from '../helpers/get-local-info.ts';
 
 export type Arguments = {
   workspaceController: WorkspaceController;

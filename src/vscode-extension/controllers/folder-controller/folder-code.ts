@@ -3,7 +3,7 @@ import { Utils } from 'vscode-uri';
 
 import { CODE_EXTENSIONS, fileOperation, type LoggerController } from '../../../common/index.ts';
 
-import { scanImports } from '../../providers/helpers/scan-imports.ts';
+import { scanImports } from '../../helpers/scan-imports.ts';
 
 import { FolderCss } from './folder-css.ts';
 

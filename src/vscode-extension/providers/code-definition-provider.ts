@@ -9,8 +9,7 @@ import {
 import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-
-import { getLocalInfo } from './helpers/get-local-info.ts';
+import { getLocalInfo } from '../helpers/get-local-info.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;

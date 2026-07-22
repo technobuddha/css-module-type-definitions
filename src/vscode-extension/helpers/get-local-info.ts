@@ -1,14 +1,14 @@
 import { isIdentifier, isStringLiteralLike } from 'typescript';
 import { type Position, type TextDocument, type Uri } from 'vscode';
 
-import { isPropertyAccessExpressionLike } from './lib/expression.ts';
-import { findAccessExpression } from './lib/find-access-expression.ts';
-import { findDeepestNodeAtPosition } from './lib/find-deepest-node-at-position.ts';
-import { getSourceFile } from './lib/get-source-file.ts';
-import { getTypeChecker } from './lib/get-type-checker.ts';
-import { importModuleFromDeclaration } from './lib/import-module-from-declaration.ts';
-import { resolveImportPath } from './lib/resolve-import-path.ts';
-import { unwrapExpression } from './lib/unwrap-expression.ts';
+import { isPropertyAccessExpressionLike } from './expression.ts';
+import { findAccessExpression } from './find-access-expression.ts';
+import { findDeepestNodeAtPosition } from './find-deepest-node-at-position.ts';
+import { getSourceFile } from './get-source-file.ts';
+import { getTypeChecker } from './get-type-checker.ts';
+import { importModuleFromDeclaration } from './import-module-from-declaration.ts';
+import { resolveImportPath } from './resolve-import-path.ts';
+import { unwrapExpression } from './unwrap-expression.ts';
 
 type LocalInfo = {
   importUri: Uri;

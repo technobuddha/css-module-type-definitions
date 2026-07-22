@@ -1,12 +1,12 @@
 import { isIdentifier } from 'typescript';
 import { type Position, type TextDocument, type Uri } from 'vscode';
 
-import { findDeepestNodeAtPosition } from './lib/find-deepest-node-at-position.ts';
-import { getSourceFile } from './lib/get-source-file.ts';
-import { getTypeChecker } from './lib/get-type-checker.ts';
-import { importModuleFromDeclaration } from './lib/import-module-from-declaration.ts';
-import { resolveImportPath } from './lib/resolve-import-path.ts';
-import { variableNameBeforeAccessor } from './lib/variable-name-before-accessor.ts';
+import { findDeepestNodeAtPosition } from './find-deepest-node-at-position.ts';
+import { getSourceFile } from './get-source-file.ts';
+import { getTypeChecker } from './get-type-checker.ts';
+import { importModuleFromDeclaration } from './import-module-from-declaration.ts';
+import { resolveImportPath } from './resolve-import-path.ts';
+import { variableNameBeforeAccessor } from './variable-name-before-accessor.ts';
 
 type ImportInfo = {
   importUri: Uri;

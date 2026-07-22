@@ -14,8 +14,7 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-
-import { getImportInfo } from './helpers/get-import-info.ts';
+import { getImportInfo } from '../helpers/get-import-info.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;

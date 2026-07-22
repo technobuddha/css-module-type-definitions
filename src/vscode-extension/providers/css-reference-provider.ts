@@ -11,8 +11,7 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-
-import { normalizeLocations } from './helpers/lib/normalize-locations.ts';
+import { normalizeLocations } from '../helpers/normalize-locations.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
