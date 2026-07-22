@@ -31,14 +31,16 @@ export interface Options {
     styl: StylusPreprocessorOptions;
     stylus: StylusPreprocessorOptions;
   };
-  cssModules: {
-    scopeBehaviour: 'global' | 'local';
-    globalModulePaths: RegExp[];
-    exportGlobals: boolean;
-    generateScopedName:
-      string | ((name: string, filename: string, css: string) => string) | undefined;
-    hashPrefix: string;
-    localsConvention: LocalsConvention;
+  css: {
+    modules: {
+      scopeBehaviour: 'global' | 'local';
+      globalModulePaths: RegExp[];
+      exportGlobals: boolean;
+      generateScopedName:
+        string | ((name: string, filename: string, css: string) => string) | undefined;
+      hashPrefix: string;
+      localsConvention: LocalsConvention;
+    };
     extensions: string[];
     modulePattern: string;
     dtsHeader: string;
@@ -50,15 +52,17 @@ export interface Options {
 export type PartialOptions = {
   logLevel?: Options['logLevel'];
   preprocessor?: Partial<Options['preprocessor']>;
-  cssModules?: Partial<Options['cssModules']>;
+  css?: {
+    modules?: Partial<Options['css']['modules']>;
+  } & Partial<Omit<Options['css'], 'modules'>>;
 };
 
-type NormalizedCSSModulesOptions = Omit<Options['cssModules'], 'localsConvention'> & {
+type NormalizedCSSModulesOptions = Omit<Options['css']['modules'], 'localsConvention'> & {
   localsConvention?: LocalsConvention;
 };
 
-export type NormalizedOptions = Omit<Options, 'cssModules'> & {
-  cssModules: NormalizedCSSModulesOptions;
+export type NormalizedOptions = Required<Omit<Options, 'css'>> & {
+  css: { modules: NormalizedCSSModulesOptions } & Required<Omit<Options['css'], 'modules'>>;
 };
 
 export const defaultOptions = Object.freeze<Options>({
@@ -70,13 +74,15 @@ export const defaultOptions = Object.freeze<Options>({
     styl: {},
     stylus: {},
   },
-  cssModules: {
-    scopeBehaviour: 'local',
-    globalModulePaths: [],
-    exportGlobals: false,
-    generateScopedName: undefined,
-    hashPrefix: empty,
-    localsConvention: 'none',
+  css: {
+    modules: {
+      scopeBehaviour: 'local',
+      globalModulePaths: [],
+      exportGlobals: false,
+      generateScopedName: undefined,
+      hashPrefix: empty,
+      localsConvention: 'none',
+    },
     dtsHeader: empty,
     dtsFooter: empty,
     generateDts: true,
@@ -88,9 +94,9 @@ export const defaultOptions = Object.freeze<Options>({
 export function normalizeOptions(options: Options): NormalizedOptions {
   const nOptions: NormalizedOptions = options;
 
-  const extensions = cull(nOptions.cssModules.extensions, { emptyStrings: true });
+  const extensions = cull(nOptions.css.extensions, { emptyStrings: true });
   if (extensions.length === 0) {
-    nOptions.cssModules.extensions = defaultOptions.cssModules.extensions;
+    nOptions.css.extensions = defaultOptions.css.extensions;
   }
 
   return nOptions;

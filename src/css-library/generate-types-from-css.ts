@@ -21,6 +21,7 @@ import { BANNER_MESSAGE } from './constants.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
 import { type CssLocation, extractClassRangesFromCss } from './extract-class-ranges-from-css.ts';
+import { type Position, type Range } from './position.ts';
 import { SourceMapGenerator } from './source-map.ts';
 
 export type GenerateTypesFromCssOptions = {
@@ -35,7 +36,6 @@ export async function generateTypesFromCss(
   { options, logger }: GenerateTypesFromCssOptions,
 ): Promise<CssInfo> {
   const file = path.resolve(filepath);
-  const { cssModules } = options;
 
   return extractClassRangesFromCss(css, { file, options, logger }).then(
     async ({ css, classes: locals, includedFiles }) => {
@@ -43,7 +43,7 @@ export async function generateTypesFromCss(
       return postcss()
         .use(
           postcssModules({
-            ...cssModules,
+            ...options.css.modules,
             getJSON: (_cssFilename, json, _outputFilename) => {
               classScope = json;
             },
@@ -57,7 +57,7 @@ export async function generateTypesFromCss(
           const classLocal: Map<string, Set<string>> = new Map();
           for (const className of locals.keys()) {
             if (!classLocal.has(className)) {
-              switch (cssModules.localsConvention) {
+              switch (options.css.modules.localsConvention) {
                 case 'camelCase': {
                   classLocal.set(className, new Set([className, camelCase(className)]));
                   break;
@@ -120,7 +120,7 @@ export async function generateTypesFromCss(
             '{',
             ...defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`),
             '}',
-            ...(cssModules.dtsHeader ? splitLines(cssModules.dtsHeader) : []),
+            ...(options.css.dtsHeader ? splitLines(options.css.dtsHeader) : []),
             empty,
             '// prettier-ignore',
             `${space.repeat(0)}type ${classname} = {`,
@@ -128,6 +128,7 @@ export async function generateTypesFromCss(
 
           const { dir, name, ext } = path.parse(file);
           const dtsFile = `${name}.d${ext}.ts`;
+          const dtsRange: Map<string, Range> = new Map();
           const mapFile = `${dtsFile}.map`;
 
           const smg = new SourceMapGenerator({ file: dtsFile, logger });
@@ -151,18 +152,25 @@ export async function generateTypesFromCss(
               },
             } = extracted;
 
+            const generated: Position = {
+              line: dts.length,
+              column: 11, // length of {space.repeat(2)}readonly{space}{quote},
+            };
+
             smg.addMapping({
               source,
-              generated: {
-                line: dts.length,
-                column: 11, // length of {space.repeat(2)}readonly{space}{quote},
-              },
+              generated,
               original: { line, column },
             });
 
             dts.push(
               `${space.repeat(2)}readonly${space}${quote(className)}:${space}${quote(classScope[className])};`,
             );
+
+            dtsRange.set(className, {
+              start: { line: generated.line, column: generated.column + 1 },
+              end: { line: generated.line, column: generated.column + className.length + 1 },
+            });
           }
 
           dts.push(
@@ -174,7 +182,7 @@ export async function generateTypesFromCss(
             empty,
             `//# sourceMappingURL=${path.basename(mapFile)}`,
             empty,
-            ...splitLines(cssModules.dtsFooter ?? empty),
+            ...splitLines(options.css.dtsFooter ?? empty),
             empty,
           );
 
@@ -183,10 +191,13 @@ export async function generateTypesFromCss(
               [path.resolve(dir, dtsFile)]: dts.join('\n'),
               [path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
             },
+            dtsFile,
+            mapFile,
             locals,
             includedFiles,
             classLocal,
             localClass,
+            dtsRange,
           };
         })
         .catch((error) => {

@@ -1,7 +1,7 @@
 import { SerializedSet } from '@technobuddha/library';
 import { Location, Position, Range, Uri } from 'vscode';
 
-import { canonicalPath } from './cononical-path.ts';
+import { canonicalPath } from './canonical-path.ts';
 
 type SerializableLocation = {
   uri: string;

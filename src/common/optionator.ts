@@ -143,57 +143,55 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#vite?.preprocessorOptions?.stylus ??
           defaultOptions.preprocessor.stylus,
       },
-      cssModules: {
-        scopeBehaviour:
-          this.#top?.cssModules?.scopeBehaviour ??
-          this.#cmtd?.cssModules?.scopeBehaviour ??
-          this.#vite?.modules?.scopeBehaviour ??
-          defaultOptions.cssModules.scopeBehaviour,
-        globalModulePaths:
-          this.#top.cssModules?.globalModulePaths ??
-          this.#cmtd?.cssModules?.globalModulePaths ??
-          this.#vite?.modules?.globalModulePaths ??
-          defaultOptions.cssModules.globalModulePaths,
-        exportGlobals:
-          this.#top?.cssModules?.exportGlobals ??
-          this.#cmtd?.cssModules?.exportGlobals ??
-          this.#vite?.modules?.exportGlobals ??
-          defaultOptions.cssModules.exportGlobals,
-        generateScopedName:
-          this.#top?.cssModules?.generateScopedName ??
-          this.#cmtd?.cssModules?.generateScopedName ??
-          this.#vite?.modules?.generateScopedName ??
-          defaultOptions.cssModules.generateScopedName,
-        hashPrefix:
-          this.#top?.cssModules?.hashPrefix ??
-          this.#cmtd?.cssModules?.hashPrefix ??
-          this.#vite?.modules?.hashPrefix ??
-          defaultOptions.cssModules.hashPrefix,
-        localsConvention:
-          this.#top?.cssModules?.localsConvention ??
-          this.#cmtd?.cssModules?.localsConvention ??
-          this.#vite?.modules?.localsConvention ??
-          defaultOptions.cssModules.localsConvention,
+      css: {
+        modules: {
+          scopeBehaviour:
+            this.#top?.css?.modules?.scopeBehaviour ??
+            this.#cmtd?.css?.modules?.scopeBehaviour ??
+            this.#vite?.modules?.scopeBehaviour ??
+            defaultOptions.css.modules.scopeBehaviour,
+          globalModulePaths:
+            this.#top.css?.modules?.globalModulePaths ??
+            this.#cmtd?.css?.modules?.globalModulePaths ??
+            this.#vite?.modules?.globalModulePaths ??
+            defaultOptions.css.modules.globalModulePaths,
+          exportGlobals:
+            this.#top?.css?.modules?.exportGlobals ??
+            this.#cmtd?.css?.modules?.exportGlobals ??
+            this.#vite?.modules?.exportGlobals ??
+            defaultOptions.css.modules.exportGlobals,
+          generateScopedName:
+            this.#top?.css?.modules?.generateScopedName ??
+            this.#cmtd?.css?.modules?.generateScopedName ??
+            this.#vite?.modules?.generateScopedName ??
+            defaultOptions.css.modules.generateScopedName,
+          hashPrefix:
+            this.#top?.css?.modules?.hashPrefix ??
+            this.#cmtd?.css?.modules?.hashPrefix ??
+            this.#vite?.modules?.hashPrefix ??
+            defaultOptions.css.modules.hashPrefix,
+          localsConvention:
+            this.#top?.css?.modules?.localsConvention ??
+            this.#cmtd?.css?.modules?.localsConvention ??
+            this.#vite?.modules?.localsConvention ??
+            defaultOptions.css.modules.localsConvention,
+        },
         dtsHeader:
-          this.#top?.cssModules?.dtsHeader ??
-          this.#cmtd?.cssModules?.dtsHeader ??
-          defaultOptions.cssModules.dtsHeader,
+          this.#top?.css?.dtsHeader ?? this.#cmtd?.css?.dtsHeader ?? defaultOptions.css.dtsHeader,
         dtsFooter:
-          this.#top?.cssModules?.dtsFooter ??
-          this.#cmtd?.cssModules?.dtsFooter ??
-          defaultOptions.cssModules.dtsFooter,
+          this.#top?.css?.dtsFooter ?? this.#cmtd?.css?.dtsFooter ?? defaultOptions.css.dtsFooter,
         generateDts:
-          this.#top?.cssModules?.generateDts ??
-          this.#cmtd?.cssModules?.generateDts ??
-          defaultOptions.cssModules.generateDts,
+          this.#top?.css?.generateDts ??
+          this.#cmtd?.css?.generateDts ??
+          defaultOptions.css.generateDts,
         modulePattern:
-          this.#top?.cssModules?.modulePattern ??
-          this.#cmtd?.cssModules?.modulePattern ??
-          defaultOptions.cssModules.modulePattern,
+          this.#top?.css?.modulePattern ??
+          this.#cmtd?.css?.modulePattern ??
+          defaultOptions.css.modulePattern,
         extensions:
-          this.#top?.cssModules?.extensions ??
-          this.#cmtd?.cssModules?.extensions ??
-          defaultOptions.cssModules.extensions,
+          this.#top?.css?.extensions ??
+          this.#cmtd?.css?.extensions ??
+          defaultOptions.css.extensions,
       },
     });
   }
@@ -216,7 +214,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   }
 
   public get globIsCssModule(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
+    const { modulePattern, extensions } = this.#options.css;
 
     if (extensions.length === 0) {
       return modulePattern;
@@ -229,7 +227,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   }
 
   public get globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.#options.cssModules;
+    const { modulePattern, extensions } = this.#options.css;
 
     if (extensions.length === 0) {
       return `${modulePattern}.d{.ts,.ts.map}`;

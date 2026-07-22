@@ -1,5 +1,7 @@
 export default {
-  cssModules: {
-    generateDts: true,
+  css: {
+    modules: {
+      generateDts: true,
+    },
   },
 };

@@ -124,39 +124,38 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
           ...defaultOptions.preprocessor.stylus,
         },
       },
-      cssModules: {
-        scopeBehaviour:
-          this.#cmtdConfig?.cssModules?.scopeBehaviour ??
-          this.#viteConfig?.modules?.scopeBehaviour ??
-          defaultOptions.cssModules.scopeBehaviour,
-        globalModulePaths:
-          this.#cmtdConfig?.cssModules?.globalModulePaths ??
-          this.#viteConfig?.modules?.globalModulePaths ??
-          defaultOptions.cssModules.globalModulePaths,
-        exportGlobals:
-          this.#cmtdConfig?.cssModules?.exportGlobals ??
-          this.#viteConfig?.modules?.exportGlobals ??
-          defaultOptions.cssModules.exportGlobals,
-        generateScopedName:
-          this.#cmtdConfig?.cssModules?.generateScopedName ??
-          this.#viteConfig?.modules?.generateScopedName ??
-          defaultOptions.cssModules.generateScopedName,
-        hashPrefix:
-          this.#cmtdConfig?.cssModules?.hashPrefix ??
-          this.#viteConfig?.modules?.hashPrefix ??
-          defaultOptions.cssModules.hashPrefix,
-        localsConvention:
-          this.#cmtdConfig?.cssModules?.localsConvention ??
-          this.#viteConfig?.modules?.localsConvention ??
-          defaultOptions.cssModules.localsConvention,
-        dtsHeader: this.#cmtdConfig?.cssModules?.dtsHeader ?? defaultOptions.cssModules.dtsHeader,
-        dtsFooter: this.#cmtdConfig?.cssModules?.dtsFooter ?? defaultOptions.cssModules.dtsFooter,
-        generateDts:
-          this.#cmtdConfig?.cssModules?.generateDts ?? defaultOptions.cssModules.generateDts,
-        modulePattern:
-          this.#cmtdConfig?.cssModules?.modulePattern ?? defaultOptions.cssModules.modulePattern,
-        extensions:
-          this.#cmtdConfig?.cssModules?.extensions ?? defaultOptions.cssModules.extensions,
+      css: {
+        modules: {
+          scopeBehaviour:
+            this.#cmtdConfig?.css?.modules?.scopeBehaviour ??
+            this.#viteConfig?.modules?.scopeBehaviour ??
+            defaultOptions.css.modules.scopeBehaviour,
+          globalModulePaths:
+            this.#cmtdConfig?.css?.modules?.globalModulePaths ??
+            this.#viteConfig?.modules?.globalModulePaths ??
+            defaultOptions.css.modules.globalModulePaths,
+          exportGlobals:
+            this.#cmtdConfig?.css?.modules?.exportGlobals ??
+            this.#viteConfig?.modules?.exportGlobals ??
+            defaultOptions.css.modules.exportGlobals,
+          generateScopedName:
+            this.#cmtdConfig?.css?.modules?.generateScopedName ??
+            this.#viteConfig?.modules?.generateScopedName ??
+            defaultOptions.css.modules.generateScopedName,
+          hashPrefix:
+            this.#cmtdConfig?.css?.modules?.hashPrefix ??
+            this.#viteConfig?.modules?.hashPrefix ??
+            defaultOptions.css.modules.hashPrefix,
+          localsConvention:
+            this.#cmtdConfig?.css?.modules?.localsConvention ??
+            this.#viteConfig?.modules?.localsConvention ??
+            defaultOptions.css.modules.localsConvention,
+        },
+        dtsHeader: this.#cmtdConfig?.css?.dtsHeader ?? defaultOptions.css.dtsHeader,
+        dtsFooter: this.#cmtdConfig?.css?.dtsFooter ?? defaultOptions.css.dtsFooter,
+        generateDts: this.#cmtdConfig?.css?.generateDts ?? defaultOptions.css.generateDts,
+        modulePattern: this.#cmtdConfig?.css?.modulePattern ?? defaultOptions.css.modulePattern,
+        extensions: this.#cmtdConfig?.css?.extensions ?? defaultOptions.css.extensions,
       },
     });
   }
@@ -166,7 +165,7 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
   }
 
   public globIsCss(): string {
-    const { extensions } = this.options.cssModules;
+    const { extensions } = this.options.css;
 
     if (extensions.length === 1) {
       return `*.${extensions[0]}`;
@@ -176,7 +175,7 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
   }
 
   public globIsCssModule(): string {
-    const { modulePattern, extensions } = this.options.cssModules;
+    const { modulePattern, extensions } = this.options.css;
 
     if (extensions.length === 1) {
       return `${modulePattern}.${extensions[0]}`;
@@ -186,7 +185,7 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
   }
 
   public globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.options.cssModules;
+    const { modulePattern, extensions } = this.options.css;
 
     return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
   }

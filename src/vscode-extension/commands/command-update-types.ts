@@ -11,7 +11,7 @@ export function commandUpdateTypes({ controller }: CommandUpdateTypesOptions): D
     Promise.all(
       controller.folders
         .values()
-        .map(async (folderController) => folderController.getAllCssInformation()),
+        .map(async (folderController) => folderController.updateCssTypeDefinitions()),
     ),
   );
 }

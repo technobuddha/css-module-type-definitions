@@ -9,7 +9,7 @@ import {
 import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-import { getLocalInfo } from '../helpers/get-local-info.ts';
+import { getLocalInfo } from '../helpers/index.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -28,7 +28,7 @@ export class CodeDefinitionProvider implements DefinitionProvider {
     _token: CancellationToken,
   ): Promise<Location | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
-    if (folderController?.options.cssModules.generateDts === false) {
+    if (folderController?.options.css.generateDts === false) {
       const localInfo = await getLocalInfo(document, position);
       if (localInfo) {
         const { importUri, localName } = localInfo;

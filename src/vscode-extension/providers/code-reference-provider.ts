@@ -6,21 +6,20 @@ import {
   type ReferenceProvider,
   type TextDocument,
   Uri,
-  workspace,
 } from 'vscode';
+import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-import { getLocalInfo } from '../helpers/get-local-info.ts';
-import { normalizeLocations } from '../helpers/normalize-locations.ts';
+import { fileExists, getLocalInfo, normalizeLocations } from '../helpers/index.ts';
 
-type CSSReferenceProviderOptions = {
+type Arguments = {
   workspaceController: WorkspaceController;
 };
 
 export class CodeReferenceProvider implements ReferenceProvider {
   readonly #workspaceController: WorkspaceController;
 
-  public constructor(options: CSSReferenceProviderOptions) {
+  public constructor(options: Arguments) {
     this.#workspaceController = options.workspaceController;
   }
 
@@ -34,14 +33,12 @@ export class CodeReferenceProvider implements ReferenceProvider {
     if (folderController) {
       const localInfo = await getLocalInfo(document, position);
       if (localInfo) {
-        const { importUri, localName, accessorType } = localInfo;
+        const { localName, importUri, accessorType } = localInfo;
         const locations: Location[] = [];
 
-        // TODO Add references to the .dts file (if exists) for classLocal
-
-        const info = await folderController.getCssInformation(importUri);
-        if (info) {
-          const cssLocations = info.cssLocations(localName, importUri);
+        const cssInfo = await folderController.getCssInformation(importUri);
+        if (cssInfo) {
+          const cssLocations = cssInfo.cssLocations(localName, importUri);
           if (cssLocations) {
             if (context.includeDeclaration) {
               for (const cssLocation of cssLocations.values()) {
@@ -55,18 +52,20 @@ export class CodeReferenceProvider implements ReferenceProvider {
               }
 
               if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                for (const usage of await info.localUsages(
-                  await workspace.openTextDocument(file),
-                  importUri,
-                  info.localNames(cssLocations.keys()),
-                )) {
-                  if (accessorType === 'element' && usage.accessorType === accessorType) {
-                    continue;
+                for (const usage of await cssInfo.localUsages(localName, file, importUri)) {
+                  if (accessorType === 'property' || usage.accessorType !== accessorType) {
+                    locations.push(new Location(Uri.file(file), usage.range));
                   }
-
-                  locations.push(new Location(Uri.file(file), usage.range));
                 }
               }
+            }
+          }
+
+          const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFile);
+          if (await fileExists(dtsFile)) {
+            const ranges = cssInfo.localDtsRanges(localName);
+            for (const range of ranges) {
+              locations.push(new Location(dtsFile, range));
             }
           }
 

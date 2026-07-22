@@ -4,12 +4,11 @@ import {
   type RenameProvider,
   type TextDocument,
   Uri,
-  workspace,
   WorkspaceEdit,
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-import { getLocalInfo } from '../helpers/get-local-info.ts';
+import { getLocalInfo } from '../helpers/index.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -26,7 +25,7 @@ export class CodeRenameProvider implements RenameProvider {
     document: TextDocument,
     position: Position,
     newName: string,
-    _token: CancellationToken,
+    token: CancellationToken,
   ): Promise<WorkspaceEdit | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
@@ -52,12 +51,12 @@ export class CodeRenameProvider implements RenameProvider {
             }
 
             for (const [file, imports] of await folderController.allImports()) {
+              if (token.isCancellationRequested) {
+                return null;
+              }
+
               if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                for (const usage of await info.localUsages(
-                  await workspace.openTextDocument(file),
-                  importUri,
-                  info.localNames(cssLocations.keys()),
-                )) {
+                for (const usage of await info.localUsages(localName, file, importUri)) {
                   we.replace(Uri.file(file), usage.range, newName);
                 }
               }

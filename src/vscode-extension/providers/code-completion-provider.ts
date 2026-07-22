@@ -14,7 +14,7 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-import { getImportInfo } from '../helpers/get-import-info.ts';
+import { getImportInfo } from '../helpers/index.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -35,7 +35,7 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
   ): Promise<CompletionItem[] | CompletionList | null | undefined> {
     if (triggerKind === CompletionTriggerKind.TriggerCharacter && !token.isCancellationRequested) {
       const folderController = this.#workspaceController.folderController(document.uri);
-      if (folderController && !folderController.options.cssModules.generateDts) {
+      if (folderController && !folderController.options.css.generateDts) {
         const importInfo = await getImportInfo(document, position);
         if (importInfo) {
           const { importUri } = importInfo;

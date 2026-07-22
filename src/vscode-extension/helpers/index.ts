@@ -1,0 +1,33 @@
+export { canonicalPath } from './canonical-path.ts';
+export { codePointLength } from './code-point-length.ts';
+export { collectImportBindings } from './collect-import-bindings.ts';
+export { createRange } from './create-range.ts';
+export {
+  type AccessExpressionLike,
+  type ElementAccessExpressionLike,
+  isAccessExpressionLike,
+  isElementAccessExpressionLike,
+  isPropertyAccessExpressionLike,
+  type PropertyAccessExpressionLike,
+} from './expression.ts';
+export { fileExists } from './file-exists.ts';
+export { findAccessExpression } from './find-access-expression.ts';
+export { findDeepestNodeAtPosition } from './find-deepest-node-at-position.ts';
+export { getImportInfo } from './get-import-info.ts';
+export { getLocalInfo } from './get-local-info.ts';
+export { getSourceFile } from './get-source-file.ts';
+export { getTypeChecker } from './get-type-checker.ts';
+export { importBindingNames } from './import-binding-names.ts';
+export { importDeclarationModule } from './import-declaration-module.ts';
+export { importEqualsModule } from './import-equals-module.ts';
+export { importModuleFromDeclaration } from './import-module-from-declaration.ts';
+export { isExtendedIdentifier } from './is-extended-identifier.ts';
+export { isWithin } from './is-within.ts';
+export { normalizeLocations } from './normalize-locations.ts';
+export { propertyNameRange } from './property-name-range.ts';
+export { requireCallModule } from './require-call-module.ts';
+export { resolveImportPath } from './resolve-import-path.ts';
+export { scanImports } from './scan-imports.ts';
+export { scriptKind } from './script-kind.ts';
+export { unwrapExpression } from './unwrap-expression.ts';
+export { variableNameBeforeAccessor } from './variable-name-before-accessor.ts';

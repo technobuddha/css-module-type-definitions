@@ -56,12 +56,14 @@ if (import.meta.main) {
         await using optionator = await Optionator.create(
           cull({
             logLevel,
-            cssModules: {
-              scopeBehaviour,
-              exportGlobals,
-              generateScopedName,
-              hashPrefix,
-              localsConvention,
+            css: {
+              modules: {
+                scopeBehaviour,
+                exportGlobals,
+                generateScopedName,
+                hashPrefix,
+                localsConvention,
+              },
               extensions,
               modulePattern,
               dtsHeader,

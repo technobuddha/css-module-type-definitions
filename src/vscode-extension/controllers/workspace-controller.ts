@@ -46,7 +46,7 @@ export class WorkspaceController implements Disposable, LoggerController {
       for (const folder of workspace.workspaceFolders) {
         if (!this.folders.has(folder)) {
           const controller = await FolderController.create({ folder, logger: this });
-          await controller.getAllCssInformation();
+          await controller.updateCssTypeDefinitions();
           this.folders.set(folder, controller);
         }
       }
