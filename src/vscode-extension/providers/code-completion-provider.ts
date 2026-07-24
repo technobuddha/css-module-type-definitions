@@ -42,10 +42,10 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
 
           const types = await folderController.getCssInformation(importUri);
           if (types) {
-            const { locals: classes } = types;
+            const { classLocations } = types;
 
             return new CompletionList(
-              Array.from(classes.keys(), (key) =>
+              Array.from(classLocations.keys(), (key) =>
                 toCompletionItem(key, triggerCharacter, position),
               ),
             );

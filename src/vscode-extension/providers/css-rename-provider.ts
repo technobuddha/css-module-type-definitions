@@ -8,13 +8,13 @@ import {
 } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-import { getLocalInfo, replacementName } from '../helpers/index.ts';
+import { getClassInfo, replacementName } from '../helpers/index.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
 };
 
-export class CodeRenameProvider implements RenameProvider {
+export class CssRenameProvider implements RenameProvider {
   readonly #workspaceController: WorkspaceController;
 
   public constructor(options: Arguments) {
@@ -33,19 +33,28 @@ export class CodeRenameProvider implements RenameProvider {
 
       const { cssName, codeName } = replacementName(newName, options);
 
-      const localInfo = await getLocalInfo(document, position);
-      if (localInfo) {
-        const { importUri, localName } = localInfo;
+      const classInfo = getClassInfo(document, position);
+      if (classInfo) {
+        const { className } = classInfo;
+        const we = new WorkspaceEdit();
 
-        const cssInfo = await folderController.getCssInformation(importUri);
-        if (cssInfo) {
-          const cssLocations = cssInfo.cssLocations(localName, importUri);
-          if (cssLocations) {
-            const we = new WorkspaceEdit();
-
-            for (const locs of cssLocations.values()) {
-              for (const loc of locs) {
-                we.replace(loc.uri, loc.range, `.${cssName}`);
+        for (const importer of await folderController.importers(document.uri)) {
+          const cssInfo = await folderController.getCssInformation(importer);
+          if (cssInfo) {
+            const locations = cssInfo.classLocations.get(className);
+            if (locations) {
+              for (const location of locations) {
+                const range = new Range(
+                  new Position(
+                    location.location.range.start.line,
+                    location.location.range.start.column,
+                  ),
+                  new Position(
+                    location.location.range.end.line,
+                    location.location.range.end.column,
+                  ),
+                );
+                we.replace(importer, range, `.${cssName}`);
               }
             }
 
@@ -54,10 +63,10 @@ export class CodeRenameProvider implements RenameProvider {
                 return null;
               }
 
-              if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                const localUsages = await cssInfo.localUsages(localName, file, importUri);
-                if (localUsages) {
-                  const { document, usages } = localUsages;
+              if (imports.some((i) => i.fsPath === importer.fsPath)) {
+                const classUsages = await cssInfo.classUsages(className, file, importer);
+                if (classUsages) {
+                  const { document, usages } = classUsages;
                   for (const usage of usages) {
                     const { range } = usage;
 
@@ -87,9 +96,9 @@ export class CodeRenameProvider implements RenameProvider {
                 }
               }
             }
-            return we;
           }
         }
+        return we;
       }
     }
 

@@ -156,6 +156,8 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
         generateDts: this.#cmtdConfig?.css?.generateDts ?? defaultOptions.css.generateDts,
         modulePattern: this.#cmtdConfig?.css?.modulePattern ?? defaultOptions.css.modulePattern,
         extensions: this.#cmtdConfig?.css?.extensions ?? defaultOptions.css.extensions,
+        classesConvention:
+          this.#cmtdConfig?.css?.classesConvention ?? defaultOptions.css.classesConvention,
       },
     });
   }

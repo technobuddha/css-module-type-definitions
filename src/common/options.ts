@@ -16,6 +16,8 @@ type LocalsConvention =
   | 'none'
   | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
 
+type ClassConvention = 'kebabCase' | 'none';
+
 export interface Options {
   logLevel: LogLevel;
   preprocessor: {
@@ -46,6 +48,7 @@ export interface Options {
     dtsHeader: string;
     dtsFooter: string;
     generateDts: boolean;
+    classesConvention: ClassConvention;
   };
 }
 
@@ -88,6 +91,7 @@ export const defaultOptions = Object.freeze<Options>({
     generateDts: true,
     extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
     modulePattern: '*.module',
+    classesConvention: 'none',
   },
 });
 

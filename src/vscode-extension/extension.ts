@@ -7,13 +7,14 @@ import {
   commandUpdateTypes,
 } from './commands/index.ts';
 import { WorkspaceController } from './controllers/index.ts';
-import { CssReferenceProvider } from './providers/css-reference-provider.ts';
 import {
   CodeCompletionItemProvider,
   CodeDefinitionProvider,
   CodeHoverProvider,
   CodeReferenceProvider,
   CodeRenameProvider,
+  CssReferenceProvider,
+  CssRenameProvider,
 } from './providers/index.ts';
 
 const codeSelector: DocumentSelector = [
@@ -62,6 +63,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
       cssSelector,
       new CssReferenceProvider({ workspaceController }),
     ),
+    languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
   );
 
   commands.executeCommand('cmtd.updateTypes');

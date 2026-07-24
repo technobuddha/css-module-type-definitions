@@ -192,6 +192,10 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#top?.css?.extensions ??
           this.#cmtd?.css?.extensions ??
           defaultOptions.css.extensions,
+        classesConvention:
+          this.#top?.css?.classesConvention ??
+          this.#cmtd?.css?.classesConvention ??
+          defaultOptions.css.classesConvention,
       },
     });
   }

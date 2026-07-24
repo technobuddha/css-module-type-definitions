@@ -162,4 +162,16 @@ export class FolderCss extends FolderOptions implements Disposable {
       }
     });
   }
+
+  public async importers(uri: Uri): Promise<Uri[]> {
+    return this.isCssModule(uri) ?
+        [uri]
+      : this.getAllCssInformation().then((imports) =>
+          imports
+            .entries()
+            .filter(([, info]) => info.includedFiles.has(uri.fsPath))
+            .map(([importer]) => Uri.file(importer))
+            .toArray(),
+        );
+  }
 }

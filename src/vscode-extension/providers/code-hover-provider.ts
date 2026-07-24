@@ -32,11 +32,11 @@ export class CodeHoverProvider implements HoverProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const types = await folderController.getCssInformation(importUri);
-        if (types) {
-          const { locals: classes } = types;
+        const cssInfo = await folderController.getCssInformation(importUri);
+        if (cssInfo) {
+          const { classLocations } = cssInfo;
 
-          const extracted = classes.get(localName);
+          const extracted = classLocations.get(localName);
           if (extracted) {
             const md: string[] = [];
             let first = true;

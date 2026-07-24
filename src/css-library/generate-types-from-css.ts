@@ -38,7 +38,7 @@ export async function generateTypesFromCss(
   const file = path.resolve(filepath);
 
   return extractClassRangesFromCss(css, { file, options, logger }).then(
-    async ({ css, classes: locals, includedFiles }) => {
+    async ({ css, classLocation: classLocations, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
@@ -55,7 +55,7 @@ export async function generateTypesFromCss(
         })
         .then(() => {
           const classLocal: Map<string, Set<string>> = new Map();
-          for (const className of locals.keys()) {
+          for (const className of classLocations.keys()) {
             if (!classLocal.has(className)) {
               switch (options.css.modules.localsConvention) {
                 case 'camelCase': {
@@ -101,7 +101,7 @@ export async function generateTypesFromCss(
           const extractedCss: Map<string, CssLocation[]> = new Map();
           for (const [className, set] of classLocal) {
             for (const alias of set) {
-              extractedCss.set(alias, locals.get(className) ?? []);
+              extractedCss.set(alias, classLocations.get(className) ?? []);
             }
           }
 
@@ -193,7 +193,7 @@ export async function generateTypesFromCss(
             },
             dtsFile,
             mapFile,
-            locals,
+            classLocations,
             includedFiles,
             classLocal,
             localClass,

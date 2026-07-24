@@ -5,7 +5,7 @@ export type CssInfo = {
   files: Record<string, string>;
   dtsFile: string;
   mapFile: string;
-  locals: Map<string, CssLocation[]>;
+  classLocations: Map<string, CssLocation[]>;
   includedFiles: Set<string>;
   classLocal: Map<string, Set<string>>;
   localClass: Map<string, Set<string>>;

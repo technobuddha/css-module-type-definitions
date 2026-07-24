@@ -52,9 +52,12 @@ export class CodeReferenceProvider implements ReferenceProvider {
               }
 
               if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                for (const usage of await cssInfo.localUsages(localName, file, importUri)) {
-                  if (accessorType === 'property' || usage.accessorType !== accessorType) {
-                    locations.push(new Location(Uri.file(file), usage.range));
+                const localUsages = await cssInfo.localUsages(localName, file, importUri);
+                if (localUsages) {
+                  for (const usage of localUsages.usages) {
+                    if (accessorType === 'property' || usage.accessorType !== accessorType) {
+                      locations.push(new Location(Uri.file(file), usage.range));
+                    }
                   }
                 }
               }

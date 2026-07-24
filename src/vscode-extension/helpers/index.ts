@@ -13,6 +13,7 @@ export {
 export { fileExists } from './file-exists.ts';
 export { findAccessExpression } from './find-access-expression.ts';
 export { findDeepestNodeAtPosition } from './find-deepest-node-at-position.ts';
+export { getClassInfo } from './get-class-info.ts';
 export { getImportInfo } from './get-import-info.ts';
 export { getLocalInfo } from './get-local-info.ts';
 export { getSourceFile } from './get-source-file.ts';
@@ -25,6 +26,7 @@ export { isExtendedIdentifier } from './is-extended-identifier.ts';
 export { isWithin } from './is-within.ts';
 export { normalizeLocations } from './normalize-locations.ts';
 export { propertyNameRange } from './property-name-range.ts';
+export { replacementName } from './replacement-name.ts';
 export { requireCallModule } from './require-call-module.ts';
 export { resolveImportPath } from './resolve-import-path.ts';
 export { scanImports } from './scan-imports.ts';

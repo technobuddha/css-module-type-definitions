@@ -34,10 +34,10 @@ export type CssLocation = {
   location: Location;
 };
 
-export type ExtractClassRangesFromCssReturn = {
+type Return = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  classes: Map<string, CssLocation[]>;
+  classLocation: Map<string, CssLocation[]>;
   includedFiles: Set<string>;
 };
 
@@ -72,7 +72,7 @@ const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
 export async function extractClassRangesFromCss(
   css: string,
   { file, options, logger }: Arguments,
-): Promise<ExtractClassRangesFromCssReturn> {
+): Promise<Return> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
 
@@ -107,7 +107,7 @@ export async function extractClassRangesFromCss(
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
-        const classes: Map<string, CssLocation[]> = new Map();
+        const classLocation: Map<string, CssLocation[]> = new Map();
 
         postcss()
           .process(css, { from: path.basename(filename) })
@@ -125,8 +125,8 @@ export async function extractClassRangesFromCss(
                 column: (node.source?.end?.column ?? 1) - 1,
               };
 
-              classes.set(name, [
-                ...(classes.get(name) ?? []),
+              classLocation.set(name, [
+                ...(classLocation.get(name) ?? []),
                 {
                   snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
                   location: { source, range: { start, end } },
@@ -135,7 +135,7 @@ export async function extractClassRangesFromCss(
             }
           });
 
-        for (const [className, extracted] of Array.from(classes)) {
+        for (const [className, extracted] of Array.from(classLocation)) {
           const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
           let prevStart: Position | undefined;
@@ -198,10 +198,10 @@ export async function extractClassRangesFromCss(
             }
             extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }
-          classes.set(className, extractedCss);
+          classLocation.set(className, extractedCss);
         }
 
-        return { css, sourceMap, classes, includedFiles };
+        return { css, sourceMap, classLocation, includedFiles };
       }),
   );
 }

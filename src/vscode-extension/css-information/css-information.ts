@@ -8,7 +8,7 @@ import { type CssInfo } from '../../css-library/index.ts';
 
 import { getSourceFile, importBindingNames } from '../helpers/index.ts';
 
-import { type ClassUsage } from './class-usage.ts';
+import { type ClassUsage, type Usage } from './class-usage.ts';
 import { type State } from './state.ts';
 import { visit } from './visit.ts';
 
@@ -16,7 +16,7 @@ type Arguments = CssInfo & {};
 
 export class CssInformation implements CssInfo {
   public files: CssInfo['files'];
-  public locals: CssInfo['locals'];
+  public classLocations: CssInfo['classLocations'];
   public includedFiles: CssInfo['includedFiles'];
   public classLocal: CssInfo['classLocal'];
   public localClass: CssInfo['localClass'];
@@ -26,7 +26,7 @@ export class CssInformation implements CssInfo {
 
   public constructor({
     files,
-    locals,
+    classLocations,
     includedFiles,
     classLocal,
     localClass,
@@ -35,7 +35,7 @@ export class CssInformation implements CssInfo {
     mapFile,
   }: Arguments) {
     this.files = files;
-    this.locals = locals;
+    this.classLocations = classLocations;
     this.includedFiles = includedFiles;
     this.classLocal = classLocal;
     this.localClass = localClass;
@@ -48,7 +48,7 @@ export class CssInformation implements CssInfo {
     localNames: ReadonlySet<string>,
     file: string,
     importUri: Uri,
-  ): Promise<ClassUsage[]> {
+  ): Promise<ClassUsage> {
     const document = await workspace.openTextDocument(file);
     const sourceFile = getSourceFile(document);
     const bindingNames = await importBindingNames(document, sourceFile, importUri);
@@ -57,15 +57,21 @@ export class CssInformation implements CssInfo {
         bindingNames,
         localNames,
         seenUsages: new Set<string>(),
-        usages: [] as ClassUsage[],
+        usages: [] as Usage[],
         sourceFile,
       };
 
       visit(sourceFile, state);
 
-      return state.usages;
+      return {
+        document,
+        usages: state.usages,
+      };
     }
-    return [];
+    return {
+      document: await workspace.openTextDocument(file),
+      usages: [],
+    };
   }
 
   public async writeTypeDefinitionFiles(logger: Logger): Promise<void> {
@@ -104,7 +110,7 @@ export class CssInformation implements CssInfo {
       const result = new Map<string, Location[]>();
 
       for (const className of classes) {
-        const locations = this.locals.get(className);
+        const locations = this.classLocations.get(className);
         if (locations) {
           result.set(
             className,
@@ -170,7 +176,11 @@ export class CssInformation implements CssInfo {
       );
   }
 
-  public async localUsages(localName: string, file: string, importUri: Uri): Promise<ClassUsage[]> {
+  public async localUsages(
+    localName: string,
+    file: string,
+    importUri: Uri,
+  ): Promise<ClassUsage | null> {
     const classNames = this.localClass.get(localName);
     if (classNames) {
       const localNames = new Set(
@@ -180,14 +190,18 @@ export class CssInformation implements CssInfo {
       return this.usages(localNames, file, importUri);
     }
 
-    return [];
+    return null;
   }
 
-  public async classUsages(className: string, file: string, importUri: Uri): Promise<ClassUsage[]> {
+  public async classUsages(
+    className: string,
+    file: string,
+    importUri: Uri,
+  ): Promise<ClassUsage | null> {
     const localNames = this.classLocal.get(className);
     if (localNames) {
       return this.usages(localNames, file, importUri);
     }
-    return [];
+    return null;
   }
 }
