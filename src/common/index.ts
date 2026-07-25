@@ -1,5 +1,5 @@
 export { generateTypes } from '../css-library/generate-types.ts';
-export { CODE_EXTENSIONS, CONFIG_EXTENSIONS } from './constants.ts';
+export { CODE_EXTENSIONS, CONFIG_EXTENSIONS, CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
 export { GitConfig } from './git-config.ts';
@@ -12,13 +12,7 @@ export {
   LOGLEVELS,
 } from './logger.ts';
 export { Optionator } from './optionator.ts';
-export {
-  defaultOptions,
-  type NormalizedOptions,
-  normalizeOptions,
-  type Options,
-  type PartialOptions,
-} from './options.ts';
+export { defaultOptions, type Options, type PartialOptions } from './options.ts';
 export { locateCMTDConfigurationFile, readCMTDConfig } from './read-cmtd-config.ts';
 export {
   locateViteConfigurationFile,
@@ -28,5 +22,6 @@ export {
 } from './read-vite-config.ts';
 export { remove } from './remove.ts';
 export { removeInlineSourceMap } from './remove-inline-source-map.ts';
+export { globIsCss, globIsCssModule, isCss, isCssModule } from './type-check.ts';
 export { update } from './update.ts';
 export { watch } from './watch.ts';

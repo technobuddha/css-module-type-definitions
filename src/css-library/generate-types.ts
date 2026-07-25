@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { fileOperation, type Logger, type NormalizedOptions } from '../common/index.ts';
+import { fileOperation, type Logger, type Options } from '../common/index.ts';
 
 import { generateTypesFromCss } from './index.ts';
 
 type GenerateTypesOptions = {
-  options: NormalizedOptions;
+  options: Options;
   logger: Logger;
 };
 

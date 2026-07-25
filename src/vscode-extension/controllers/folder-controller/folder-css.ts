@@ -3,7 +3,13 @@ import path from 'node:path';
 import { toError } from '@technobuddha/library';
 import { type Disposable, Uri, workspace, type WorkspaceFolder } from 'vscode';
 
-import { fileOperation, type LoggerController } from '../../../common/index.ts';
+import {
+  fileOperation,
+  globIsCssModule,
+  isCss,
+  isCssModule,
+  type LoggerController,
+} from '../../../common/index.ts';
 import { generateTypesFromCss } from '../../../css-library/index.ts';
 
 import { CssInformation } from '../../css-information/index.ts';
@@ -29,7 +35,7 @@ export class FolderCss extends FolderOptions implements Disposable {
     });
 
     this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
-      if (this.isCssModule(uri)) {
+      if (isCssModule(uri)) {
         this.logger.debug(fileOperation(uri.fsPath, action));
         if (action === 'unlink') {
           await this.deleteCssInformation(uri);
@@ -44,7 +50,7 @@ export class FolderCss extends FolderOptions implements Disposable {
         return;
       }
 
-      if (this.isCss(uri)) {
+      if (isCss(uri)) {
         this.logger.debug(fileOperation(uri.fsPath, action));
         for (const [file, { includedFiles }] of this.cssInformation) {
           if (includedFiles.has(uri.fsPath)) {
@@ -67,7 +73,7 @@ export class FolderCss extends FolderOptions implements Disposable {
 
     const { logger, options } = this;
 
-    if (this.isCssModule(uri) && !this.isIgnored(uri)) {
+    if (isCssModule(uri) && !this.isIgnored(uri)) {
       try {
         const result = await workspace.fs
           .readFile(uri)
@@ -98,7 +104,7 @@ export class FolderCss extends FolderOptions implements Disposable {
       (await this.findUnignoredFiles(`**/${this.globIsTypeDefinition()}`)).map((uri) => uri.fsPath),
     );
 
-    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+    await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
         const result = await this.getCssInformation(uri);
         if (result) {
@@ -120,7 +126,7 @@ export class FolderCss extends FolderOptions implements Disposable {
   }
 
   public async getAllCssInformation(): Promise<ReadonlyMap<string, CssInformation>> {
-    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+    await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
         await this.getCssInformation(uri);
       }
@@ -150,7 +156,7 @@ export class FolderCss extends FolderOptions implements Disposable {
   }
 
   public async deleteAllCssInformation(): Promise<void> {
-    await this.findUnignoredFiles(`**/${this.globIsCssModule()}`).then(async (uris) => {
+    await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
         await this.deleteCssInformation(uri);
       }
@@ -164,7 +170,7 @@ export class FolderCss extends FolderOptions implements Disposable {
   }
 
   public async importers(uri: Uri): Promise<Uri[]> {
-    return this.isCssModule(uri) ?
+    return isCssModule(uri) ?
         [uri]
       : this.getAllCssInformation().then((imports) =>
           imports

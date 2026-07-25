@@ -1,4 +1,4 @@
-import { cull, empty } from '@technobuddha/library';
+import { empty } from '@technobuddha/library';
 import {
   type LessPreprocessorOptions,
   type SassPreprocessorOptions,
@@ -43,8 +43,6 @@ export interface Options {
       hashPrefix: string;
       localsConvention: LocalsConvention;
     };
-    extensions: string[];
-    modulePattern: string;
     dtsHeader: string;
     dtsFooter: string;
     generateDts: boolean;
@@ -58,14 +56,6 @@ export type PartialOptions = {
   css?: {
     modules?: Partial<Options['css']['modules']>;
   } & Partial<Omit<Options['css'], 'modules'>>;
-};
-
-type NormalizedCSSModulesOptions = Omit<Options['css']['modules'], 'localsConvention'> & {
-  localsConvention?: LocalsConvention;
-};
-
-export type NormalizedOptions = Required<Omit<Options, 'css'>> & {
-  css: { modules: NormalizedCSSModulesOptions } & Required<Omit<Options['css'], 'modules'>>;
 };
 
 export const defaultOptions = Object.freeze<Options>({
@@ -89,19 +79,6 @@ export const defaultOptions = Object.freeze<Options>({
     dtsHeader: empty,
     dtsFooter: empty,
     generateDts: true,
-    extensions: ['css', 'less', 'sass', 'scss', 'styl', 'stylus'],
-    modulePattern: '*.module',
     classesConvention: 'none',
   },
 });
-
-export function normalizeOptions(options: Options): NormalizedOptions {
-  const nOptions: NormalizedOptions = options;
-
-  const extensions = cull(nOptions.css.extensions, { emptyStrings: true });
-  if (extensions.length === 0) {
-    nOptions.css.extensions = defaultOptions.css.extensions;
-  }
-
-  return nOptions;
-}

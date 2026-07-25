@@ -1,11 +1,11 @@
 import { camelCase, isJsIdentifier, kebabCase, quote } from '@technobuddha/library';
 
-import { type NormalizedOptions } from '../../common/index.ts';
+import { type Options } from '../../common/index.ts';
 import { dashes } from '../../css-library/index.ts';
 
 export function replacementName(
   newName: string,
-  options: NormalizedOptions,
+  options: Options,
 ): { codeReplacement: string; cssReplacement: string } {
   let cssReplacement = newName;
   switch (options.css.classesConvention) {

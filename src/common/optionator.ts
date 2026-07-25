@@ -5,15 +5,10 @@ import { cull, deepEquals, locatePackageRoot } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
 
+import { CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController, loggerForLevel, stdioLogger } from './logger.ts';
-import {
-  defaultOptions,
-  type NormalizedOptions,
-  normalizeOptions,
-  type Options,
-  type PartialOptions,
-} from './options.ts';
+import { defaultOptions, type Options, type PartialOptions } from './options.ts';
 import { locateCMTDConfigurationFile } from './read-cmtd-config.ts';
 import {
   locateViteConfigurationFile,
@@ -105,7 +100,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   #watcher: FSWatcher | undefined;
   #vite: ViteCss | undefined;
   #cmtd: Options | undefined;
-  #options = normalizeOptions(defaultOptions);
+  #options = defaultOptions;
 
   private constructor(top: PartialOptions, baseLogger: Logger) {
     this.#top = top;
@@ -113,8 +108,8 @@ export class Optionator implements LoggerController, AsyncDisposable {
     this.#options = this.compileOptions();
   }
 
-  private compileOptions(): NormalizedOptions {
-    return normalizeOptions({
+  private compileOptions(): Options {
+    return {
       logLevel: this.#top.logLevel ?? defaultOptions.logLevel,
       preprocessor: {
         less:
@@ -184,20 +179,12 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#top?.css?.generateDts ??
           this.#cmtd?.css?.generateDts ??
           defaultOptions.css.generateDts,
-        modulePattern:
-          this.#top?.css?.modulePattern ??
-          this.#cmtd?.css?.modulePattern ??
-          defaultOptions.css.modulePattern,
-        extensions:
-          this.#top?.css?.extensions ??
-          this.#cmtd?.css?.extensions ??
-          defaultOptions.css.extensions,
         classesConvention:
           this.#top?.css?.classesConvention ??
           this.#cmtd?.css?.classesConvention ??
           defaultOptions.css.classesConvention,
       },
-    });
+    };
   }
 
   private async optionsChanged(): Promise<void> {
@@ -213,31 +200,16 @@ export class Optionator implements LoggerController, AsyncDisposable {
     return loggerForLevel(this.#baseLogger, this.#options.logLevel);
   }
 
-  public get options(): NormalizedOptions {
+  public get options(): Options {
     return this.#options;
   }
 
   public get globIsCssModule(): string {
-    const { modulePattern, extensions } = this.#options.css;
-
-    if (extensions.length === 0) {
-      return modulePattern;
-    }
-    if (extensions.length === 1) {
-      return `${modulePattern}.${extensions[0]}`;
-    }
-
-    return `${modulePattern}.{${extensions.join(',')}}`;
+    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.join(',')}}`;
   }
 
   public get globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.#options.css;
-
-    if (extensions.length === 0) {
-      return `${modulePattern}.d{.ts,.ts.map}`;
-    }
-
-    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
+    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `d${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
   }
 
   public onChange(listener: () => void): void {

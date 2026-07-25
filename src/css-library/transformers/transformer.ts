@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { type Logger, type NormalizedOptions } from '../../common/index.ts';
+import { type Logger, type Options } from '../../common/index.ts';
 
 import { type RawSourceMap } from '../source-map.ts';
 
@@ -17,7 +17,7 @@ export type TransformerReturn = {
 export type TransformerArguments = {
   filename: string;
   directory: string;
-  options: NormalizedOptions;
+  options: Options;
   logger: Logger;
 };
 

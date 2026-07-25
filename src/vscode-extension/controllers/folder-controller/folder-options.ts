@@ -1,17 +1,14 @@
-import path from 'node:path';
-
 import { deepEquals } from '@technobuddha/library';
-import { type Disposable, type Uri, workspace, type WorkspaceFolder } from 'vscode';
-import { Utils } from 'vscode-uri';
+import { type Disposable, type WorkspaceFolder } from 'vscode';
 
 import {
+  CSS_EXTENSIONS,
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
   locateViteConfigurationFile,
   type LoggerController,
-  type NormalizedOptions,
-  normalizeOptions,
+  MODULE_PATTERN,
   type Options,
   readCMTDConfig,
   readViteConfig,
@@ -19,8 +16,6 @@ import {
 } from '../../../common/index.ts';
 
 import { FolderIgnorer } from './folder-ignorer.ts';
-
-const reIsRelative = new RegExp(`^\\.{1,2}${path.sep}`, 'v');
 
 type FolderControllerOptions = {
   folder: WorkspaceFolder;
@@ -39,7 +34,7 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
     controller.setOptions(controller.buildOptions());
   }
 
-  #options = normalizeOptions(defaultOptions);
+  #options = defaultOptions;
   #cmtdConfigFile: string | undefined;
   #cmtdConfig: Options | undefined;
   #viteConfigFile: string | undefined;
@@ -72,7 +67,7 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
     this.#viteConfigFile = file;
   }
 
-  private setOptions(options: NormalizedOptions): void {
+  private setOptions(options: Options): void {
     this.#options = options;
   }
 
@@ -94,8 +89,8 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
     }
   }
 
-  private buildOptions(): NormalizedOptions {
-    return normalizeOptions({
+  private buildOptions(): Options {
+    return {
       logLevel: defaultOptions.logLevel,
       preprocessor: {
         less: {
@@ -154,66 +149,18 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
         dtsHeader: this.#cmtdConfig?.css?.dtsHeader ?? defaultOptions.css.dtsHeader,
         dtsFooter: this.#cmtdConfig?.css?.dtsFooter ?? defaultOptions.css.dtsFooter,
         generateDts: this.#cmtdConfig?.css?.generateDts ?? defaultOptions.css.generateDts,
-        modulePattern: this.#cmtdConfig?.css?.modulePattern ?? defaultOptions.css.modulePattern,
-        extensions: this.#cmtdConfig?.css?.extensions ?? defaultOptions.css.extensions,
         classesConvention:
           this.#cmtdConfig?.css?.classesConvention ?? defaultOptions.css.classesConvention,
       },
-    });
+    };
   }
 
-  public get options(): NormalizedOptions {
+  public get options(): Options {
     return this.#options;
   }
 
-  public globIsCss(): string {
-    const { extensions } = this.options.css;
-
-    if (extensions.length === 1) {
-      return `*.${extensions[0]}`;
-    }
-
-    return `*.{${extensions.join(',')}}`;
-  }
-
-  public globIsCssModule(): string {
-    const { modulePattern, extensions } = this.options.css;
-
-    if (extensions.length === 1) {
-      return `${modulePattern}.${extensions[0]}`;
-    }
-
-    return `${modulePattern}.{${extensions.join(',')}}`;
-  }
-
   public globIsTypeDefinition(): string {
-    const { modulePattern, extensions } = this.options.css;
-
-    return `${modulePattern}.{${extensions.map((ext) => `d.${ext},${ext}.d`).join(',')}}{.ts,.ts.map}`;
-  }
-
-  public isRelative(filename: string | Uri): boolean {
-    return reIsRelative.test(typeof filename === 'string' ? filename : filename.fsPath);
-  }
-
-  public isCss(filename: Uri): boolean {
-    const folder = workspace.getWorkspaceFolder(filename);
-    if (folder) {
-      return path.matchesGlob(Utils.basename(filename), this.globIsCss());
-    }
-    return false;
-  }
-
-  public isCssModule(filename: Uri): boolean {
-    const folder = workspace.getWorkspaceFolder(filename);
-    if (folder) {
-      return path.matchesGlob(Utils.basename(filename), this.globIsCssModule());
-    }
-    return false;
-  }
-
-  public isRelativeCSS(filename: Uri): boolean {
-    return this.isRelative(filename) && this.isCssModule(filename);
+    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `d.${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
   }
 
   public override async dispose(): Promise<void> {

@@ -2,6 +2,7 @@ import { type Disposable, Uri, type WorkspaceFolder } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { CODE_EXTENSIONS, fileOperation, type LoggerController } from '../../../common/index.ts';
+import { isCssModule } from '../../../common/index.ts';
 
 import { scanImports } from '../../helpers/index.ts';
 
@@ -44,7 +45,7 @@ export class FolderCode extends FolderCss implements Disposable {
 
     if (this.isCode(uri) && !this.isIgnored(uri)) {
       const result = await scanImports(uri)
-        .then((uris) => uris.filter((u) => this.isCssModule(u)))
+        .then((uris) => uris.filter((u) => isCssModule(u)))
         .catch(() => []);
       this.imports.set(uri.fsPath, result);
       return result;

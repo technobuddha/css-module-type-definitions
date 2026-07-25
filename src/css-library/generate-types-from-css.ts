@@ -15,7 +15,7 @@ import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 import { type CompilerOptions } from 'typescript';
 
-import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
+import { type Logger, type Options, removeInlineSourceMap } from '../common/index.ts';
 
 import { BANNER_MESSAGE } from './constants.ts';
 import { type CssInfo } from './css-info.ts';
@@ -25,7 +25,7 @@ import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { SourceMapGenerator } from './source-map.ts';
 
 export type GenerateTypesFromCssOptions = {
-  options: NormalizedOptions;
+  options: Options;
   logger: Logger;
   compilerOptions?: CompilerOptions;
 };

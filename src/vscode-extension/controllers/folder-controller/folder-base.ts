@@ -1,11 +1,7 @@
 import { CustomEventTarget } from '@technobuddha/library';
 import { type Disposable, type Uri, type WorkspaceFolder } from 'vscode';
 
-import {
-  type Logger,
-  type LoggerController,
-  type NormalizedOptions,
-} from '../../../common/index.ts';
+import { type Logger, type LoggerController, type Options } from '../../../common/index.ts';
 
 type FolderControllerOptions = {
   folder: WorkspaceFolder;
@@ -18,7 +14,7 @@ type WatcherEvent = {
 };
 
 type OptionsEvent = {
-  options: NormalizedOptions;
+  options: Options;
 };
 
 export class FolderBase implements LoggerController, Disposable {

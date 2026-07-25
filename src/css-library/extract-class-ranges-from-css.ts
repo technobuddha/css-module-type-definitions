@@ -6,7 +6,7 @@ import postcss, { AtRule, type Node, Rule } from 'postcss';
 import postcssImport from 'postcss-import';
 import selectorParser from 'postcss-selector-parser';
 
-import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
+import { type Logger, type Options, removeInlineSourceMap } from '../common/index.ts';
 
 import {
   type CMTDLocation,
@@ -24,7 +24,7 @@ type ClassPosition = {
 };
 
 type Arguments = {
-  options: NormalizedOptions;
+  options: Options;
   file: string;
   logger: Logger;
 };
