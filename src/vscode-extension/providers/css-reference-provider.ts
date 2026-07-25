@@ -37,8 +37,8 @@ export class CssReferenceProvider implements ReferenceProvider {
       if (classInfo) {
         const { className } = classInfo;
 
-        for (const importer of await folderController.importers(document.uri)) {
-          const cssInfo = await folderController.getCssInformation(importer);
+        for (const importUri of await folderController.importers(document.uri)) {
+          const cssInfo = await folderController.getCssInformation(importUri);
           if (cssInfo) {
             const { classLocal } = cssInfo;
 
@@ -48,17 +48,17 @@ export class CssReferenceProvider implements ReferenceProvider {
                   return [];
                 }
 
-                if (imports.some((i) => i.fsPath === importer.fsPath)) {
-                  const classUsages = await cssInfo.classUsages(className, file, importer);
+                if (imports.some((i) => i.fsPath === importUri.fsPath)) {
+                  const classUsages = await cssInfo.usages({ className, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {
                       locations.push(new Location(Uri.file(file), usage.range));
                     }
                   }
 
-                  const dtsFile = Uri.joinPath(Utils.dirname(importer), cssInfo.dtsFile);
+                  const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFile);
                   if (await fileExists(dtsFile)) {
-                    const ranges = cssInfo.classDtsRanges(className);
+                    const ranges = cssInfo.dtsRanges({ className });
                     for (const range of ranges) {
                       locations.push(new Location(dtsFile, range));
                     }

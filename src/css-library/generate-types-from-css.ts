@@ -21,7 +21,7 @@ import { BANNER_MESSAGE } from './constants.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
 import { type CssLocation, extractClassRangesFromCss } from './extract-class-ranges-from-css.ts';
-import { type Position, type Range } from './position.ts';
+import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { SourceMapGenerator } from './source-map.ts';
 
 export type GenerateTypesFromCssOptions = {
@@ -128,7 +128,7 @@ export async function generateTypesFromCss(
 
           const { dir, name, ext } = path.parse(file);
           const dtsFile = `${name}.d${ext}.ts`;
-          const dtsRange: Map<string, Range> = new Map();
+          const dtsRange: Map<string, CMTDRange> = new Map();
           const mapFile = `${dtsFile}.map`;
 
           const smg = new SourceMapGenerator({ file: dtsFile, logger });
@@ -152,7 +152,7 @@ export async function generateTypesFromCss(
               },
             } = extracted;
 
-            const generated: Position = {
+            const generated: CMTDPosition = {
               line: dts.length,
               column: 11, // length of {space.repeat(2)}readonly{space}{quote},
             };

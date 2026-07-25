@@ -38,12 +38,10 @@ export class CodeReferenceProvider implements ReferenceProvider {
 
         const cssInfo = await folderController.getCssInformation(importUri);
         if (cssInfo) {
-          const cssLocations = cssInfo.cssLocations(localName, importUri);
+          const cssLocations = cssInfo.cssLocations({ localName, importUri });
           if (cssLocations) {
             if (context.includeDeclaration) {
-              for (const cssLocation of cssLocations.values()) {
-                locations.push(...cssLocation);
-              }
+              locations.push(...cssLocations);
             }
 
             for (const [file, imports] of await folderController.allImports()) {
@@ -52,7 +50,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
               }
 
               if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                const localUsages = await cssInfo.localUsages(localName, file, importUri);
+                const localUsages = await cssInfo.usages({ localName, file, importUri });
                 if (localUsages) {
                   for (const usage of localUsages.usages) {
                     if (accessorType === 'property' || usage.accessorType !== accessorType) {
@@ -66,7 +64,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
 
           const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFile);
           if (await fileExists(dtsFile)) {
-            const ranges = cssInfo.localDtsRanges(localName);
+            const ranges = cssInfo.dtsRanges({ localName });
             for (const range of ranges) {
               locations.push(new Location(dtsFile, range));
             }

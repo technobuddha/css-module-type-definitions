@@ -6,11 +6,11 @@ import { dashes } from '../../css-library/index.ts';
 export function replacementName(
   newName: string,
   options: NormalizedOptions,
-): { codeName: string; cssName: string } {
-  let cssName = newName;
+): { codeReplacement: string; cssReplacement: string } {
+  let cssReplacement = newName;
   switch (options.css.classesConvention) {
     case 'kebabCase': {
-      cssName = kebabCase(newName);
+      cssReplacement = kebabCase(newName);
       break;
     }
 
@@ -20,41 +20,46 @@ export function replacementName(
     }
   }
 
-  let codeName: string;
+  let codeReplacement: string;
   switch (options.css.modules.localsConvention) {
     case 'all':
     case 'camelCase': {
-      codeName = camelCase(newName);
-      codeName = isJsIdentifier(codeName) ? `.${codeName}` : `[${quote(cssName)}]`;
+      codeReplacement = camelCase(newName);
+      codeReplacement =
+        isJsIdentifier(codeReplacement) ? `.${codeReplacement}` : `[${quote(cssReplacement)}]`;
       break;
     }
 
     case 'camelCaseOnly': {
-      codeName = camelCase(newName);
-      codeName = isJsIdentifier(codeName) ? `.${codeName}` : `[${quote(codeName)}]`;
+      codeReplacement = camelCase(newName);
+      codeReplacement =
+        isJsIdentifier(codeReplacement) ? `.${codeReplacement}` : `[${quote(codeReplacement)}]`;
       break;
     }
 
     case 'dashes': {
-      codeName = dashes(newName);
-      codeName = isJsIdentifier(codeName) ? `.${codeName}` : `[${quote(cssName)}]`;
+      codeReplacement = dashes(newName);
+      codeReplacement =
+        isJsIdentifier(codeReplacement) ? `.${codeReplacement}` : `[${quote(cssReplacement)}]`;
       break;
     }
 
     case 'dashesOnly': {
-      codeName = dashes(newName);
-      codeName = isJsIdentifier(codeName) ? `.${codeName}` : `[${quote(codeName)}]`;
+      codeReplacement = dashes(newName);
+      codeReplacement =
+        isJsIdentifier(codeReplacement) ? `.${codeReplacement}` : `[${quote(codeReplacement)}]`;
       break;
     }
 
     case 'none':
     case undefined:
     default: {
-      codeName = cssName;
-      codeName = isJsIdentifier(codeName) ? `.${codeName}` : `[${quote(cssName)}]`;
+      codeReplacement = cssReplacement;
+      codeReplacement =
+        isJsIdentifier(codeReplacement) ? `.${codeReplacement}` : `[${quote(cssReplacement)}]`;
       break;
     }
   }
 
-  return { cssName, codeName };
+  return { cssReplacement, codeReplacement };
 }

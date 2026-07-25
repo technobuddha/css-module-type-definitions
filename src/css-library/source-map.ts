@@ -10,7 +10,7 @@ import {
 
 import { type Logger } from '../common/index.ts';
 
-import { type MappedPosition, type Position } from './position.ts';
+import { type CMTDMappedPosition, type CMTDPosition } from './position.ts';
 
 // source-map-js uses line base-1 column base-0, so we need to both base-0;
 
@@ -33,7 +33,7 @@ export class SourceMapConsumer {
     this.#logger = logger;
   }
 
-  public originalPosition(position: Position): MappedPosition {
+  public originalPosition(position: CMTDPosition): CMTDMappedPosition {
     if (this.#smc) {
       try {
         let { line, column, source } = this.#smc.originalPositionFor({
@@ -66,8 +66,8 @@ type SMGArguments = {
 
 type AddMappingArguments = {
   source: string;
-  generated: Position;
-  original: Position;
+  generated: CMTDPosition;
+  original: CMTDPosition;
 };
 
 export class SourceMapGenerator {

@@ -1,24 +1,24 @@
-export type Position = {
+export type CMTDPosition = {
   line: number;
   column: number;
 };
 
-export type MappedPosition = Position & {
+export type CMTDMappedPosition = CMTDPosition & {
   source: string;
 };
 
-export type Range = {
-  start: Position;
-  end: Position;
+export type CMTDRange = {
+  start: CMTDPosition;
+  end: CMTDPosition;
 };
 
-export type Location = {
+export type CMTDLocation = {
   source: string;
-  range: Range;
+  range: CMTDRange;
 };
 
-export function positionOfOffset(text: string, offset: number): Position {
-  const result: Position = {
+export function positionOfOffset(text: string, offset: number): CMTDPosition {
+  const result: CMTDPosition = {
     line: 0,
     column: 0,
   };
@@ -36,7 +36,7 @@ export function positionOfOffset(text: string, offset: number): Position {
   return result;
 }
 
-export function offsetOfPosition(text: string, position: Position): number {
+export function offsetOfPosition(text: string, position: CMTDPosition): number {
   let offset = 0;
   let line = 0;
   let column = 0;
@@ -65,7 +65,7 @@ export function offsetOfPosition(text: string, position: Position): number {
   return offset;
 }
 
-export function positionAdd(base: Position, delta: Position): Position {
+export function positionAdd(base: CMTDPosition, delta: CMTDPosition): CMTDPosition {
   return {
     line: base.line + delta.line,
     column: base.column + delta.column,

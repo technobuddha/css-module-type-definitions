@@ -9,9 +9,9 @@ import selectorParser from 'postcss-selector-parser';
 import { type Logger, type NormalizedOptions, removeInlineSourceMap } from '../common/index.ts';
 
 import {
-  type Location,
+  type CMTDLocation,
+  type CMTDPosition,
   offsetOfPosition,
-  type Position,
   positionAdd,
   positionOfOffset,
 } from './position.ts';
@@ -20,7 +20,7 @@ import { transformer } from './transformers/transformer.ts';
 
 type ClassPosition = {
   name: string;
-  offset: Position;
+  offset: CMTDPosition;
 };
 
 type Arguments = {
@@ -31,7 +31,7 @@ type Arguments = {
 
 export type CssLocation = {
   snippet: string;
-  location: Location;
+  location: CMTDLocation;
 };
 
 type Return = {
@@ -115,12 +115,12 @@ export async function extractClassRangesFromCss(
             for (const { name } of walkNode(node, logger)) {
               // postcss's Position is 1-based, but we use 0-based
 
-              const start: Position = {
+              const start: CMTDPosition = {
                 line: (node.source?.start?.line ?? 1) - 1,
                 column: (node.source?.start?.column ?? 1) - 1,
               };
 
-              const end: Position = {
+              const end: CMTDPosition = {
                 line: (node.source?.end?.line ?? 1) - 1,
                 column: (node.source?.end?.column ?? 1) - 1,
               };
@@ -138,7 +138,7 @@ export async function extractClassRangesFromCss(
         for (const [className, extracted] of Array.from(classLocation)) {
           const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
-          let prevStart: Position | undefined;
+          let prevStart: CMTDPosition | undefined;
           let skip = 0;
 
           for (let {
@@ -233,7 +233,7 @@ function walkRule(rule: Rule, _logger?: Logger): ClassPosition[] {
 }
 
 function* walkAtRule(atRule: AtRule, logger?: Logger): Generator<ClassPosition> {
-  const basePosition: Position = {
+  const basePosition: CMTDPosition = {
     line: 0,
     column: `@${atRule.name}`.length + (atRule.raws.afterName?.length ?? 0),
   };

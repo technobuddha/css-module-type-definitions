@@ -4,7 +4,7 @@ import { Utils } from 'vscode-uri';
 
 import { fileOperation } from '../../common/file-operation.ts';
 import { type Logger } from '../../common/logger.ts';
-import { type CssInfo } from '../../css-library/index.ts';
+import { type CMTDLocation, type CssInfo } from '../../css-library/index.ts';
 
 import { getSourceFile, importBindingNames } from '../helpers/index.ts';
 
@@ -44,36 +44,6 @@ export class CssInformation implements CssInfo {
     this.mapFile = mapFile;
   }
 
-  private async usages(
-    localNames: ReadonlySet<string>,
-    file: string,
-    importUri: Uri,
-  ): Promise<ClassUsage> {
-    const document = await workspace.openTextDocument(file);
-    const sourceFile = getSourceFile(document);
-    const bindingNames = await importBindingNames(document, sourceFile, importUri);
-    if (bindingNames.size > 0) {
-      const state: State = {
-        bindingNames,
-        localNames,
-        seenUsages: new Set<string>(),
-        usages: [] as Usage[],
-        sourceFile,
-      };
-
-      visit(sourceFile, state);
-
-      return {
-        document,
-        usages: state.usages,
-      };
-    }
-    return {
-      document: await workspace.openTextDocument(file),
-      usages: [],
-    };
-  }
-
   public async writeTypeDefinitionFiles(logger: Logger): Promise<void> {
     const { files } = this;
 
@@ -104,104 +74,142 @@ export class CssInformation implements CssInfo {
     );
   }
 
-  public cssLocations(localName: string, importUri: Uri): ReadonlyMap<string, Location[]> | null {
-    const classes = this.localClass.get(localName);
-    if (classes) {
-      const result = new Map<string, Location[]>();
-
-      for (const className of classes) {
-        const locations = this.classLocations.get(className);
-        if (locations) {
-          result.set(
-            className,
-            locations.map(
-              ({
-                location: {
-                  source,
-                  range: { start, end },
-                },
-              }) =>
-                new Location(
-                  Uri.joinPath(Utils.dirname(importUri), source),
-                  new Range(
-                    new Position(start.line, start.column),
-                    new Position(end.line, end.column),
-                  ),
-                ),
-            ),
-          );
-        }
+  public cssLocations({
+    className,
+    localName,
+    importUri,
+  }: LocalOrClass & { importUri: Uri }): Location[] | null {
+    if (className) {
+      const locations = this.classLocations.get(className);
+      if (locations) {
+        return locations.map(({ location }) => toLocation(location, importUri));
       }
-      return result;
+    }
+
+    if (localName) {
+      const classes = this.localClass.get(localName);
+      if (classes) {
+        const result: Location[] = [];
+
+        for (const className of classes) {
+          const locations = this.classLocations.get(className);
+          if (locations) {
+            result.push(...locations.map(({ location }) => toLocation(location, importUri)));
+          }
+        }
+        return result;
+      }
     }
 
     return null;
   }
 
-  public localAliases(localName: string): ReadonlySet<string> {
-    const classNames = this.localClass.get(localName);
-    if (classNames) {
-      return new Set(
-        Array.from(classNames).flatMap((cn) => Array.from(this.classLocal.get(cn) ?? [])),
-      );
+  public aliases({ className, localName }: LocalOrClass): ReadonlySet<string> {
+    if (localName) {
+      const classNames = this.localClass.get(localName);
+      if (classNames) {
+        return new Set(
+          Array.from(classNames).flatMap((cn) => Array.from(this.classLocal.get(cn) ?? [])),
+        );
+      }
+    }
+
+    if (className) {
+      return new Set(this.classLocal.get(className));
     }
 
     return new Set();
   }
 
-  public classAliases(className: string): ReadonlySet<string> {
-    return new Set(this.classLocal.get(className));
-  }
-
-  public localDtsRanges(localName: string): Iterable<Range> {
-    return this.localAliases(localName)
-      .values()
-      .filter((alias) => alias !== localName)
-      .map((alias) => this.dtsRange.get(alias))
-      .filter((range) => range != null)
-      .map(
-        ({ start, end }) =>
-          new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
-      );
-  }
-
-  public classDtsRanges(className: string): Iterable<Range> {
-    return this.classAliases(className)
-      .values()
-      .map((alias) => this.dtsRange.get(alias))
-      .filter((range) => range != null)
-      .map(
-        ({ start, end }) =>
-          new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
-      );
-  }
-
-  public async localUsages(
-    localName: string,
-    file: string,
-    importUri: Uri,
-  ): Promise<ClassUsage | null> {
-    const classNames = this.localClass.get(localName);
-    if (classNames) {
-      const localNames = new Set(
-        Array.from(classNames).flatMap((cn) => Array.from(this.classLocal.get(cn) ?? [])),
-      );
-
-      return this.usages(localNames, file, importUri);
+  public dtsRanges(args: { className: string } | { localName: string }): Iterable<Range> {
+    if ('className' in args) {
+      const { className } = args;
+      return this.aliases({ className })
+        .values()
+        .map((alias) => this.dtsRange.get(alias))
+        .filter((range) => range != null)
+        .map(
+          ({ start, end }) =>
+            new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
+        );
     }
 
-    return null;
+    if ('localName' in args) {
+      const { localName } = args;
+      return this.aliases({ localName })
+        .values()
+        .filter((alias) => alias !== localName)
+        .map((alias) => this.dtsRange.get(alias))
+        .filter((range) => range != null)
+        .map(
+          ({ start, end }) =>
+            new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
+        );
+    }
+
+    return [];
   }
 
-  public async classUsages(
-    className: string,
-    file: string,
-    importUri: Uri,
-  ): Promise<ClassUsage | null> {
-    const localNames = this.classLocal.get(className);
+  public async usages({
+    localName,
+    className,
+    file,
+    importUri,
+  }: LocalOrClass & { file: string; importUri: Uri }): Promise<ClassUsage | null> {
+    let localNames: Set<string> | undefined;
+
+    if (localName) {
+      const classNames = this.localClass.get(localName);
+      if (classNames) {
+        localNames = new Set(
+          Array.from(classNames).flatMap((cn) => Array.from(this.classLocal.get(cn) ?? [])),
+        );
+      }
+    }
+
+    if (className) {
+      localNames = this.classLocal.get(className);
+    }
+
     if (localNames) {
-      return this.usages(localNames, file, importUri);
+      const document = await workspace.openTextDocument(file);
+      const sourceFile = getSourceFile(document);
+      const bindingNames = await importBindingNames(document, sourceFile, importUri);
+      if (bindingNames.size > 0) {
+        const state: State = {
+          bindingNames,
+          localNames,
+          seenUsages: new Set<string>(),
+          usages: [] as Usage[],
+          sourceFile,
+        };
+
+        visit(sourceFile, state);
+
+        return {
+          document,
+          usages: state.usages,
+        };
+      }
+
+      return {
+        document: await workspace.openTextDocument(file),
+        usages: [],
+      };
     }
     return null;
   }
+}
+
+type LocalOrClass = { localName?: string; className?: string };
+
+function toLocation(location: CMTDLocation, importUri: Uri): Location {
+  const { source, range } = location;
+  return new Location(
+    Uri.joinPath(Utils.dirname(importUri), source),
+    new Range(
+      new Position(range.start.line, range.start.column),
+      new Position(range.end.line, range.end.column),
+    ),
+  );
 }

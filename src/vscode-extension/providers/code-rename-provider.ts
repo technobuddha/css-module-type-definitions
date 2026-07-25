@@ -1,7 +1,6 @@
 import {
   type CancellationToken,
-  Position,
-  Range,
+  type Position,
   type RenameProvider,
   type TextDocument,
   WorkspaceEdit,
@@ -31,65 +30,23 @@ export class CodeRenameProvider implements RenameProvider {
     if (folderController) {
       const { options } = folderController;
 
-      const { cssName, codeName } = replacementName(newName, options);
+      const { cssReplacement, codeReplacement } = replacementName(newName, options);
 
       const localInfo = await getLocalInfo(document, position);
       if (localInfo) {
         const { importUri, localName } = localInfo;
+        const we = new WorkspaceEdit();
 
-        const cssInfo = await folderController.getCssInformation(importUri);
-        if (cssInfo) {
-          const cssLocations = cssInfo.cssLocations(localName, importUri);
-          if (cssLocations) {
-            const we = new WorkspaceEdit();
+        await folderController.edit({
+          we,
+          importUri,
+          codeReplacement,
+          cssReplacement,
+          localName,
+          token,
+        });
 
-            for (const locs of cssLocations.values()) {
-              for (const loc of locs) {
-                we.replace(loc.uri, loc.range, `.${cssName}`);
-              }
-            }
-
-            for (const [file, imports] of await folderController.allImports()) {
-              if (token.isCancellationRequested) {
-                return null;
-              }
-
-              if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                const localUsages = await cssInfo.localUsages(localName, file, importUri);
-                if (localUsages) {
-                  const { document, usages } = localUsages;
-                  for (const usage of usages) {
-                    const { range } = usage;
-
-                    if (range.start.character >= 2) {
-                      const expandedRange = new Range(
-                        new Position(range.start.line, range.start.character - 1),
-                        new Position(range.end.line, range.end.character + 1),
-                      );
-
-                      if (/^\[(?:(?:'.*')|(?:".*"))\]$/v.test(document.getText(expandedRange))) {
-                        we.replace(document.uri, expandedRange, codeName);
-                        continue;
-                      }
-                    }
-
-                    if (range.start.character >= 1) {
-                      const expandedRange = new Range(
-                        new Position(range.start.line, range.start.character - 1),
-                        new Position(range.end.line, range.end.character),
-                      );
-
-                      if (/^\..*$/v.test(document.getText(expandedRange))) {
-                        we.replace(document.uri, expandedRange, codeName);
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            return we;
-          }
-        }
+        return we;
       }
     }
 
