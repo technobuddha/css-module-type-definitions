@@ -2,13 +2,11 @@ import { deepEquals } from '@technobuddha/library';
 import { type Disposable, type WorkspaceFolder } from 'vscode';
 
 import {
-  CSS_EXTENSIONS,
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
   locateViteConfigurationFile,
   type LoggerController,
-  MODULE_PATTERN,
   type Options,
   readCMTDConfig,
   readViteConfig,
@@ -157,10 +155,6 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
 
   public get options(): Options {
     return this.#options;
-  }
-
-  public globIsTypeDefinition(): string {
-    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `d.${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
   }
 
   public override async dispose(): Promise<void> {

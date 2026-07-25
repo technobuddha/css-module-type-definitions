@@ -1,5 +1,7 @@
 import { commands, type Disposable, window, workspace } from 'vscode';
 
+import { globIsTypeDefinition } from '../../common/index.ts';
+
 import { type WorkspaceController } from '../controllers/index.ts';
 
 type CommandHideTypesFilesOptions = {
@@ -11,7 +13,7 @@ export function commandHideTypeFiles({ controller }: CommandHideTypesFilesOption
     for (const folder of workspace.workspaceFolders ?? []) {
       const folderController = controller.folders.get(folder);
       if (folderController) {
-        const pattern = `**/${folderController.globIsTypeDefinition()}`;
+        const pattern = `**/${globIsTypeDefinition()}`;
         const wsConfig = workspace.getConfiguration(undefined, folder);
         window.showInformationMessage('Type files will now be hidden in the explorer.');
         wsConfig.update('cmtd.showTypeFiles', false);

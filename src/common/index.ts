@@ -22,6 +22,12 @@ export {
 } from './read-vite-config.ts';
 export { remove } from './remove.ts';
 export { removeInlineSourceMap } from './remove-inline-source-map.ts';
-export { globIsCss, globIsCssModule, isCss, isCssModule } from './type-check.ts';
+export {
+  globIsCss,
+  globIsCssModule,
+  globIsTypeDefinition,
+  isCss,
+  isCssModule,
+} from './type-check.ts';
 export { update } from './update.ts';
 export { watch } from './watch.ts';

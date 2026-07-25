@@ -6,6 +6,7 @@ import { type Disposable, Uri, workspace, type WorkspaceFolder } from 'vscode';
 import {
   fileOperation,
   globIsCssModule,
+  globIsTypeDefinition,
   isCss,
   isCssModule,
   type LoggerController,
@@ -101,7 +102,7 @@ export class FolderCss extends FolderOptions implements Disposable {
     this.cssInformation.clear();
 
     const typedefs = new Set(
-      (await this.findUnignoredFiles(`**/${this.globIsTypeDefinition()}`)).map((uri) => uri.fsPath),
+      (await this.findUnignoredFiles(`**/${globIsTypeDefinition()}`)).map((uri) => uri.fsPath),
     );
 
     await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
@@ -161,7 +162,7 @@ export class FolderCss extends FolderOptions implements Disposable {
         await this.deleteCssInformation(uri);
       }
     });
-    await this.findUnignoredFiles(`**/${this.globIsTypeDefinition()}`).then(async (uris) => {
+    await this.findUnignoredFiles(`**/${globIsTypeDefinition()}`).then(async (uris) => {
       for (const uri of uris) {
         await workspace.fs.delete(uri);
         this.logger.info(fileOperation(uri.fsPath, 'deleted'));

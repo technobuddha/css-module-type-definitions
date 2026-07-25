@@ -1,4 +1,4 @@
-import { commands, type DocumentSelector, type ExtensionContext, languages, window } from 'vscode';
+import { type DocumentSelector, type ExtensionContext, languages, window } from 'vscode';
 
 import {
   commandDeleteTypes,
@@ -66,7 +66,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
   );
 
-  commands.executeCommand('cmtd.updateTypes');
+  // commands.executeCommand('cmtd.updateTypes');
 
   window.showInformationMessage('css-module-type-definitions is ready');
 }

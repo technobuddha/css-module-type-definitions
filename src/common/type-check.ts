@@ -9,11 +9,15 @@ function toPathname(filename: string | URI): string {
 }
 
 export function globIsCss(): string {
-  return `*{${CSS_EXTENSIONS.map((ext) => ext.slice(1)).join(',')}}`;
+  return `*{${CSS_EXTENSIONS.join(',')}}`;
 }
 
 export function globIsCssModule(): string {
-  return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => ext.slice(1)).join(',')}}`;
+  return `${MODULE_PATTERN}{${CSS_EXTENSIONS.join(',')}}`;
+}
+
+export function globIsTypeDefinition(): string {
+  return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `d.${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
 }
 
 export function isCss(filename: string | URI): boolean {
