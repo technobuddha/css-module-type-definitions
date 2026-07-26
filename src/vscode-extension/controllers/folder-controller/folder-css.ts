@@ -32,7 +32,11 @@ export class FolderCss extends FolderOptions implements Disposable {
       await this.updateCssTypeDefinitions();
     });
     this.eventTarget.addEventListener('ignored', async () => {
-      await this.updateCssTypeDefinitions();
+      for (const cssFile of Array.from(this.cssInformation.keys())) {
+        if (this.isIgnored(Uri.file(cssFile))) {
+          this.cssInformation.delete(cssFile);
+        }
+      }
     });
 
     this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {

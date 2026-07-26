@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import chalk from 'chalk';
 
-type Operation = 'created' | 'updated' | 'deleted' | 'configuration' | 'add' | 'change' | 'unlink';
+type Operation =
+  'created' | 'updated' | 'deleted' | 'configuration' | 'add' | 'change' | 'unlink' | 'ignored';
 
 export function fileOperation(file: string, mode: Operation): string {
   const aFile = path.resolve(file);
@@ -39,6 +40,10 @@ export function fileOperation(file: string, mode: Operation): string {
     case 'change':
     case 'unlink': {
       return `${chalk.cyan(`⟦${mode}⟧`.padEnd(16))} ${display}`;
+    }
+
+    case 'ignored': {
+      return `${chalk.gray('︽ ignored ︾'.padEnd(16))} ${display}`;
     }
 
     // no default

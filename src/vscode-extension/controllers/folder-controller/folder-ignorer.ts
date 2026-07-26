@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { empty, isWithinDirectory, pathDepth, toError } from '@technobuddha/library';
 import ignore, { type Ignore } from 'ignore';
 import {
@@ -11,7 +9,7 @@ import {
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, GitConfig, type LoggerController } from '../../../common/index.ts';
+import { fileOperation, type LoggerController } from '../../../common/index.ts';
 
 import { FolderBase } from './folder-base.ts';
 
@@ -23,27 +21,7 @@ type FolderControllerOptions = {
 export class FolderIgnorer extends FolderBase implements Disposable {
   public static override async init(controller: FolderIgnorer): Promise<void> {
     await super.init(controller);
-
-    controller.setGitConfig(
-      await GitConfig.watcher({ root: controller.folder.uri.fsPath, logger: controller }),
-    );
-
-    await workspace
-      .findFiles(new RelativePattern(controller.folder, '**/.gitignore'))
-      .then(async (files) => {
-        for (const file of files) {
-          controller.logger.debug(fileOperation(file.fsPath, 'configuration'));
-          const dir = path.dirname(workspace.asRelativePath(file, false));
-          try {
-            const content = await workspace.fs.readFile(file).then(workspace.decode);
-            controller.gitIgnores.set(dir, content);
-          } catch (error) {
-            controller.logger.error(toError(error), `Failed to read ignore file: ${file}`);
-          }
-        }
-      });
-
-    controller.buildIgnored();
+    await controller.buildIgnored();
 
     const watcher = workspace.createFileSystemWatcher(
       new RelativePattern(controller.folder, '**/*'),
@@ -53,6 +31,7 @@ export class FolderIgnorer extends FolderBase implements Disposable {
       if (controller.isIgnored(uri)) {
         return;
       }
+      controller.logger.debug(fileOperation(uri.fsPath, action));
       controller.eventTarget.dispatchEvent('watcher', { action, uri });
     };
 
@@ -66,108 +45,70 @@ export class FolderIgnorer extends FolderBase implements Disposable {
     controller.eventTarget.addEventListener('watcher', ({ detail: { action, uri } }) => {
       if (Utils.basename(uri) === '.gitignore') {
         controller.logger.debug(fileOperation(uri.fsPath, action));
-        if (action === 'unlink') {
-          void controller.removeGitIgnore(uri);
-        } else {
-          void controller.readGitIgnore(uri);
-        }
+        void controller.buildIgnored();
       }
     });
   }
 
-  #gitIgnore?: string;
-
-  protected gitConfig?: GitConfig;
-  protected readonly gitIgnores: Map<string, string> = new Map();
-  protected readonly ignored: Map<string, Ignore> = new Map();
+  protected readonly ignorers: Map<string, Ignore> = new Map();
 
   public constructor({ folder, logger }: FolderControllerOptions) {
     super({ folder, logger });
   }
 
-  private setGitConfig(gitConfig: GitConfig): void {
-    this.gitConfig = gitConfig;
-    gitConfig.onChange(({ gitIgnore }) => {
-      if (this.#gitIgnore !== gitIgnore) {
-        this.#gitIgnore = gitIgnore;
-        this.buildIgnored();
-        this.changed();
-      }
-    });
-  }
+  protected ignorer(file: Uri): Ignore | undefined {
+    let parent = Utils.dirname(file);
 
-  private async readGitIgnore(file: Uri): Promise<void> {
-    const dir = path.dirname(workspace.asRelativePath(file, false));
-    try {
-      const content = await workspace.fs.readFile(file).then(workspace.decode);
+    while (isWithinDirectory(this.folder.uri.fsPath, parent.fsPath)) {
+      const ignorer = this.ignorers.get(parent.fsPath);
+      if (ignorer) {
+        return ignorer;
+      }
 
-      if (content !== this.gitIgnores.get(dir)) {
-        this.gitIgnores.set(dir, content);
-        this.buildIgnored();
-        this.changed();
-      }
-    } catch (error) {
-      this.logger.error(toError(error), `Failed to read ignore file: ${file}`);
-      if (this.gitIgnores.has(dir)) {
-        this.gitIgnores.delete(dir);
-        this.buildIgnored();
-        this.changed();
-      }
+      parent = Utils.dirname(parent);
     }
+
+    return undefined;
   }
 
-  private removeGitIgnore(file: Uri): void {
-    const dir = path.dirname(workspace.asRelativePath(file, false));
+  protected async buildIgnored(): Promise<void> {
+    this.ignorers.clear();
 
-    if (this.gitIgnores.has(dir)) {
-      this.gitIgnores.delete(dir);
-      this.buildIgnored();
-      this.changed();
-    }
-  }
-
-  private changed(): void {
-    this.eventTarget.dispatchEvent('ignored');
-  }
-
-  protected ignorable(): Ignore {
-    return ignore().add(this.#gitIgnore ?? empty);
-  }
-
-  protected buildIgnored(): void {
-    this.ignored.clear();
-
-    top: for (const [dir, ignored] of Array.from(this.gitIgnores).sort(
-      ([a], [b]) => pathDepth(a) - pathDepth(b),
-    )) {
-      let parent = path.join(dir, '..');
-      while (isWithinDirectory('.', parent)) {
-        if (this.ignored.has(parent)) {
-          const parentIgnored = this.ignored.get(parent)!;
-
-          if (!parentIgnored.ignores(path.join(dir, '.gitignore'))) {
-            this.ignored.set(dir, ignore().add(parentIgnored).add(ignored));
+    return workspace
+      .findFiles(new RelativePattern(this.folder, '**/.gitignore'))
+      .then(async (files) => {
+        for (const file of Array.from(files).sort(
+          (a, b) => pathDepth(a.fsPath) - pathDepth(b.fsPath),
+        )) {
+          const ignorer = this.ignorer(file);
+          if (ignorer?.ignores(workspace.asRelativePath(file, false))) {
+            continue;
           }
-          break top;
-        }
-        parent = path.join(parent, '..');
-      }
 
-      this.ignored.set(dir, this.ignorable().add(ignored));
-    }
+          const dir = Utils.dirname(file);
+          try {
+            const content = await workspace.fs.readFile(file).then(workspace.decode);
+            this.ignorers.set(
+              dir.fsPath,
+              ignore()
+                .add(ignorer ?? empty)
+                .add(content),
+            );
+            this.logger.debug(fileOperation(file.fsPath, 'configuration'));
+          } catch (error) {
+            this.logger.error(toError(error), `Failed to read ignore file: ${file}`);
+          }
+        }
+
+        this.eventTarget.dispatchEvent('ignored');
+      });
   }
 
   public isIgnored(file: Uri): boolean {
-    const filepath = workspace.asRelativePath(file, false);
-    let parent = path.dirname(filepath);
-
-    while (isWithinDirectory('.', parent)) {
-      if (this.ignored.has(parent)) {
-        return this.ignored.get(parent)!.ignores(filepath);
-      }
-      parent = path.join(parent, '..');
+    const ignorer = this.ignorer(file);
+    if (ignorer) {
+      return ignorer.ignores(workspace.asRelativePath(file, false));
     }
-
     return false;
   }
 

@@ -19,6 +19,8 @@ type Changed = {
 
 export class GitConfig implements AsyncDisposable {
   private static async create({ root, logger }: Arguments): Promise<GitConfig> {
+    logger.logger.error('creating GitConfig');
+
     const gc = new GitConfig({ root, logger });
 
     await Promise.all([
