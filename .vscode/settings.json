@@ -13,5 +13,6 @@
   "files.trimTrailingWhitespace": true,
   "files.encoding": "utf8",
   "css.customData": ["./.vscode/custom.css-data.json"],
+  "eslint.validate": ["css", "html", "md", "markdown"],
   "cmtd.showTypeFiles": true
 }

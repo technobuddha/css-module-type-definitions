@@ -40,7 +40,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-166",
+    "@technobuddha/library": "2.1.0-167",
     "@vitejs/devtools": "0.3.4",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
@@ -68,7 +68,7 @@
     "@babel/traverse": "8.0.0",
     "@babel/types": "8.0.0",
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-128",
+    "@technobuddha/project": "1.0.0-142",
     "@types/json5": "2.2.0",
     "@types/less": "3.0.8",
     "@types/node": "26.1.1",

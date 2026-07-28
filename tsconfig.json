@@ -11,6 +11,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.config.js", "*.config.ts"],
+  "include": ["*.config.ts", "*.setup.ts"],
   "exclude": ["eslint.config.js"]
 }
