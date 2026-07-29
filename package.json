@@ -25,7 +25,7 @@
     "url": "https://github.com/technobuddha/css-module-type-definitions/issues"
   },
   "scripts": {
-    "x": "tsx src/cli/cmtd.ts update",
+    "x": "npx tb",
     "vscode:prepublish": "yarn run compile",
     "compile": "build compile",
     "dev": "build dev",
@@ -40,7 +40,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-167",
+    "@technobuddha/library": "2.1.0-168",
     "@vitejs/devtools": "0.3.4",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
@@ -68,7 +68,7 @@
     "@babel/traverse": "8.0.0",
     "@babel/types": "8.0.0",
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-142",
+    "@technobuddha/project": "1.0.0-157",
     "@types/json5": "2.2.0",
     "@types/less": "3.0.8",
     "@types/node": "26.1.1",
@@ -115,5 +115,5 @@
     "vite",
     "postcss"
   ],
-  "packageManager": "yarn@4.17.1"
+  "packageManager": "yarn@4.18.0"
 }

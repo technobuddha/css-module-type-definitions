@@ -6,7 +6,7 @@ import { lint } from '@technobuddha/project';
 
 export default lint({
   files: ['**/*.ts'],
-  ignores: ['@types/**/*'],
+  ignores: ['@types/**'],
   platform: 'node',
   typescript: true,
 });
