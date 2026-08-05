@@ -11,7 +11,7 @@ import {
   type WorkspaceFolder,
 } from 'vscode';
 
-import { isCode, type Logger, type LoggerController } from '../../common/index.ts';
+import { fileOperation, isCode, type Logger, type LoggerController } from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 
@@ -42,6 +42,7 @@ export class WorkspaceController implements Disposable, LoggerController {
     }
 
     for (const fsPath of wc.openDocuments) {
+      wc.logger.debug(fileOperation(fsPath, 'open'));
       await wc.onOpenTab(Uri.file(fsPath));
     }
 
@@ -108,7 +109,7 @@ export class WorkspaceController implements Disposable, LoggerController {
           if (this.openDocuments.has(fsPath)) {
             current.delete(fsPath);
           } else {
-            this.logger.trace(`Tab opening: ${fsPath}`);
+            this.logger.debug(fileOperation(fsPath, 'open'));
             this.openDocuments.add(fsPath);
             await this.onOpenTab(tab.input.uri);
           }
@@ -118,7 +119,7 @@ export class WorkspaceController implements Disposable, LoggerController {
 
     for (const fsPath of current) {
       this.openDocuments.delete(fsPath);
-      this.logger.trace(`Tab closing: ${fsPath}`);
+      this.logger.debug(fileOperation(fsPath, 'close'));
       await this.onCloseTab(Uri.file(fsPath));
     }
   }

@@ -5,7 +5,16 @@ import { toError } from '@technobuddha/library';
 import chalk from 'chalk';
 
 type Operation =
-  'created' | 'updated' | 'deleted' | 'configuration' | 'add' | 'change' | 'unlink' | 'ignored';
+  | 'created'
+  | 'updated'
+  | 'deleted'
+  | 'configuration'
+  | 'add'
+  | 'change'
+  | 'unlink'
+  | 'ignored'
+  | 'open'
+  | 'close';
 
 export function fileOperation(file: string, mode: Operation, error?: unknown): string {
   const aFile = path.resolve(file);
@@ -45,6 +54,11 @@ export function fileOperation(file: string, mode: Operation, error?: unknown): s
     case 'change':
     case 'unlink': {
       return `${chalk.cyan(`⟦${mode}⟧`.padEnd(16))} ${display}`;
+    }
+
+    case 'open':
+    case 'close': {
+      return `${chalk.green(`⟦${mode}⟧`.padEnd(16))} ${display}`;
     }
 
     case 'ignored': {

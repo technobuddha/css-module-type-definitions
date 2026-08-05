@@ -4,6 +4,7 @@ import {
   camelCase,
   defaultBanner,
   empty,
+  encodeBase64,
   fileExists,
   isJsVariable,
   pascalCase,
@@ -184,7 +185,8 @@ export async function generateTypesFromCss(
             empty,
             `${space.repeat(0)}export default ${variable};`,
             empty,
-            `//# sourceMappingURL=${path.basename(mapFile)}`,
+            //`//# sourceMappingURL=${path.basename(mapFile)}`,
+            `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${encodeBase64(JSON.stringify(smg.sourceMap()), 'utf-8')}`,
             empty,
             ...splitLines(options.css.dtsFooter ?? empty),
             empty,
@@ -193,7 +195,7 @@ export async function generateTypesFromCss(
           return {
             files: {
               [path.resolve(dir, dtsFile)]: dts.join('\n'),
-              [path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
+              //[path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
             },
             dtsFile,
             mapFile,
