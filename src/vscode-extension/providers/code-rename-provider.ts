@@ -30,11 +30,10 @@ export class CodeRenameProvider implements RenameProvider {
     if (folderController) {
       const { options } = folderController;
 
-      const { cssReplacement, codeReplacement } = replacementName(newName, options);
-
       const localInfo = await getLocalInfo(document, position);
       if (localInfo) {
         const { importUri, localName } = localInfo;
+        const { cssReplacement, codeReplacement } = replacementName(newName, options);
         const we = new WorkspaceEdit();
 
         await folderController.edit({

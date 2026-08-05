@@ -10,4 +10,6 @@ export type CssInfo = {
   classLocal: Map<string, Set<string>>;
   localClass: Map<string, Set<string>>;
   dtsRange: Map<string, CMTDRange>;
+  hasDts: boolean;
+  hasMap: boolean;
 };

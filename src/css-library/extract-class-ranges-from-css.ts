@@ -125,13 +125,10 @@ export async function extractClassRangesFromCss(
                 column: (node.source?.end?.column ?? 1) - 1,
               };
 
-              classLocation.set(name, [
-                ...(classLocation.get(name) ?? []),
-                {
-                  snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
-                  location: { source, range: { start, end } },
-                },
-              ]);
+              classLocation.getOrInsert(name, []).push({
+                snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
+                location: { source, range: { start, end } },
+              });
             }
           });
 

@@ -44,13 +44,13 @@ export class CodeReferenceProvider implements ReferenceProvider {
               locations.push(...cssLocations);
             }
 
-            for (const [file, imports] of await folderController.allImports()) {
+            for (const [file, imports] of await folderController.allCssModuleImports()) {
               if (token.isCancellationRequested) {
                 return [];
               }
 
               if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-                const localUsages = await cssInfo.usages({ localName, file, importUri });
+                const localUsages = await cssInfo.classUsage({ localName, file, importUri });
                 if (localUsages) {
                   for (const usage of localUsages.usages) {
                     if (accessorType === 'property' || usage.accessorType !== accessorType) {

@@ -13,6 +13,31 @@
   "files.trimTrailingWhitespace": true,
   "files.encoding": "utf8",
   "css.customData": ["./.vscode/custom.css-data.json"],
-  "eslint.validate": ["css", "html", "md", "markdown"],
-  "cmtd.showTypeFiles": true
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "markdown",
+    "css",
+    "html",
+    "json",
+    "jsonc"
+  ],
+  "eslint.probe": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "markdown",
+    "css",
+    "html",
+    "json",
+    "jsonc"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ]
 }

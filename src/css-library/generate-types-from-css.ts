@@ -4,6 +4,7 @@ import {
   camelCase,
   defaultBanner,
   empty,
+  fileExists,
   isJsVariable,
   pascalCase,
   quote,
@@ -53,7 +54,7 @@ export async function generateTypesFromCss(
           from: file,
           map: { inline: false },
         })
-        .then(() => {
+        .then(async () => {
           const classLocal: Map<string, Set<string>> = new Map();
           for (const className of classLocations.keys()) {
             if (!classLocal.has(className)) {
@@ -128,8 +129,11 @@ export async function generateTypesFromCss(
 
           const { dir, name, ext } = path.parse(file);
           const dtsFile = `${name}.d${ext}.ts`;
-          const dtsRange: Map<string, CMTDRange> = new Map();
           const mapFile = `${dtsFile}.map`;
+          const hasDts = await fileExists(path.join(dir, dtsFile));
+          const hasMap = await fileExists(path.join(dir, mapFile));
+
+          const dtsRange: Map<string, CMTDRange> = new Map();
 
           const smg = new SourceMapGenerator({ file: dtsFile, logger });
 
@@ -193,6 +197,8 @@ export async function generateTypesFromCss(
             },
             dtsFile,
             mapFile,
+            hasDts,
+            hasMap,
             classLocations,
             includedFiles,
             classLocal,

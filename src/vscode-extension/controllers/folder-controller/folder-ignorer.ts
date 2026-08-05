@@ -1,24 +1,15 @@
 import { empty, isWithinDirectory, pathDepth, toError } from '@technobuddha/library';
 import ignore, { type Ignore } from 'ignore';
-import {
-  type Disposable,
-  RelativePattern,
-  type Uri,
-  workspace,
-  type WorkspaceFolder,
-} from 'vscode';
+import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, type LoggerController } from '../../../common/index.ts';
+import { fileOperation } from '../../../common/index.ts';
 
-import { FolderBase } from './folder-base.ts';
+import { FolderBase, type FolderBaseArguments } from './folder-base.ts';
 
-type FolderControllerOptions = {
-  folder: WorkspaceFolder;
-  logger: LoggerController;
-};
+export type FolderIgnorerArguments = FolderBaseArguments;
 
-export class FolderIgnorer extends FolderBase implements Disposable {
+export abstract class FolderIgnorer extends FolderBase implements Disposable {
   public static override async init(controller: FolderIgnorer): Promise<void> {
     await super.init(controller);
     await controller.buildIgnored();
@@ -31,7 +22,6 @@ export class FolderIgnorer extends FolderBase implements Disposable {
       if (controller.isIgnored(uri)) {
         return;
       }
-      controller.logger.debug(fileOperation(uri.fsPath, action));
       controller.eventTarget.dispatchEvent('watcher', { action, uri });
     };
 
@@ -52,8 +42,8 @@ export class FolderIgnorer extends FolderBase implements Disposable {
 
   protected readonly ignorers: Map<string, Ignore> = new Map();
 
-  public constructor({ folder, logger }: FolderControllerOptions) {
-    super({ folder, logger });
+  public constructor({ workspaceController, folder }: FolderIgnorerArguments) {
+    super({ workspaceController, folder });
   }
 
   protected ignorer(file: Uri): Ignore | undefined {

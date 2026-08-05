@@ -1,6 +1,17 @@
-import { type Disposable, type Uri, workspace, type WorkspaceFolder } from 'vscode';
+import {
+  type DiagnosticCollection,
+  type Disposable,
+  languages,
+  TabInputText,
+  type TextDocument,
+  type TextEditor,
+  Uri,
+  window,
+  workspace,
+  type WorkspaceFolder,
+} from 'vscode';
 
-import { type Logger, type LoggerController } from '../../common/index.ts';
+import { isCode, type Logger, type LoggerController } from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 
@@ -8,19 +19,47 @@ import { FolderController } from './folder-controller/index.ts';
 
 export class WorkspaceController implements Disposable, LoggerController {
   public static async create(): Promise<WorkspaceController> {
-    const controller = new WorkspaceController();
+    const wc = new WorkspaceController();
 
-    await controller.updateFolders();
+    if (workspace.workspaceFolders) {
+      for (const folder of workspace.workspaceFolders) {
+        if (!wc.folders.has(folder)) {
+          const fc = await FolderController.create({
+            workspaceController: wc,
+            folder,
+          });
+          wc.folders.set(folder, fc);
+        }
+      }
+    }
 
-    return controller;
+    for (const group of window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (tab.input instanceof TabInputText) {
+          wc.openDocuments.add(tab.input.uri.fsPath);
+        }
+      }
+    }
+
+    for (const fsPath of wc.openDocuments) {
+      await wc.onOpenTab(Uri.file(fsPath));
+    }
+
+    return wc;
   }
 
   protected readonly disposables: Disposable[] = [];
-  public readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
+  protected readonly textEditors: Set<TextEditor> = new Set();
+  protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
   public readonly logger: Logger = createLogger();
+  public readonly diagnostics: DiagnosticCollection;
+  public readonly openDocuments: Set<string> = new Set();
 
   public constructor() {
+    this.diagnostics = languages.createDiagnosticCollection('cmtd');
+
     this.disposables.push(
+      this.diagnostics,
       // workspace.onDidChangeConfiguration(async (event) => {
       //   if (event.affectsConfiguration(SETTINGS_PREFIX)) {
       //     this.logger.info('Relevant configuration change detected, updating options...');
@@ -28,26 +67,93 @@ export class WorkspaceController implements Disposable, LoggerController {
       //     this.onDidChangeEmitter.fire(event);
       //   }
       // }),
-      workspace.onDidChangeWorkspaceFolders(async () => {
-        await this.updateFolders();
+      workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
+        for (const folder of removed) {
+          const fc = this.folders.get(folder);
+          if (fc) {
+            await fc.dispose();
+            this.folders.delete(folder);
+          }
+        }
+
+        for (const folder of added) {
+          const fc = await FolderController.create({
+            folder,
+            workspaceController: this,
+          });
+          this.folders.set(folder, fc);
+        }
       }),
+
+      window.tabGroups.onDidChangeTabGroups(async () => {
+        await this.examineTabs();
+      }),
+      window.tabGroups.onDidChangeTabs(async () => {
+        await this.examineTabs();
+      }),
+
+      workspace.onDidChangeTextDocument(async (change) =>
+        this.onTextDocumentChange(change.document),
+      ),
     );
   }
 
-  private async updateFolders(): Promise<void> {
-    if (workspace.workspaceFolders) {
-      for (const [folder, controller] of Array.from(this.folders)) {
-        if (!workspace.workspaceFolders.includes(folder)) {
-          await controller.dispose();
-          this.folders.delete(folder);
+  private async examineTabs(): Promise<void> {
+    const current = new Set(this.openDocuments);
+
+    for (const group of window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (tab.input instanceof TabInputText) {
+          const { fsPath } = tab.input.uri;
+          if (this.openDocuments.has(fsPath)) {
+            current.delete(fsPath);
+          } else {
+            this.logger.trace(`Tab opening: ${fsPath}`);
+            this.openDocuments.add(fsPath);
+            await this.onOpenTab(tab.input.uri);
+          }
         }
       }
+    }
 
-      for (const folder of workspace.workspaceFolders) {
-        if (!this.folders.has(folder)) {
-          const controller = await FolderController.create({ folder, logger: this });
-          // await controller.updateCssTypeDefinitions();
-          this.folders.set(folder, controller);
+    for (const fsPath of current) {
+      this.openDocuments.delete(fsPath);
+      this.logger.trace(`Tab closing: ${fsPath}`);
+      await this.onCloseTab(Uri.file(fsPath));
+    }
+  }
+
+  private async onOpenTab(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
+      const folder = workspace.getWorkspaceFolder(uri);
+      if (folder) {
+        const fc = this.folders.get(folder);
+        if (fc) {
+          await fc.onOpenTab(uri);
+        }
+      }
+    }
+  }
+
+  private async onCloseTab(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
+      const folder = workspace.getWorkspaceFolder(uri);
+      if (folder) {
+        const fc = this.folders.get(folder);
+        if (fc) {
+          await fc.onCloseTab(uri);
+        }
+      }
+    }
+  }
+
+  private async onTextDocumentChange(document: TextDocument): Promise<void> {
+    if (isCode(document.uri)) {
+      const folder = workspace.getWorkspaceFolder(document.uri);
+      if (folder) {
+        const fc = this.folders.get(folder);
+        if (fc) {
+          await fc.updateTab(document.uri);
         }
       }
     }
@@ -62,15 +168,21 @@ export class WorkspaceController implements Disposable, LoggerController {
     return undefined;
   }
 
+  public *folderControllers(): Generator<FolderController> {
+    for (const fc of this.folders.values()) {
+      yield fc;
+    }
+  }
+
   public async dispose(): Promise<void> {
     for (const disposable of this.disposables) {
       await disposable.dispose();
     }
     this.disposables.length = 0;
 
-    for (const [folder, controller] of Array.from(this.folders)) {
-      await controller.dispose();
-      this.folders.delete(folder);
+    for (const fc of this.folders.values()) {
+      await fc.dispose();
     }
+    this.folders.clear();
   }
 }

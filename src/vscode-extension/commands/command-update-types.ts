@@ -9,8 +9,8 @@ type CommandUpdateTypesOptions = {
 export function commandUpdateTypes({ controller }: CommandUpdateTypesOptions): Disposable {
   return commands.registerCommand('cmtd.updateTypes', async () =>
     Promise.all(
-      controller.folders
-        .values()
+      controller
+        .folderControllers()
         .map(async (folderController) => folderController.updateCssTypeDefinitions()),
     ),
   );

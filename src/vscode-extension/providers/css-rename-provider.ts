@@ -30,11 +30,10 @@ export class CssRenameProvider implements RenameProvider {
     if (folderController) {
       const { options } = folderController;
 
-      const { cssReplacement, codeReplacement } = replacementName(newName, options);
-
       const classInfo = getClassInfo(document, position);
       if (classInfo) {
         const { className } = classInfo;
+        const { cssReplacement, codeReplacement } = replacementName(newName, options);
         const we = new WorkspaceEdit();
 
         for (const importUri of await folderController.importers(document.uri)) {

@@ -11,16 +11,12 @@ import { addRange } from './add-range.ts';
 import { type State } from './state.ts';
 
 export function visit(node: Node, state: State): void {
-  const { bindingNames, localNames, sourceFile } = state;
+  const { bindingNames } = state;
 
   if (isPropertyAccessExpressionLike(node)) {
     const expression = unwrapExpression(node.expression);
-    if (
-      isIdentifier(expression) &&
-      bindingNames.has(expression.text) &&
-      localNames.has(node.name.text)
-    ) {
-      addRange(node, node.name.getStart(sourceFile), node.name.getEnd(), 'property', state);
+    if (isIdentifier(expression) && bindingNames.has(expression.text)) {
+      addRange(node, node.name, 'property', state);
     }
   }
 
@@ -32,10 +28,9 @@ export function visit(node: Node, state: State): void {
       isIdentifier(expression) &&
       bindingNames.has(expression.text) &&
       argument &&
-      isStringLiteralLike(argument) &&
-      localNames.has(argument.text)
+      isStringLiteralLike(argument)
     ) {
-      addRange(node, argument.getStart(sourceFile), argument.getEnd(), 'element', state);
+      addRange(node, argument, 'element', state);
     }
   }
 

@@ -2,6 +2,17 @@ export { generateTypes } from '../css-library/generate-types.ts';
 export { CODE_EXTENSIONS, CONFIG_EXTENSIONS, CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';
+export {
+  correspondingDts,
+  correspondingSource,
+  globIsCode,
+  globIsCss,
+  globIsCssModule,
+  globIsCssTypeDefinition,
+  isCode,
+  isCss,
+  isCssModule,
+} from './file-types.ts';
 export { GitConfig } from './git-config.ts';
 export { Ignorer } from './ignorer.ts';
 export {
@@ -22,12 +33,5 @@ export {
 } from './read-vite-config.ts';
 export { remove } from './remove.ts';
 export { removeInlineSourceMap } from './remove-inline-source-map.ts';
-export {
-  globIsCss,
-  globIsCssModule,
-  globIsTypeDefinition,
-  isCss,
-  isCssModule,
-} from './type-check.ts';
 export { update } from './update.ts';
 export { watch } from './watch.ts';

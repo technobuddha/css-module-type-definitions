@@ -1,26 +1,22 @@
 import { deepEquals } from '@technobuddha/library';
-import { type Disposable, type WorkspaceFolder } from 'vscode';
+import { type Disposable } from 'vscode';
 
 import {
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
   locateViteConfigurationFile,
-  type LoggerController,
   type Options,
   readCMTDConfig,
   readViteConfig,
   type ViteCss,
 } from '../../../common/index.ts';
 
-import { FolderIgnorer } from './folder-ignorer.ts';
+import { FolderIgnorer, type FolderIgnorerArguments } from './folder-ignorer.ts';
 
-type FolderControllerOptions = {
-  folder: WorkspaceFolder;
-  logger: LoggerController;
-};
+export type FolderOptionsArguments = FolderIgnorerArguments;
 
-export class FolderOptions extends FolderIgnorer implements Disposable {
+export abstract class FolderOptions extends FolderIgnorer implements Disposable {
   public static override async init(controller: FolderOptions): Promise<void> {
     await super.init(controller);
 
@@ -38,8 +34,8 @@ export class FolderOptions extends FolderIgnorer implements Disposable {
   #viteConfigFile: string | undefined;
   #viteConfig: ViteCss | undefined;
 
-  public constructor({ folder, logger }: FolderControllerOptions) {
-    super({ folder, logger });
+  public constructor({ workspaceController, folder }: FolderOptionsArguments) {
+    super({ workspaceController, folder });
 
     this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
       if (uri.fsPath === this.#viteConfigFile) {

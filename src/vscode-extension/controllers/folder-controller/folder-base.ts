@@ -1,11 +1,13 @@
 import { CustomEventTarget } from '@technobuddha/library';
-import { type Disposable, type Uri, type WorkspaceFolder } from 'vscode';
+import { type DiagnosticCollection, type Disposable, type Uri, type WorkspaceFolder } from 'vscode';
 
 import { type Logger, type LoggerController, type Options } from '../../../common/index.ts';
 
-type FolderControllerOptions = {
+import { type WorkspaceController } from '../workspace-controller.ts';
+
+export type FolderBaseArguments = {
   folder: WorkspaceFolder;
-  logger: LoggerController;
+  workspaceController: WorkspaceController;
 };
 
 type WatcherEvent = {
@@ -17,29 +19,31 @@ type OptionsEvent = {
   options: Options;
 };
 
-export class FolderBase implements LoggerController, Disposable {
+export abstract class FolderBase implements LoggerController, Disposable {
   public static async init(_controller: FolderBase): Promise<void> {
     //
   }
 
-  readonly #logger: LoggerController;
   protected readonly folder: WorkspaceFolder;
-
+  protected readonly workspaceController: WorkspaceController;
   protected readonly eventTarget = new CustomEventTarget<{
     watcher: WatcherEvent;
     options: OptionsEvent;
     ignored: undefined;
   }>();
-
   protected readonly disposables: Disposable[] = [];
 
-  public constructor({ folder, logger }: FolderControllerOptions) {
-    this.#logger = logger;
+  public constructor({ workspaceController, folder }: FolderBaseArguments) {
+    this.workspaceController = workspaceController;
     this.folder = folder;
   }
 
   public get logger(): Logger {
-    return this.#logger.logger;
+    return this.workspaceController.logger;
+  }
+
+  public get diagnostics(): DiagnosticCollection {
+    return this.workspaceController.diagnostics;
   }
 
   public async dispose(): Promise<void> {

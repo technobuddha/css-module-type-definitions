@@ -1,6 +1,7 @@
 import { type Range, type TextDocument } from 'vscode';
 
 export type Usage = {
+  localName: string;
   range: Range;
   accessorType: 'property' | 'element';
 };

@@ -1,4 +1,4 @@
-import { type Node } from 'typescript';
+import { type MemberName, type Node, type StringLiteralLike } from 'typescript';
 
 import { createRange } from '../helpers/create-range.ts';
 
@@ -7,12 +7,16 @@ import { type State } from './state.ts';
 
 export function addRange(
   node: Node,
-  start: number,
-  end: number,
+  target: MemberName | StringLiteralLike,
   accessorType: Usage['accessorType'],
   state: State,
 ): void {
   const { seenUsages, usages, sourceFile } = state;
+
+  const start = target.getStart(sourceFile);
+  const end = target.getEnd();
+  const localName = target.text;
+
   const usageKey = [node.getStart(sourceFile), node.getEnd()].join(':');
   if (seenUsages.has(usageKey)) {
     return;
@@ -21,5 +25,5 @@ export function addRange(
   seenUsages.add(usageKey);
 
   const range = createRange(sourceFile, start, end);
-  usages.push({ range, accessorType });
+  usages.push({ localName, range, accessorType });
 }

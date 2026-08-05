@@ -1,5 +1,5 @@
 import { toError } from '@technobuddha/library';
-import { Location, Position, Range, Uri, workspace } from 'vscode';
+import { Location, Position, Range, type TextDocument, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation } from '../../common/file-operation.ts';
@@ -23,6 +23,8 @@ export class CssInformation implements CssInfo {
   public dtsRange: CssInfo['dtsRange'];
   public dtsFile: CssInfo['dtsFile'];
   public mapFile: CssInfo['mapFile'];
+  public hasDts: boolean;
+  public hasMap: boolean;
 
   public constructor({
     files,
@@ -33,6 +35,8 @@ export class CssInformation implements CssInfo {
     dtsRange,
     dtsFile,
     mapFile,
+    hasDts,
+    hasMap,
   }: Arguments) {
     this.files = files;
     this.classLocations = classLocations;
@@ -42,6 +46,8 @@ export class CssInformation implements CssInfo {
     this.dtsRange = dtsRange;
     this.dtsFile = dtsFile;
     this.mapFile = mapFile;
+    this.hasDts = hasDts;
+    this.hasMap = hasMap;
   }
 
   public async writeTypeDefinitionFiles(logger: Logger): Promise<void> {
@@ -150,7 +156,7 @@ export class CssInformation implements CssInfo {
     return [];
   }
 
-  public async usages({
+  public async classUsage({
     localName,
     className,
     file,
@@ -173,31 +179,38 @@ export class CssInformation implements CssInfo {
 
     if (localNames) {
       const document = await workspace.openTextDocument(file);
-      const sourceFile = getSourceFile(document);
-      const bindingNames = await importBindingNames(document, sourceFile, importUri);
-      if (bindingNames.size > 0) {
-        const state: State = {
-          bindingNames,
-          localNames,
-          seenUsages: new Set<string>(),
-          usages: [] as Usage[],
-          sourceFile,
-        };
+      const usages = (await this.usages({ document, importUri })).filter((usage) =>
+        localNames.has(usage.localName),
+      );
 
-        visit(sourceFile, state);
-
-        return {
-          document,
-          usages: state.usages,
-        };
-      }
-
-      return {
-        document: await workspace.openTextDocument(file),
-        usages: [],
-      };
+      return { document, usages };
     }
     return null;
+  }
+
+  public async usages({
+    document,
+    importUri,
+  }: {
+    document: TextDocument;
+    importUri: Uri;
+  }): Promise<Usage[]> {
+    const sourceFile = getSourceFile(document);
+    const bindingNames = await importBindingNames(document, sourceFile, importUri);
+    if (bindingNames.size > 0) {
+      const state: State = {
+        bindingNames,
+        seenUsages: new Set<string>(),
+        usages: [],
+        sourceFile,
+      };
+
+      visit(sourceFile, state);
+
+      return state.usages;
+    }
+
+    return [];
   }
 }
 

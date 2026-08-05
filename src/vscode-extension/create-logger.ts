@@ -7,6 +7,7 @@ export function createLogger(): Logger {
   const outputChannel = window.createOutputChannel('CMTD'); //, { log: true });
 
   outputChannel.clear();
+  outputChannel.show(true);
 
   return {
     trace: (...message: string[]) => outputChannel.appendLine(message.join(empty)),

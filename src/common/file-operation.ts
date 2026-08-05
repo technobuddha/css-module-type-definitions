@@ -1,12 +1,13 @@
 import os from 'node:os';
 import path from 'node:path';
 
+import { toError } from '@technobuddha/library';
 import chalk from 'chalk';
 
 type Operation =
   'created' | 'updated' | 'deleted' | 'configuration' | 'add' | 'change' | 'unlink' | 'ignored';
 
-export function fileOperation(file: string, mode: Operation): string {
+export function fileOperation(file: string, mode: Operation, error?: unknown): string {
   const aFile = path.resolve(file);
   const cFile = path.relative(process.cwd(), file);
   const hFile = `~/${path.relative(os.homedir(), file)}`;
@@ -18,6 +19,10 @@ export function fileOperation(file: string, mode: Operation): string {
       : hFile
     : cFile.length < hFile.length ? cFile
     : hFile;
+
+  if (error) {
+    return `${chalk.red(`[${mode}]`.padEnd(16))} ${display}\n${chalk.red('[ERROR]'.padEnd(16))} ${toError(error).message}`;
+  }
 
   switch (mode) {
     case 'created': {
