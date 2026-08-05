@@ -5,15 +5,16 @@ import {
   TabInputText,
   type TextDocument,
   type TextEditor,
-  Uri,
+  type Uri,
   window,
   workspace,
   type WorkspaceFolder,
 } from 'vscode';
 
-import { fileOperation, isCode, type Logger, type LoggerController } from '../../common/index.ts';
+import { isCode, type Logger, type LoggerController } from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
+import { UriSet } from '../helpers/index.ts';
 
 import { FolderController } from './folder-controller/index.ts';
 
@@ -36,14 +37,13 @@ export class WorkspaceController implements Disposable, LoggerController {
     for (const group of window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof TabInputText) {
-          wc.openDocuments.add(tab.input.uri.fsPath);
+          wc.openDocuments.add(tab.input.uri);
         }
       }
     }
 
-    for (const fsPath of wc.openDocuments) {
-      wc.logger.debug(fileOperation(fsPath, 'open'));
-      await wc.onOpenTab(Uri.file(fsPath));
+    for (const uri of wc.openDocuments) {
+      await wc.onOpenTab(uri);
     }
 
     return wc;
@@ -54,7 +54,7 @@ export class WorkspaceController implements Disposable, LoggerController {
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
   public readonly logger: Logger = createLogger();
   public readonly diagnostics: DiagnosticCollection;
-  public readonly openDocuments: Set<string> = new Set();
+  public readonly openDocuments: UriSet = new UriSet();
 
   public constructor() {
     this.diagnostics = languages.createDiagnosticCollection('cmtd');
@@ -100,38 +100,33 @@ export class WorkspaceController implements Disposable, LoggerController {
   }
 
   private async examineTabs(): Promise<void> {
-    const current = new Set(this.openDocuments);
+    const current = new UriSet(this.openDocuments);
 
     for (const group of window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof TabInputText) {
-          const { fsPath } = tab.input.uri;
-          if (this.openDocuments.has(fsPath)) {
-            current.delete(fsPath);
+          if (this.openDocuments.has(tab.input.uri)) {
+            current.delete(tab.input.uri);
           } else {
-            this.logger.debug(fileOperation(fsPath, 'open'));
-            this.openDocuments.add(fsPath);
+            this.openDocuments.add(tab.input.uri);
             await this.onOpenTab(tab.input.uri);
           }
         }
       }
     }
 
-    for (const fsPath of current) {
-      this.openDocuments.delete(fsPath);
-      this.logger.debug(fileOperation(fsPath, 'close'));
-      await this.onCloseTab(Uri.file(fsPath));
+    for (const uri of current) {
+      this.openDocuments.delete(uri);
+      await this.onCloseTab(uri);
     }
   }
 
   private async onOpenTab(uri: Uri): Promise<void> {
-    if (isCode(uri)) {
-      const folder = workspace.getWorkspaceFolder(uri);
-      if (folder) {
-        const fc = this.folders.get(folder);
-        if (fc) {
-          await fc.onOpenTab(uri);
-        }
+    const folder = workspace.getWorkspaceFolder(uri);
+    if (folder) {
+      const fc = this.folders.get(folder);
+      if (fc) {
+        await fc.onOpenTab(uri);
       }
     }
   }
@@ -149,13 +144,12 @@ export class WorkspaceController implements Disposable, LoggerController {
   }
 
   private async onTextDocumentChange(document: TextDocument): Promise<void> {
-    if (isCode(document.uri)) {
-      const folder = workspace.getWorkspaceFolder(document.uri);
-      if (folder) {
-        const fc = this.folders.get(folder);
-        if (fc) {
-          await fc.updateTab(document.uri);
-        }
+    const folder = workspace.getWorkspaceFolder(document.uri);
+    if (folder) {
+      const fc = this.folders.get(folder);
+      if (fc) {
+        this.logger.trace(`Document changed: ${document.uri.fsPath}`);
+        await fc.updateTab(document.uri);
       }
     }
   }

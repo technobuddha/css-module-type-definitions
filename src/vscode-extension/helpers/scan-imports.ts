@@ -10,7 +10,7 @@ import {
   ScriptTarget,
   SyntaxKind,
 } from 'typescript';
-import { type Uri, workspace } from 'vscode';
+import { type TextDocument, type Uri } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 /**
@@ -20,19 +20,14 @@ import { Utils } from 'vscode-uri';
  * @param fileContent - Optional file content (if already loaded)
  * @returns Array of resolved module paths
  */
-export async function scanImports(code: Uri): Promise<Uri[]> {
+export function scanImports(code: TextDocument): Uri[] {
   try {
-    return await workspace.fs
-      .readFile(code)
-      .then(workspace.decode)
-      .then((sourceText) => {
-        const sourceFile = createSourceFile(code.fsPath, sourceText, ScriptTarget.Latest, true);
-        const imports: Uri[] = [...visit(code, sourceFile)];
-        return imports;
-      });
+    const sourceFile = createSourceFile(code.uri.fsPath, code.getText(), ScriptTarget.Latest, true);
+    const imports: Uri[] = [...visit(code.uri, sourceFile)];
+    return imports;
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error(`Error scanning imports for ${code.fsPath}:`, toError(e));
+    console.error(`Error scanning imports for ${code.uri.fsPath}:`, toError(e));
     throw e;
   }
 }

@@ -1,6 +1,10 @@
 import fs from 'node:fs/promises';
 
-import { type FileIgnorer, fileOperation, generateTypes, type Optionator } from './index.ts';
+import { generateTypes } from '../css-library/index.ts';
+
+import { type FileIgnorer } from './file-ignorer.ts';
+import { fileOperation } from './file-operation.ts';
+import { type Optionator } from './optionator.ts';
 
 type UpdateOptions = {
   optionator: Optionator;

@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 
-import { type FileIgnorer, fileOperation, type Optionator } from './index.ts';
+import { type FileIgnorer } from './file-ignorer.ts';
+import { fileOperation } from './file-operation.ts';
+import { type Optionator } from './optionator.ts';
 
 type RemoveOptions = {
   ignorer: FileIgnorer;

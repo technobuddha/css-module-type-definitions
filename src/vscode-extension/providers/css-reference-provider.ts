@@ -43,16 +43,16 @@ export class CssReferenceProvider implements ReferenceProvider {
             const { classLocal } = cssInfo;
 
             if (classLocal.has(className)) {
-              for (const [file, imports] of await folderController.allCssModuleImports()) {
+              for (const [file, codeInfo] of await folderController.allCodeInformation()) {
                 if (token.isCancellationRequested) {
                   return [];
                 }
 
-                if (imports.some((i) => i.fsPath === importUri.fsPath)) {
+                if (codeInfo.cssModuleImports.some((i) => i.fsPath === importUri.fsPath)) {
                   const classUsages = await cssInfo.classUsage({ className, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {
-                      locations.push(new Location(Uri.file(file), usage.range));
+                      locations.push(new Location(file, usage.range));
                     }
                   }
 

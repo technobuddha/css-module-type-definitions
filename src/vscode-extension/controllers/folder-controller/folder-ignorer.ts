@@ -3,7 +3,9 @@ import ignore, { type Ignore } from 'ignore';
 import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation } from '../../../common/index.ts';
+import { type Action, fileOperation } from '../../../common/index.ts';
+
+import { UriMap } from '../../helpers/index.ts';
 
 import { FolderBase, type FolderBaseArguments } from './folder-base.ts';
 
@@ -18,7 +20,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
       new RelativePattern(controller.folder, '**/*'),
     );
 
-    const respond = (action: 'add' | 'change' | 'unlink') => async (uri: Uri) => {
+    const respond = (action: Action) => async (uri: Uri) => {
       if (controller.isIgnored(uri)) {
         return;
       }
@@ -40,7 +42,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
     });
   }
 
-  protected readonly ignorers: Map<string, Ignore> = new Map();
+  protected readonly ignorers: UriMap<Ignore> = new UriMap();
 
   public constructor({ workspaceController, folder }: FolderIgnorerArguments) {
     super({ workspaceController, folder });
@@ -50,7 +52,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
     let parent = Utils.dirname(file);
 
     while (isWithinDirectory(this.folder.uri.fsPath, parent.fsPath)) {
-      const ignorer = this.ignorers.get(parent.fsPath);
+      const ignorer = this.ignorers.get(parent);
       if (ignorer) {
         return ignorer;
       }
@@ -79,7 +81,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
           try {
             const content = await workspace.fs.readFile(file).then(workspace.decode);
             this.ignorers.set(
-              dir.fsPath,
+              dir,
               ignore()
                 .add(ignorer ?? empty)
                 .add(content),

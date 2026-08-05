@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
 
-import { generateTypesFromCss } from './index.ts';
+import { generateTypesFromCss } from './generate-types-from-css.ts';
 
 type GenerateTypesOptions = {
   options: Options;

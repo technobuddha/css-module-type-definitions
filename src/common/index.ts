@@ -1,4 +1,4 @@
-export { generateTypes } from '../css-library/generate-types.ts';
+export { type Action } from './action.ts';
 export { CODE_EXTENSIONS, CONFIG_EXTENSIONS, CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 export { FileIgnorer } from './file-ignorer.ts';
 export { fileOperation } from './file-operation.ts';

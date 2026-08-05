@@ -156,12 +156,23 @@ export class CssInformation implements CssInfo {
     return [];
   }
 
+  public localNames({ localName, className }: LocalOrClass): ReadonlySet<string> {
+    return new Set(
+      localName ?
+        Array.from(this.localClass.get(localName) ?? []).flatMap((cn) =>
+          Array.from(this.classLocal.get(cn) ?? []),
+        )
+      : className ? this.classLocal.get(className)
+      : [],
+    );
+  }
+
   public async classUsage({
     localName,
     className,
     file,
     importUri,
-  }: LocalOrClass & { file: string; importUri: Uri }): Promise<ClassUsage | null> {
+  }: LocalOrClass & { file: Uri; importUri: Uri }): Promise<ClassUsage | null> {
     let localNames: Set<string> | undefined;
 
     if (localName) {

@@ -32,4 +32,6 @@ export { resolveImportPath } from './resolve-import-path.ts';
 export { scanImports } from './scan-imports.ts';
 export { scriptKind } from './script-kind.ts';
 export { unwrapExpression } from './unwrap-expression.ts';
+export { ReadonlyUriMap, UriMap } from './uri-map.ts';
+export { ReadonlyUriSet, UriSet } from './uri-set.ts';
 export { variableNameBeforeAccessor } from './variable-name-before-accessor.ts';

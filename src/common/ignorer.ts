@@ -6,6 +6,7 @@ import { execPromise, toError } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import ignore, { type Ignore } from 'ignore';
 
+import { type Action } from './action.ts';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController } from './logger.ts';
 
@@ -44,7 +45,7 @@ export abstract class Ignorer<T> implements AsyncDisposable {
       });
 
       const respond =
-        (action: 'add' | 'change' | 'unlink') =>
+        (action: Action) =>
         (file: string): void => {
           (async () => {
             switch (file) {
@@ -100,7 +101,7 @@ export abstract class Ignorer<T> implements AsyncDisposable {
     }
   }
 
-  async #loadGlobalIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
+  async #loadGlobalIgnore(action?: Action): Promise<void> {
     this.#globalIgnore = undefined;
 
     if (this.#gitGlobalExcludesFilename) {
@@ -119,7 +120,7 @@ export abstract class Ignorer<T> implements AsyncDisposable {
     }
   }
 
-  async #loadRepoIgnore(action?: 'add' | 'change' | 'unlink'): Promise<void> {
+  async #loadRepoIgnore(action?: Action): Promise<void> {
     this.#localIgnore = undefined;
 
     if (this.#gitLocalExcludeFilename) {

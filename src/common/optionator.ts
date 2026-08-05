@@ -5,6 +5,7 @@ import { cull, deepEquals, locatePackageRoot } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
 
+import { type Action } from './action.ts';
 import { CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController, loggerForLevel, stdioLogger } from './logger.ts';
@@ -61,7 +62,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
       });
 
       const respond =
-        (reason: 'add' | 'change' | 'unlink') =>
+        (reason: Action) =>
         (file: string): void => {
           optionator.logger?.debug(fileOperation(file, reason));
 

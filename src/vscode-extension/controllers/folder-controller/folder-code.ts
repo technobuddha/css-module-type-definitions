@@ -1,3 +1,4 @@
+import { toError } from '@technobuddha/library';
 import {
   type CancellationToken,
   Diagnostic,
@@ -5,24 +6,22 @@ import {
   type Disposable,
   Position,
   Range,
-  Uri,
-  workspace,
+  type Uri,
   type WorkspaceEdit,
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, globIsCode, isCode, isCssModule } from '../../../common/index.ts';
+import { fileOperation, globIsCode, isCode } from '../../../common/index.ts';
 
-import { scanImports } from '../../helpers/index.ts';
+import { CodeInformation } from '../../code-information/index.ts';
+import { type ReadonlyUriMap, UriMap } from '../../helpers/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
 
 export type FolderCodeArguments = FolderCssArguments;
 
 export abstract class FolderCode extends FolderCss implements Disposable {
-  protected readonly openTabs: Set<string> = new Set();
-  protected readonly cssModuleImports: Map<string, Uri[]> = new Map();
-  protected cssImporters: Map<string, Set<string>> | undefined = undefined;
+  protected readonly codeInformation: UriMap<CodeInformation> = new UriMap();
 
   public constructor({ workspaceController, folder }: FolderCodeArguments) {
     super({ workspaceController, folder });
@@ -32,121 +31,114 @@ export abstract class FolderCode extends FolderCss implements Disposable {
         this.logger.debug(fileOperation(uri.fsPath, action));
 
         if (action === 'unlink') {
-          await this.deleteCssModuleImports(uri);
+          await this.deleteCodeInformation(uri);
         } else {
-          await this.getCssModuleImports(uri, false);
+          await this.getCodeInformation(uri, false);
         }
       }
     });
 
     this.eventTarget.addEventListener('ignored', () => {
-      this.deleteIgnoredImports();
+      this.deleteIgnoredCodeInformation();
     });
   }
 
   protected override async onCssInformationChanged(uri: Uri): Promise<void> {
-    for (const file of this.getCssImporters(uri)) {
-      if (this.openTabs.has(file)) {
-        await this.updateTab(Uri.file(file));
+    for (const tab of this.openTabs) {
+      if (isCode(tab)) {
+        const codeInfo = await this.getCodeInformation(tab);
+        if (codeInfo?.cssModuleImports.some((i) => i.fsPath === uri.fsPath)) {
+          await this.updateTab(tab);
+        }
       }
     }
   }
 
-  protected getCssImporters(uri: Uri): Set<string> {
-    if (this.cssImporters) {
-      return this.cssImporters.get(uri.fsPath) ?? new Set();
-    }
-
-    this.cssImporters = new Map();
-    for (const [file, imports] of this.cssModuleImports) {
-      for (const importUri of imports) {
-        const key = importUri.fsPath;
-        this.cssImporters.getOrInsertComputed(key, () => new Set()).add(file);
-      }
-    }
-    return this.cssImporters.get(uri.fsPath) ?? new Set();
-  }
-
-  public async getCssModuleImports(uri: Uri, cache = true): Promise<Uri[] | undefined> {
-    if (cache && this.cssModuleImports.has(uri.fsPath)) {
-      return this.cssModuleImports.get(uri.fsPath)!;
+  protected async getCodeInformation(
+    uri: Uri,
+    useCache = true,
+  ): Promise<CodeInformation | undefined> {
+    if (useCache && this.codeInformation.has(uri)) {
+      return this.codeInformation.get(uri)!;
     }
 
     if (isCode(uri) && !this.isIgnored(uri)) {
-      const result = await scanImports(uri)
-        .then((uris) => uris.filter((u) => isCssModule(u)))
-        .catch(() => []);
-      this.cssModuleImports.set(uri.fsPath, result);
-      this.cssImporters = undefined;
-      return result;
+      try {
+        const codeInfo = await CodeInformation.create(uri);
+
+        this.codeInformation.set(uri, codeInfo);
+        return codeInfo;
+      } catch (e) {
+        this.logger.error(toError(e));
+      }
     }
     return undefined;
   }
 
-  public async allCssModuleImports(): Promise<ReadonlyMap<string, Uri[]>> {
+  public async allCodeInformation(): Promise<ReadonlyUriMap<CodeInformation>> {
     await this.findUnignoredFiles(`**/${globIsCode()}`).then(async (uris) => {
       for (const uri of uris) {
         if (isCode(uri)) {
-          await this.getCssModuleImports(uri, false);
+          await this.getCodeInformation(uri, false);
         }
       }
     });
-    return this.cssModuleImports;
+    return this.codeInformation;
   }
 
-  public async deleteCssModuleImports(uri: Uri): Promise<void> {
-    this.cssModuleImports.delete(uri.fsPath);
+  public async deleteCodeInformation(uri: Uri): Promise<void> {
+    this.codeInformation.delete(uri);
   }
 
-  public deleteIgnoredImports(): void {
-    for (const file of Array.from(this.cssModuleImports.keys())) {
-      if (this.isIgnored(Uri.file(file))) {
-        this.cssModuleImports.delete(file);
+  public deleteIgnoredCodeInformation(): void {
+    for (const uri of Array.from(this.codeInformation.keys())) {
+      if (this.isIgnored(uri)) {
+        this.codeInformation.delete(uri);
       }
     }
   }
 
-  public async updateTab(uri: Uri): Promise<void> {
-    const importUris = await this.getCssModuleImports(uri);
-    if (importUris) {
-      const errors: Diagnostic[] = [];
+  public override async updateTab(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
+      const codeInfo = await this.getCodeInformation(uri, false);
+      if (codeInfo) {
+        const errors: Diagnostic[] = [];
 
-      for (const importUri of importUris) {
-        const cssInfo = await this.getCssInformation(importUri);
-        if (cssInfo && !cssInfo.hasDts) {
-          const document = await workspace.openTextDocument(uri);
-          const usages = await cssInfo.usages({ document, importUri });
-          for (const usage of usages) {
-            if (!cssInfo.localClass.has(usage.localName)) {
-              const error = new Diagnostic(
-                usage.range,
-                `Class "${usage.localName}" is not defined in "${Utils.basename(importUri)}"`,
-                DiagnosticSeverity.Error,
-              );
-              error.source = 'cmtd';
+        for (const importUri of codeInfo.cssModuleImports) {
+          const cssInfo = await this.getCssInformation(importUri);
+          if (cssInfo && !cssInfo.hasDts) {
+            const usages = codeInfo.usages.get(importUri);
+            if (usages) {
+              for (const usage of usages) {
+                if (!cssInfo.localClass.has(usage.localName)) {
+                  const error = new Diagnostic(
+                    usage.range,
+                    `Class "${usage.localName}" is not defined in "${Utils.basename(importUri)}"`,
+                    DiagnosticSeverity.Error,
+                  );
+                  error.source = 'cmtd';
 
-              errors.push(error);
+                  errors.push(error);
+                }
+              }
             }
           }
         }
-      }
 
-      if (errors.length > 0) {
-        this.diagnostics.set(uri, errors);
-      } else {
-        this.diagnostics.delete(uri);
+        if (errors.length > 0) {
+          this.diagnostics.set(uri, errors);
+        } else {
+          this.diagnostics.delete(uri);
+        }
       }
+    } else {
+      return super.updateTab(uri);
     }
   }
 
-  public async onOpenTab(uri: Uri): Promise<void> {
-    this.openTabs.add(uri.fsPath);
-    void this.updateTab(uri);
-  }
-
-  public async onCloseTab(uri: Uri): Promise<void> {
-    this.diagnostics.delete(uri);
-    this.openTabs.delete(uri.fsPath);
+  public override async onOpenTab(uri: Uri): Promise<void> {
+    await super.onOpenTab(uri);
+    return this.updateTab(uri);
   }
 
   public async edit({
@@ -167,45 +159,40 @@ export abstract class FolderCode extends FolderCss implements Disposable {
         }
       }
 
-      for (const [file, imports] of await this.allCssModuleImports()) {
+      const locals = cssInfo.localNames({ className, localName });
+
+      for (const codeInfo of (await this.allCodeInformation()).values()) {
         if (token?.isCancellationRequested) {
           return;
         }
 
-        if (imports.some((i) => i.fsPath === importUri.fsPath)) {
-          const classUsages = await cssInfo.classUsage({
-            className,
-            localName,
-            file,
-            importUri,
-          });
-          if (classUsages) {
-            const { document, usages } = classUsages;
+        const usages = codeInfo.usages
+          .get(importUri)
+          ?.filter((usage) => locals.has(usage.localName));
+        if (usages) {
+          for (const usage of usages) {
+            const { range } = usage;
 
-            for (const usage of usages) {
-              const { range } = usage;
+            if (range.start.character >= 2) {
+              const expandedRange = new Range(
+                new Position(range.start.line, range.start.character - 1),
+                new Position(range.end.line, range.end.character + 1),
+              );
 
-              if (range.start.character >= 2) {
-                const expandedRange = new Range(
-                  new Position(range.start.line, range.start.character - 1),
-                  new Position(range.end.line, range.end.character + 1),
-                );
-
-                if (/^\[(?:(?:'.*')|(?:".*"))\]$/v.test(document.getText(expandedRange))) {
-                  we.replace(document.uri, expandedRange, codeReplacement);
-                  continue;
-                }
+              if (/^\[(?:(?:'.*')|(?:".*"))\]$/v.test(codeInfo.document.getText(expandedRange))) {
+                we.replace(codeInfo.document.uri, expandedRange, codeReplacement);
+                continue;
               }
+            }
 
-              if (range.start.character >= 1) {
-                const expandedRange = new Range(
-                  new Position(range.start.line, range.start.character - 1),
-                  new Position(range.end.line, range.end.character),
-                );
+            if (range.start.character >= 1) {
+              const expandedRange = new Range(
+                new Position(range.start.line, range.start.character - 1),
+                new Position(range.end.line, range.end.character),
+              );
 
-                if (/^\..*$/v.test(document.getText(expandedRange))) {
-                  we.replace(document.uri, expandedRange, codeReplacement);
-                }
+              if (/^\..*$/v.test(codeInfo.document.getText(expandedRange))) {
+                we.replace(codeInfo.document.uri, expandedRange, codeReplacement);
               }
             }
           }

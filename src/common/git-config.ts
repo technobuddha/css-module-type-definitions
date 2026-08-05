@@ -5,6 +5,7 @@ import path from 'node:path';
 import { empty, execPromise, toError } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 
+import { type Action } from './action.ts';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController } from './logger.ts';
 
@@ -51,7 +52,7 @@ export class GitConfig implements AsyncDisposable {
     });
 
     const respond =
-      (action: 'add' | 'change' | 'unlink') =>
+      (action: Action) =>
       (file: string): void => {
         switch (file) {
           case gco.#gitRepoExcludeFilename: {
@@ -139,7 +140,7 @@ export class GitConfig implements AsyncDisposable {
       );
   }
 
-  async #readGlobalIgnore(action?: 'add' | 'change' | 'unlink'): Promise<string | undefined> {
+  async #readGlobalIgnore(action?: Action): Promise<string | undefined> {
     if (this.#gitGlobalExcludesFilename) {
       this.logger.debug(fileOperation(this.#gitGlobalExcludesFilename, action ?? 'configuration'));
 
@@ -153,7 +154,7 @@ export class GitConfig implements AsyncDisposable {
     return undefined;
   }
 
-  async #readRepoIgnore(action?: 'add' | 'change' | 'unlink'): Promise<string | undefined> {
+  async #readRepoIgnore(action?: Action): Promise<string | undefined> {
     if (this.#gitRepoExcludeFilename) {
       this.logger.debug(fileOperation(this.#gitRepoExcludeFilename, action ?? 'configuration'));
       return fs.readFile(this.#gitRepoExcludeFilename, 'utf-8').catch((e) => {

@@ -44,17 +44,17 @@ export class CodeReferenceProvider implements ReferenceProvider {
               locations.push(...cssLocations);
             }
 
-            for (const [file, imports] of await folderController.allCssModuleImports()) {
+            for (const [file, codeInfo] of await folderController.allCodeInformation()) {
               if (token.isCancellationRequested) {
                 return [];
               }
 
-              if (imports.some((i) => i.fsPath === importUri.fsPath)) {
+              if (codeInfo.cssModuleImports.some((i) => i.fsPath === importUri.fsPath)) {
                 const localUsages = await cssInfo.classUsage({ localName, file, importUri });
                 if (localUsages) {
                   for (const usage of localUsages.usages) {
                     if (accessorType === 'property' || usage.accessorType !== accessorType) {
-                      locations.push(new Location(Uri.file(file), usage.range));
+                      locations.push(new Location(file, usage.range));
                     }
                   }
                 }

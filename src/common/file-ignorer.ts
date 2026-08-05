@@ -6,6 +6,7 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { glob } from 'glob';
 import ignore, { type Ignore } from 'ignore';
 
+import { type Action } from './action.ts';
 import { fileOperation } from './file-operation.ts';
 import { Ignorer } from './ignorer.ts';
 import { type LoggerController } from './logger.ts';
@@ -54,7 +55,7 @@ export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
       });
 
       const respond =
-        (action: 'add' | 'change' | 'unlink') =>
+        (action: Action) =>
         (file: string): void => {
           void this.gatherGitIgnores()
             .then(() => this.buildIgnored())

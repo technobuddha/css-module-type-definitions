@@ -4,6 +4,7 @@ import { toError } from '@technobuddha/library';
 import { type Disposable, Uri, workspace } from 'vscode';
 
 import {
+  type Action,
   correspondingSource,
   fileOperation,
   globIsCssModule,
@@ -14,13 +15,14 @@ import {
 import { generateTypesFromCss } from '../../../css-library/index.ts';
 
 import { CssInformation } from '../../css-information/index.ts';
+import { type ReadonlyUriMap, UriMap } from '../../helpers/index.ts';
 
 import { FolderOptions, type FolderOptionsArguments } from './folder-options.ts';
 
 export type FolderCssArguments = FolderOptionsArguments;
 
 export abstract class FolderCss extends FolderOptions implements Disposable {
-  protected readonly cssInformation: Map<string, CssInformation> = new Map();
+  protected readonly cssInformation: UriMap<CssInformation> = new UriMap();
 
   public constructor({ workspaceController, folder }: FolderCssArguments) {
     super({ workspaceController, folder });
@@ -31,61 +33,79 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
 
     this.eventTarget.addEventListener('ignored', async () => {
       for (const cssFile of Array.from(this.cssInformation.keys())) {
-        if (this.isIgnored(Uri.file(cssFile))) {
+        if (this.isIgnored(cssFile)) {
           this.cssInformation.delete(cssFile);
-          await this.onCssInformationChanged(Uri.file(cssFile));
+          await this.onCssInformationChanged(cssFile);
         }
       }
     });
 
     this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
       if (isCssModule(uri)) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
-        if (action === 'unlink') {
-          await this.deleteCss(uri);
-        } else {
-          await this.getCssInformation(uri, false).then(async (cssInfo) => {
-            if (cssInfo && this.options.css.generateDts) {
-              return cssInfo.writeTypeDefinitionFiles(this.logger);
-            }
-          });
-        }
-        return;
+        return this.onCssModuleChanged(uri, action);
       }
 
       if (isCss(uri)) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
-        for (const [file, { includedFiles }] of this.cssInformation) {
-          if (includedFiles.has(uri.fsPath)) {
-            this.cssInformation.delete(file);
-            await this.getCssInformation(Uri.file(file)).then(async (cssInfo) => {
-              if (cssInfo && this.options.css.generateDts) {
-                return cssInfo.writeTypeDefinitionFiles(this.logger);
-              }
-            });
-          }
-        }
-        return;
+        return this.onCssChanged(uri, action);
       }
 
       const dtsFile = correspondingSource(uri);
       if (dtsFile) {
-        const cssInfo = this.cssInformation.get(dtsFile.fsPath);
-        if (cssInfo) {
-          if (action === 'add' || action === 'unlink') {
-            this.logger.debug(fileOperation(uri.fsPath, action));
-            cssInfo.hasDts = action === 'add';
-            await this.onCssInformationChanged(dtsFile);
-          }
-        }
+        return this.onDtsChanged(dtsFile, action);
       }
     });
+  }
+
+  protected async onCssModuleChanged(uri: Uri, action: Action): Promise<void> {
+    this.logger.debug(fileOperation(uri.fsPath, action));
+    if (action === 'unlink') {
+      await this.deleteCss(uri);
+    } else {
+      await this.getCssInformation(uri, false).then(async (cssInfo) => {
+        if (cssInfo && this.options.css.generateDts) {
+          return cssInfo.writeTypeDefinitionFiles(this.logger);
+        }
+      });
+    }
+  }
+
+  protected async onCssChanged(uri: Uri, action: Action): Promise<void> {
+    this.logger.debug(fileOperation(uri.fsPath, action));
+    for (const [file, { includedFiles }] of this.cssInformation) {
+      if (includedFiles.has(uri.fsPath)) {
+        this.cssInformation.delete(file);
+        await this.getCssInformation(file).then(async (cssInfo) => {
+          if (cssInfo && this.options.css.generateDts) {
+            return cssInfo.writeTypeDefinitionFiles(this.logger);
+          }
+        });
+      }
+    }
+  }
+
+  protected async onDtsChanged(uri: Uri, action: Action): Promise<void> {
+    const cssInfo = this.cssInformation.get(uri);
+    if (cssInfo) {
+      if (action === 'add' || action === 'unlink') {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        cssInfo.hasDts = action === 'add';
+        await this.onCssInformationChanged(uri);
+      }
+    }
+  }
+
+  public override async updateTab(uri: Uri): Promise<void> {
+    if (isCssModule(uri)) {
+      //
+    } else {
+      return super.updateTab(uri);
+    }
   }
 
   protected async deleteCss(uri: Uri): Promise<void> {
     const { dir, name, ext } = path.parse(uri.fsPath);
 
-    this.cssInformation.delete(uri.fsPath);
+    this.cssInformation.delete(uri);
     await this.onCssInformationChanged(uri);
 
     for (const file of [
@@ -107,8 +127,8 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
   protected abstract onCssInformationChanged(_uri: Uri): Promise<void>;
 
   public async getCssInformation(uri: Uri, useCache = true): Promise<CssInformation | undefined> {
-    if (useCache && this.cssInformation.has(uri.fsPath)) {
-      return this.cssInformation.get(uri.fsPath)!;
+    if (useCache && this.cssInformation.has(uri)) {
+      return this.cssInformation.get(uri)!;
     }
 
     const { logger, options } = this;
@@ -122,12 +142,12 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
           .then((cssInfo) => new CssInformation(cssInfo));
 
         if (cssInfo) {
-          this.cssInformation.set(uri.fsPath, cssInfo);
+          this.cssInformation.set(uri, cssInfo);
           await this.onCssInformationChanged(uri);
           return cssInfo;
         }
 
-        this.cssInformation.delete(uri.fsPath);
+        this.cssInformation.delete(uri);
         await this.onCssInformationChanged(uri);
         return undefined;
       } catch (e) {
@@ -167,7 +187,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
     }
   }
 
-  public async getAllCssInformation(): Promise<ReadonlyMap<string, CssInformation>> {
+  public async getAllCssInformation(): Promise<ReadonlyUriMap<CssInformation>> {
     await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
         await this.getCssInformation(uri);
@@ -196,7 +216,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
           imports
             .entries()
             .filter(([, info]) => info.includedFiles.has(uri.fsPath))
-            .map(([importer]) => Uri.file(importer))
+            .map(([importer]) => importer)
             .toArray(),
         );
   }

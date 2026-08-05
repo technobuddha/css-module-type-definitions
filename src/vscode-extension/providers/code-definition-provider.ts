@@ -28,14 +28,14 @@ export class CodeDefinitionProvider implements DefinitionProvider {
     _token: CancellationToken,
   ): Promise<Location | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
-    if (folderController?.options.css.generateDts === false) {
+    if (folderController) {
       const localInfo = await getLocalInfo(document, position);
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const types = await folderController.getCssInformation(importUri);
-        if (types) {
-          const { classLocations } = types;
+        const cssInfo = await folderController.getCssInformation(importUri);
+        if (cssInfo?.hasDts === false) {
+          const { classLocations } = cssInfo;
           const extracted = classLocations.get(localName);
           if (extracted) {
             const [
@@ -49,7 +49,7 @@ export class CodeDefinitionProvider implements DefinitionProvider {
 
             const target = Uri.joinPath(Utils.dirname(importUri), source);
 
-            return new Location(target, new Position(start.line - 1, start.column));
+            return new Location(target, new Position(start.line, start.column));
           }
         }
       }
