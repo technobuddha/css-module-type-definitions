@@ -17,17 +17,6 @@ import { FolderIgnorer, type FolderIgnorerArguments } from './folder-ignorer.ts'
 export type FolderOptionsArguments = FolderIgnorerArguments;
 
 export abstract class FolderOptions extends FolderIgnorer implements Disposable {
-  public static override async init(controller: FolderOptions): Promise<void> {
-    await super.init(controller);
-
-    controller.setCMTDConfigFile(await locateCMTDConfigurationFile(controller.folder.uri.fsPath));
-    controller.setViteConfigFile(await locateViteConfigurationFile(controller.folder.uri.fsPath));
-
-    await controller.readCMTDConfig();
-    await controller.readViteConfig();
-    controller.setOptions(controller.buildOptions());
-  }
-
   #options = defaultOptions;
   #cmtdConfigFile: string | undefined;
   #cmtdConfig: Options | undefined;
@@ -36,21 +25,6 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
 
   public constructor({ workspaceController, folder }: FolderOptionsArguments) {
     super({ workspaceController, folder });
-
-    this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
-      if (uri.fsPath === this.#viteConfigFile) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
-        await this.readViteConfig();
-        this.changeOptions();
-        return;
-      }
-
-      if (uri.fsPath === this.#cmtdConfigFile) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
-        await this.readCMTDConfig();
-        this.changeOptions();
-      }
-    });
   }
 
   private setCMTDConfigFile(file: string | undefined): void {
@@ -147,6 +121,32 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
           this.#cmtdConfig?.css?.classesConvention ?? defaultOptions.css.classesConvention,
       },
     };
+  }
+
+  public override async init(): Promise<void> {
+    await super.init();
+
+    this.setCMTDConfigFile(await locateCMTDConfigurationFile(this.folder.uri.fsPath));
+    this.setViteConfigFile(await locateViteConfigurationFile(this.folder.uri.fsPath));
+
+    await this.readCMTDConfig();
+    await this.readViteConfig();
+    this.setOptions(this.buildOptions());
+
+    this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
+      if (uri.fsPath === this.#viteConfigFile) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        await this.readViteConfig();
+        this.changeOptions();
+        return;
+      }
+
+      if (uri.fsPath === this.#cmtdConfigFile) {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        await this.readCMTDConfig();
+        this.changeOptions();
+      }
+    });
   }
 
   public get options(): Options {

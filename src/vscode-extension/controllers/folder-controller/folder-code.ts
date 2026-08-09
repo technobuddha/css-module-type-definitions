@@ -11,7 +11,7 @@ import {
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, globIsCode, isCode } from '../../../common/index.ts';
+import { fileOperation, globIsCode, isCode, operation } from '../../../common/index.ts';
 
 import { CodeInformation } from '../../code-information/index.ts';
 import { type ReadonlyUriMap, UriMap } from '../../helpers/index.ts';
@@ -25,6 +25,10 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
   public constructor({ workspaceController, folder }: FolderCodeArguments) {
     super({ workspaceController, folder });
+  }
+
+  public override async init(): Promise<void> {
+    await super.init();
 
     this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
       if (isCode(uri)) {
@@ -48,7 +52,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       if (isCode(tab)) {
         const codeInfo = await this.getCodeInformation(tab);
         if (codeInfo?.cssModuleImports.some((i) => i.fsPath === uri.fsPath)) {
-          await this.updateTab(tab);
+          await this.updateDiagnosticsForTab(tab);
         }
       }
     }
@@ -76,6 +80,8 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }
 
   public async allCodeInformation(): Promise<ReadonlyUriMap<CodeInformation>> {
+    const op = `allCodeInformation(${this.folder.name})`;
+    this.logger.trace(operation(op, 'start'));
     await this.findUnignoredFiles(`**/${globIsCode()}`).then(async (uris) => {
       for (const uri of uris) {
         if (isCode(uri)) {
@@ -83,7 +89,19 @@ export abstract class FolderCode extends FolderCss implements Disposable {
         }
       }
     });
+    this.logger.trace(operation(op, 'finish'));
     return this.codeInformation;
+  }
+
+  protected async codeInformationForCssModule(uri: Uri): Promise<CodeInformation[]> {
+    const codeInfos: CodeInformation[] = [];
+
+    for (const codeInfo of (await this.allCodeInformation()).values()) {
+      if (codeInfo.cssModuleImports.some((i) => i.fsPath === uri.fsPath)) {
+        codeInfos.push(codeInfo);
+      }
+    }
+    return codeInfos;
   }
 
   public async deleteCodeInformation(uri: Uri): Promise<void> {
@@ -98,14 +116,16 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     }
   }
 
-  public override async updateTab(uri: Uri): Promise<void> {
+  public override async updateDiagnosticsForTab(uri: Uri): Promise<void> {
+    await super.updateDiagnosticsForTab(uri);
+
     if (isCode(uri)) {
       const codeInfo = await this.getCodeInformation(uri, false);
       if (codeInfo) {
         const errors: Diagnostic[] = [];
 
         for (const importUri of codeInfo.cssModuleImports) {
-          const cssInfo = await this.getCssInformation(importUri);
+          const cssInfo = await this.cssInformationForFile(importUri);
           if (cssInfo && !cssInfo.hasDts) {
             const usages = codeInfo.usages.get(importUri);
             if (usages) {
@@ -131,14 +151,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
           this.diagnostics.delete(uri);
         }
       }
-    } else {
-      return super.updateTab(uri);
     }
-  }
-
-  public override async onOpenTab(uri: Uri): Promise<void> {
-    await super.onOpenTab(uri);
-    return this.updateTab(uri);
   }
 
   public async edit({
@@ -150,7 +163,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     localName,
     token,
   }: EditCodeArguments): Promise<void> {
-    const cssInfo = await this.getCssInformation(importUri);
+    const cssInfo = await this.cssInformationForFile(importUri);
     if (cssInfo) {
       const locations = cssInfo.cssLocations({ className, localName, importUri });
       if (locations) {

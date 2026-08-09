@@ -16,7 +16,7 @@ type Arguments = CssInfo & {};
 
 export class CssInformation implements CssInfo {
   public files: CssInfo['files'];
-  public classLocations: CssInfo['classLocations'];
+  public locationsOfClass: CssInfo['locationsOfClass'];
   public includedFiles: CssInfo['includedFiles'];
   public classLocal: CssInfo['classLocal'];
   public localClass: CssInfo['localClass'];
@@ -28,7 +28,7 @@ export class CssInformation implements CssInfo {
 
   public constructor({
     files,
-    classLocations,
+    locationsOfClass: classLocations,
     includedFiles,
     classLocal,
     localClass,
@@ -39,7 +39,7 @@ export class CssInformation implements CssInfo {
     hasMap,
   }: Arguments) {
     this.files = files;
-    this.classLocations = classLocations;
+    this.locationsOfClass = classLocations;
     this.includedFiles = includedFiles;
     this.classLocal = classLocal;
     this.localClass = localClass;
@@ -86,7 +86,7 @@ export class CssInformation implements CssInfo {
     importUri,
   }: LocalOrClass & { importUri: Uri }): Location[] | null {
     if (className) {
-      const locations = this.classLocations.get(className);
+      const locations = this.locationsOfClass.get(className);
       if (locations) {
         return locations.map(({ location }) => toLocation(location, importUri));
       }
@@ -98,7 +98,7 @@ export class CssInformation implements CssInfo {
         const result: Location[] = [];
 
         for (const className of classes) {
-          const locations = this.classLocations.get(className);
+          const locations = this.locationsOfClass.get(className);
           if (locations) {
             result.push(...locations.map(({ location }) => toLocation(location, importUri)));
           }

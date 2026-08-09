@@ -1,5 +1,5 @@
 //@ts-check
-/** @type import("@technobuddha/project").TechnobuddhaConfig */
+/** @type import("\@technobuddha/project").TechnobuddhaConfig */
 const config = {
   package: {
     dependencies: ['sugarss'],
@@ -23,7 +23,8 @@ const config = {
   },
   lint: {
     rules: {
-      'unicorn/prefer-event-target': { rule: 'off' }
+      'unicorn/prefer-event-target': { rule: 'off' },
+      'promise/prefer-catch': { rule: 'off' },
     }
   }
 };

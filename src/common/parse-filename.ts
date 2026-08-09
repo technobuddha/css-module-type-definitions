@@ -1,0 +1,72 @@
+import path from 'node:path';
+
+type DirNameAndExtension = {
+  dir: string;
+  name: string;
+  base: string;
+  ext: string;
+  root: string;
+};
+
+const tsExtensions = new Set(['.ts', '.tsx', '.mts', '.mtsx', '.cts', '.ctsx']);
+const jsExtensions = new Set(['.js', '.jsx', '.mjs', '.mjsx', '.cjs', '.cjsx']);
+
+export function parseFilename(file: string): DirNameAndExtension {
+  let { dir, name, base, ext, root } = path.parse(file);
+
+  if (file.startsWith('.env')) {
+    return { dir, name: '', base: '', ext: '.env', root };
+  }
+
+  const dots = name.split('.');
+  if (tsExtensions.has(ext) && dots.length > 1 && dots.at(-1) === 'd') {
+    ext = `.d${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (ext === '.ts' && dots.length > 2 && dots.at(-2) === 'd') {
+    ext = '.d.*.ts';
+    name = [...dots.slice(0, -2), dots.at(-1)].join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'test'
+  ) {
+    ext = `.test${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'test-d'
+  ) {
+    ext = `.test-d${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'spec'
+  ) {
+    ext = `.spec${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'spec-d'
+  ) {
+    ext = `.spec-d${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'config'
+  ) {
+    ext = `.config${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (
+    (tsExtensions.has(ext) || jsExtensions.has(ext)) &&
+    dots.length > 1 &&
+    dots.at(-1) === 'setup'
+  ) {
+    ext = `.setup${ext}`;
+    name = dots.slice(0, -1).join('.');
+  }
+  return { dir, name, base, ext, root };
+}

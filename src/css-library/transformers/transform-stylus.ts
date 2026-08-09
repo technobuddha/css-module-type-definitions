@@ -7,7 +7,7 @@ import { type TransformerArguments, type TransformerReturn } from './transformer
 
 export async function transformStylus(
   source: string,
-  { options, filename, directory }: TransformerArguments,
+  { options, filename, directory, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const { additionalData, ...stylusOptions } =
     options.preprocessor?.styl ?? options.preprocessor?.stylus ?? {};
@@ -27,7 +27,7 @@ export async function transformStylus(
 
           const sourceMap = fixSourceMap(
             (styl as unknown as { sourcemap: RawSourceMap }).sourcemap,
-            { directory, relativeTo: 'home' },
+            { directory, relativeTo: 'home', logger },
           );
           resolve({
             css,

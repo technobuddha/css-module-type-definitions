@@ -1,9 +1,16 @@
 import { CustomEventTarget } from '@technobuddha/library';
-import { type DiagnosticCollection, type Disposable, type Uri, type WorkspaceFolder } from 'vscode';
+import {
+  type DiagnosticCollection,
+  type Disposable,
+  languages,
+  RelativePattern,
+  type Uri,
+  workspace,
+  type WorkspaceFolder,
+} from 'vscode';
 
 import {
   type Action,
-  fileOperation,
   type Logger,
   type LoggerController,
   type Options,
@@ -28,10 +35,6 @@ type OptionsEvent = {
 };
 
 export abstract class FolderBase implements LoggerController, Disposable {
-  public static async init(_controller: FolderBase): Promise<void> {
-    //
-  }
-
   protected readonly folder: WorkspaceFolder;
   protected readonly workspaceController: WorkspaceController;
   protected readonly eventTarget = new CustomEventTarget<{
@@ -42,37 +45,54 @@ export abstract class FolderBase implements LoggerController, Disposable {
   protected readonly openTabs: UriSet = new UriSet();
 
   protected readonly disposables: Disposable[] = [];
+  protected readonly diagnostics: DiagnosticCollection;
 
   public constructor({ workspaceController, folder }: FolderBaseArguments) {
     this.workspaceController = workspaceController;
     this.folder = folder;
+
+    this.diagnostics = languages.createDiagnosticCollection(folder.name);
+    this.disposables.push(this.diagnostics);
   }
 
   public get logger(): Logger {
     return this.workspaceController.logger;
   }
 
-  public get diagnostics(): DiagnosticCollection {
-    return this.workspaceController.diagnostics;
+  public async init(): Promise<void> {
+    const watcher = workspace.createFileSystemWatcher(new RelativePattern(this.folder, '**/*'));
+
+    const respond = (action: Action) => async (uri: Uri) => {
+      if (!this.isIgnored(uri)) {
+        this.eventTarget.dispatchEvent('watcher', { action, uri });
+      }
+    };
+
+    this.disposables.push(
+      watcher,
+      watcher.onDidCreate(respond('add')),
+      watcher.onDidChange(respond('change')),
+      watcher.onDidDelete(respond('unlink')),
+    );
   }
 
+  public abstract isIgnored(uri: Uri): boolean;
+
   public async onOpenTab(uri: Uri): Promise<void> {
-    this.logger.debug(fileOperation(uri.fsPath, 'open'));
     this.openTabs.add(uri);
-    return this.updateTab(uri);
+    return this.updateDiagnosticsForTab(uri);
   }
 
   public async onCloseTab(uri: Uri): Promise<void> {
-    this.logger.debug(fileOperation(uri.fsPath, 'close'));
     this.diagnostics.delete(uri);
     this.openTabs.delete(uri);
   }
 
-  public async updateTab(_uri: Uri): Promise<void> {
-    //
-  }
+  public abstract updateDiagnosticsForTab(uri: Uri): Promise<void>;
 
   public async dispose(): Promise<void> {
+    this.diagnostics.clear();
+
     for (const disposable of this.disposables) {
       await disposable.dispose();
     }

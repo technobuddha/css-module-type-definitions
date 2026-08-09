@@ -3,7 +3,7 @@ import ignore, { type Ignore } from 'ignore';
 import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { type Action, fileOperation } from '../../../common/index.ts';
+import { fileOperation, operation } from '../../../common/index.ts';
 
 import { UriMap } from '../../helpers/index.ts';
 
@@ -12,40 +12,23 @@ import { FolderBase, type FolderBaseArguments } from './folder-base.ts';
 export type FolderIgnorerArguments = FolderBaseArguments;
 
 export abstract class FolderIgnorer extends FolderBase implements Disposable {
-  public static override async init(controller: FolderIgnorer): Promise<void> {
-    await super.init(controller);
-    await controller.buildIgnored();
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(controller.folder, '**/*'),
-    );
-
-    const respond = (action: Action) => async (uri: Uri) => {
-      if (controller.isIgnored(uri)) {
-        return;
-      }
-      controller.eventTarget.dispatchEvent('watcher', { action, uri });
-    };
-
-    controller.disposables.push(
-      watcher,
-      watcher.onDidCreate(respond('add')),
-      watcher.onDidChange(respond('change')),
-      watcher.onDidDelete(respond('unlink')),
-    );
-
-    controller.eventTarget.addEventListener('watcher', ({ detail: { action, uri } }) => {
-      if (Utils.basename(uri) === '.gitignore') {
-        controller.logger.debug(fileOperation(uri.fsPath, action));
-        void controller.buildIgnored();
-      }
-    });
-  }
-
   protected readonly ignorers: UriMap<Ignore> = new UriMap();
 
   public constructor({ workspaceController, folder }: FolderIgnorerArguments) {
     super({ workspaceController, folder });
+  }
+
+  public override async init(): Promise<void> {
+    await super.init();
+
+    await this.buildIgnored();
+
+    this.eventTarget.addEventListener('watcher', ({ detail: { action, uri } }) => {
+      if (Utils.basename(uri) === '.gitignore') {
+        this.logger.debug(fileOperation(uri.fsPath, action));
+        void this.buildIgnored();
+      }
+    });
   }
 
   protected ignorer(file: Uri): Ignore | undefined {
@@ -64,6 +47,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
   }
 
   protected async buildIgnored(): Promise<void> {
+    this.logger.trace(operation(`buildIgnored(${this.folder.name})`, 'start'));
     this.ignorers.clear();
 
     return workspace
@@ -92,6 +76,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
           }
         }
 
+        this.logger.trace(operation(`buildIgnored(${this.folder.name})`, 'finish'));
         this.eventTarget.dispatchEvent('ignored');
       });
   }

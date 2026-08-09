@@ -22,25 +22,27 @@ import { type Logger, type Options, removeInlineSourceMap } from '../common/inde
 import { BANNER_MESSAGE } from './constants.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
-import { type CssLocation, extractClassRangesFromCss } from './extract-class-ranges-from-css.ts';
+import { type CssLocation, extractLocationsFromCss } from './extract-locations-from-css.ts';
 import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { SourceMapGenerator } from './source-map.ts';
+import { type CssImporter } from './transformers/index.ts';
 
-export type GenerateTypesFromCssOptions = {
+type Arguments = {
   options: Options;
   logger: Logger;
   compilerOptions?: CompilerOptions;
+  cssImporter?: CssImporter;
 };
 
 export async function generateTypesFromCss(
   css: string,
   filepath: string,
-  { options, logger }: GenerateTypesFromCssOptions,
+  { options, logger, cssImporter }: Arguments,
 ): Promise<CssInfo> {
   const file = path.resolve(filepath);
 
-  return extractClassRangesFromCss(css, { file, options, logger }).then(
-    async ({ css, classLocation: classLocations, includedFiles }) => {
+  return extractLocationsFromCss(css, { file, options, logger, cssImporter }).then(
+    async ({ css, classLocations: locationsOfClass, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
@@ -57,7 +59,7 @@ export async function generateTypesFromCss(
         })
         .then(async () => {
           const classLocal: Map<string, Set<string>> = new Map();
-          for (const className of classLocations.keys()) {
+          for (const className of locationsOfClass.keys()) {
             if (!classLocal.has(className)) {
               switch (options.css.modules.localsConvention) {
                 case 'camelCase': {
@@ -103,7 +105,7 @@ export async function generateTypesFromCss(
           const extractedCss: Map<string, CssLocation[]> = new Map();
           for (const [className, set] of classLocal) {
             for (const alias of set) {
-              extractedCss.set(alias, classLocations.get(className) ?? []);
+              extractedCss.set(alias, locationsOfClass.get(className) ?? []);
             }
           }
 
@@ -201,7 +203,7 @@ export async function generateTypesFromCss(
             mapFile,
             hasDts,
             hasMap,
-            classLocations,
+            locationsOfClass,
             includedFiles,
             classLocal,
             localClass,

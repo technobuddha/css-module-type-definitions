@@ -1,6 +1,5 @@
 import path from 'node:path';
 
-import { parseFilename } from '@technobuddha/project';
 import { URI } from 'vscode-uri';
 
 import {
@@ -10,6 +9,7 @@ import {
   TEST_EXTENSIONS,
   TYPECHECK_EXTENSIONS,
 } from './constants.ts';
+import { parseFilename } from './parse-filename.ts';
 import { toPathname } from './to-pathname.ts';
 
 export function globIsCss(): string {

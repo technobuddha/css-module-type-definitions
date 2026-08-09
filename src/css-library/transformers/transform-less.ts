@@ -11,7 +11,7 @@ import { type TransformerArguments, type TransformerReturn } from './transformer
 
 export async function transformLess(
   source: string,
-  { filename, directory, options }: TransformerArguments,
+  { filename, directory, options, cssImporter, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const additionalData = options.preprocessor?.less?.additionalData;
 
@@ -22,13 +22,17 @@ export async function transformLess(
         paths: [directory],
         sourceMap: {},
         ...options,
+        plugins: [
+          ...(cssImporter?.less ? [cssImporter.less] : []),
+          ...(options.preprocessor?.less?.plugins ?? []),
+        ],
       })
       .then(({ css, map, imports }) => {
         const sourceMap = map ? JSON.parse(map) : undefined;
 
         return {
           css: removeInlineSourceMap(css),
-          sourceMap: fixSourceMap(sourceMap, { directory, relativeTo: 'directory' }),
+          sourceMap: fixSourceMap(sourceMap, { directory, relativeTo: 'directory', logger }),
           includedFiles: new Set(imports),
         };
       })

@@ -33,9 +33,9 @@ export class CodeDefinitionProvider implements DefinitionProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = await folderController.getCssInformation(importUri);
+        const cssInfo = await folderController.cssInformationForFile(importUri);
         if (cssInfo?.hasDts === false) {
-          const { classLocations } = cssInfo;
+          const { locationsOfClass: classLocations } = cssInfo;
           const extracted = classLocations.get(localName);
           if (extracted) {
             const [

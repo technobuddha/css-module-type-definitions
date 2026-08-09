@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 
-import { toError } from '@technobuddha/library';
+import { space, toError, unicodeLength } from '@technobuddha/library';
 import chalk from 'chalk';
 
 type Operation =
@@ -14,9 +14,10 @@ type Operation =
   | 'unlink'
   | 'ignored'
   | 'open'
-  | 'close';
+  | 'close'
+  | 'changed';
 
-export function fileOperation(file: string, mode: Operation, error?: unknown): string {
+export function fileOperation(file: string, action: Operation, error?: unknown): string {
   const aFile = path.resolve(file);
   const cFile = path.relative(process.cwd(), file);
   const hFile = `~/${path.relative(os.homedir(), file)}`;
@@ -30,41 +31,46 @@ export function fileOperation(file: string, mode: Operation, error?: unknown): s
     : hFile;
 
   if (error) {
-    return `${chalk.red(`[${mode}]`.padEnd(16))} ${display}\n${chalk.red('[ERROR]'.padEnd(16))} ${toError(error).message}`;
+    return `${chalk.red(pad(`[${action}]`))} ${display}\n${chalk.red(pad('[ERROR]'))} ${toError(error).message}`;
   }
 
-  switch (mode) {
+  switch (action) {
     case 'created': {
-      return `${chalk.green('[created]'.padEnd(16))} ${display}`;
+      return `${chalk.green(pad('[created]'))} ${display}`;
     }
 
     case 'updated': {
-      return `${chalk.yellow('[updated]'.padEnd(16))} ${display}`;
+      return `${chalk.yellow(pad('[updated]'))} ${display}`;
     }
 
     case 'deleted': {
-      return `${chalk.red('[deleted]'.padEnd(16))} ${display}`;
+      return `${chalk.red(pad('[deleted]'))} ${display}`;
     }
 
     case 'configuration': {
-      return `${chalk.blue('⟦configuration⟧'.padEnd(16))} ${display}`;
+      return `${chalk.blue(pad('⟦configuration⟧'))} ${display}`;
     }
 
     case 'add':
     case 'change':
     case 'unlink': {
-      return `${chalk.cyan(`⟦${mode}⟧`.padEnd(16))} ${display}`;
+      return `${chalk.cyan(pad(`⟦${action}⟧`))} ${display}`;
     }
 
     case 'open':
-    case 'close': {
-      return `${chalk.green(`⟦${mode}⟧`.padEnd(16))} ${display}`;
+    case 'close':
+    case 'changed': {
+      return `${chalk.green(pad(`【${action}】`))} ${display}`;
     }
 
     case 'ignored': {
-      return `${chalk.gray('︽ ignored ︾'.padEnd(16))} ${display}`;
+      return `${chalk.gray(pad('︽ ignored ︾'))} ${display}`;
     }
 
     // no default
   }
+}
+
+function pad(str: string): string {
+  return `${str}${space.repeat(16 - unicodeLength(str))}`;
 }

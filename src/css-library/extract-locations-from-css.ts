@@ -16,17 +16,11 @@ import {
   positionOfOffset,
 } from './position.ts';
 import { fixSourceMap, type RawSourceMap, SourceMapConsumer } from './source-map.ts';
-import { transformer } from './transformers/transformer.ts';
+import { type CssImporter, transformer } from './transformers/transformer.ts';
 
 type ClassPosition = {
   name: string;
   offset: CMTDPosition;
-};
-
-type Arguments = {
-  options: Options;
-  file: string;
-  logger: Logger;
 };
 
 export type CssLocation = {
@@ -34,45 +28,26 @@ export type CssLocation = {
   location: CMTDLocation;
 };
 
-type Return = {
+export type ELFCArguments = {
+  options: Options;
+  file: string;
+  logger: Logger;
+  cssImporter?: CssImporter;
+};
+
+type ELFCReturn = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  classLocation: Map<string, CssLocation[]>;
+  classLocations: Map<string, CssLocation[]>;
   includedFiles: Set<string>;
 };
 
 const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
 
-/**
- * Extracts exported class-like identifiers and their source offsets from CSS content.
- *
- * The returned map includes:
- * - Class selectors (e.g. `.button`)
- * - `@value` declarations/import aliases
- * - `@keyframes` names
- *
- * When the same name appears multiple times, only the first occurrence is retained.
- *
- * @param css - The CSS source text to analyze.
- * @param options - Extraction options including the source filename and optional logger.
- * @returns A map of exported name to source offset.
- *
- * @example
- * ```typescript
- * const offsets = extractClassOffsetsFromCss('.button-primary { color: red; }', {
- *   filename: 'styles.module.css',
- * });
- *
- * offsets.get('button-primary');
- * ```
- *
- * @group CSS Modules
- * @category Class Extraction
- */
-export async function extractClassRangesFromCss(
+export async function extractLocationsFromCss(
   css: string,
-  { file, options, logger }: Arguments,
-): Promise<Return> {
+  { file, options, logger, cssImporter }: ELFCArguments,
+): Promise<ELFCReturn> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
 
@@ -81,9 +56,10 @@ export async function extractClassRangesFromCss(
     directory,
     options,
     logger,
+    cssImporter,
   }).then(async ({ css, sourceMap, includedFiles }) =>
     postcss()
-      .use(postcssImport({ root: directory }))
+      .use(postcssImport({ root: directory, load: cssImporter?.css }))
       .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
       .then(async ({ css, map, messages }) => {
         for (const message of messages) {
@@ -103,11 +79,11 @@ export async function extractClassRangesFromCss(
         );
 
         const source = path.relative(directory, file);
-        const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home' });
+        const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home', logger });
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
-        const classLocation: Map<string, CssLocation[]> = new Map();
+        const classLocations: Map<string, CssLocation[]> = new Map();
 
         postcss()
           .process(css, { from: path.basename(filename) })
@@ -125,30 +101,27 @@ export async function extractClassRangesFromCss(
                 column: (node.source?.end?.column ?? 1) - 1,
               };
 
-              classLocation.getOrInsert(name, []).push({
+              classLocations.getOrInsert(name, []).push({
                 snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
                 location: { source, range: { start, end } },
               });
             }
           });
 
-        for (const [className, extracted] of Array.from(classLocation)) {
+        for (const [className, extracted] of Array.from(classLocations)) {
           const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
           let prevStart: CMTDPosition | undefined;
           let skip = 0;
 
-          for (let {
-            snippet,
-            location: {
-              source,
-              range: { start, end },
-            },
-          } of extracted.sort(
+          for (const { snippet, location } of extracted.sort(
             (a, b) =>
               a.location.range.start.line - b.location.range.start.line ||
               a.location.range.start.column - b.location.range.start.column,
           )) {
+            let { source, range } = location;
+            let { start, end } = range;
+
             if (
               prevSource === source &&
               prevStart?.line === start.line &&
@@ -161,13 +134,10 @@ export async function extractClassRangesFromCss(
               prevStart = start;
             }
 
-            const {
-              source: opSource,
-              line: opLine,
-              column: opColumn,
-            } = smc.originalPosition(start);
-            source = opSource;
-            start = { line: opLine, column: opColumn };
+            const op = smc.originalPosition(start);
+            // eslint-disable-next-line @typescript-eslint/prefer-destructuring
+            source = op.source;
+            start = { line: op.line, column: op.column };
 
             const sourcePath = path.resolve(directory, source);
             const content = sources.get(sourcePath)!;
@@ -188,17 +158,17 @@ export async function extractClassRangesFromCss(
               }
 
               const poo = positionOfOffset(content, offset);
-              start = { line: poo.line, column: poo.column };
-              end = { line: start.line, column: start.column + className.length + 1 };
+              start = { line: poo.line, column: poo.column + 1 };
+              end = { line: start.line, column: start.column + className.length };
             } else {
               logger.warn(`Source file ${file} (${source})`);
             }
             extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }
-          classLocation.set(className, extractedCss);
+          classLocations.set(className, extractedCss);
         }
 
-        return { css, sourceMap, classLocation, includedFiles };
+        return { css, sourceMap, classLocations, includedFiles };
       }),
   );
 }

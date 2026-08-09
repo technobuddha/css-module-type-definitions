@@ -40,9 +40,9 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const types = await folderController.getCssInformation(importUri);
+          const types = await folderController.cssInformationForFile(importUri);
           if (types) {
-            const { classLocations } = types;
+            const { locationsOfClass: classLocations } = types;
 
             return new CompletionList(
               Array.from(classLocations.keys(), (key) =>

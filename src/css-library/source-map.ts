@@ -7,6 +7,7 @@ import {
   SourceMapConsumer as JSSourceMapConsumer,
   SourceMapGenerator as JSSourceMapGenerator,
 } from 'source-map-js';
+import { URI } from 'vscode-uri';
 
 import { type Logger } from '../common/index.ts';
 
@@ -98,7 +99,9 @@ export class SourceMapGenerator {
 
 type FixSourceMapOptions = {
   directory: string;
-  relativeTo: string | 'home';
+  relativeTo: 'directory' | 'home' | 'uri';
+  filename?: string;
+  logger: Logger;
 };
 
 export function fixSourceMap(
@@ -116,13 +119,29 @@ export function fixSourceMap(
   return sourceMap;
 }
 
-function fixSource(filename: string, { directory, relativeTo }: FixSourceMapOptions): string {
-  let file = filename;
+function fixSource(
+  pathname: string,
+  { directory, relativeTo, filename }: FixSourceMapOptions,
+): string {
+  let file = pathname;
 
-  if (relativeTo === 'directory') {
-    file = path.resolve(directory, file);
-  } else if (relativeTo === 'home') {
-    file = path.resolve(os.homedir(), file);
+  switch (relativeTo) {
+    case 'directory': {
+      file = path.resolve(directory, file);
+      break;
+    }
+
+    case 'home': {
+      file = path.resolve(os.homedir(), file);
+      break;
+    }
+
+    case 'uri': {
+      file = pathname.startsWith('data:') ? (filename ?? empty) : URI.parse(pathname).fsPath;
+      break;
+    }
+
+    // no default
   }
 
   return path.relative(directory, file);

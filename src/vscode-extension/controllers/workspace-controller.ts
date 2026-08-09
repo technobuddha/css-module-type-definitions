@@ -1,7 +1,6 @@
+import { debounce } from '@technobuddha/library';
 import {
-  type DiagnosticCollection,
   type Disposable,
-  languages,
   TabInputText,
   type TextDocument,
   type TextEditor,
@@ -11,7 +10,12 @@ import {
   type WorkspaceFolder,
 } from 'vscode';
 
-import { isCode, type Logger, type LoggerController } from '../../common/index.ts';
+import {
+  fileOperation,
+  type Logger,
+  type LoggerController,
+  operation,
+} from '../../common/index.ts';
 
 import { createLogger } from '../create-logger.ts';
 import { UriSet } from '../helpers/index.ts';
@@ -25,15 +29,54 @@ export class WorkspaceController implements Disposable, LoggerController {
     if (workspace.workspaceFolders) {
       for (const folder of workspace.workspaceFolders) {
         if (!wc.folders.has(folder)) {
-          const fc = await FolderController.create({
-            workspaceController: wc,
-            folder,
-          });
-          wc.folders.set(folder, fc);
+          wc.folders.set(folder, new FolderController({ workspaceController: wc, folder }));
         }
       }
     }
 
+    for (const fc of wc.folders.values()) {
+      await fc.init();
+    }
+
+    wc.disposables.push(
+      // workspace.onDidChangeConfiguration(async (event) => {
+      //   if (event.affectsConfiguration(SETTINGS_PREFIX)) {
+      //     this.logger.info('Relevant configuration change detected, updating options...');
+      //     await this.loadOptions();
+      //     this.onDidChangeEmitter.fire(event);
+      //   }
+      // }),
+      workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
+        wc.logger.trace(operation('Workspace folders changed', 'start'));
+        for (const folder of removed) {
+          const fc = wc.folders.get(folder);
+          if (fc) {
+            await fc.dispose();
+            wc.folders.delete(folder);
+          }
+        }
+
+        for (const folder of added) {
+          const fc = new FolderController({ workspaceController: wc, folder });
+          wc.folders.set(folder, fc);
+          await fc.init();
+        }
+        wc.logger.trace(operation('Workspace folders changed', 'finish'));
+      }),
+
+      window.tabGroups.onDidChangeTabGroups(async () => {
+        await wc.examineTabs();
+      }),
+      window.tabGroups.onDidChangeTabs(async () => {
+        await wc.examineTabs();
+      }),
+
+      workspace.onDidChangeTextDocument(
+        debounce(async (change) => wc.onTextDocumentChange(change.document), 1000),
+      ),
+    );
+
+    wc.logger.trace(operation('Examining open tabs for workspace folders', 'start'));
     for (const group of window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof TabInputText) {
@@ -45,6 +88,7 @@ export class WorkspaceController implements Disposable, LoggerController {
     for (const uri of wc.openDocuments) {
       await wc.onOpenTab(uri);
     }
+    wc.logger.trace(operation('Examining open tabs for workspace folders', 'finish'));
 
     return wc;
   }
@@ -53,51 +97,7 @@ export class WorkspaceController implements Disposable, LoggerController {
   protected readonly textEditors: Set<TextEditor> = new Set();
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
   public readonly logger: Logger = createLogger();
-  public readonly diagnostics: DiagnosticCollection;
   public readonly openDocuments: UriSet = new UriSet();
-
-  public constructor() {
-    this.diagnostics = languages.createDiagnosticCollection('cmtd');
-
-    this.disposables.push(
-      this.diagnostics,
-      // workspace.onDidChangeConfiguration(async (event) => {
-      //   if (event.affectsConfiguration(SETTINGS_PREFIX)) {
-      //     this.logger.info('Relevant configuration change detected, updating options...');
-      //     await this.loadOptions();
-      //     this.onDidChangeEmitter.fire(event);
-      //   }
-      // }),
-      workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
-        for (const folder of removed) {
-          const fc = this.folders.get(folder);
-          if (fc) {
-            await fc.dispose();
-            this.folders.delete(folder);
-          }
-        }
-
-        for (const folder of added) {
-          const fc = await FolderController.create({
-            folder,
-            workspaceController: this,
-          });
-          this.folders.set(folder, fc);
-        }
-      }),
-
-      window.tabGroups.onDidChangeTabGroups(async () => {
-        await this.examineTabs();
-      }),
-      window.tabGroups.onDidChangeTabs(async () => {
-        await this.examineTabs();
-      }),
-
-      workspace.onDidChangeTextDocument(async (change) =>
-        this.onTextDocumentChange(change.document),
-      ),
-    );
-  }
 
   private async examineTabs(): Promise<void> {
     const current = new UriSet(this.openDocuments);
@@ -126,19 +126,21 @@ export class WorkspaceController implements Disposable, LoggerController {
     if (folder) {
       const fc = this.folders.get(folder);
       if (fc) {
-        await fc.onOpenTab(uri);
+        if (!fc.isIgnored(uri)) {
+          this.logger.debug(fileOperation(uri.fsPath, 'open'));
+          await fc.onOpenTab(uri);
+        }
       }
     }
   }
 
   private async onCloseTab(uri: Uri): Promise<void> {
-    if (isCode(uri)) {
-      const folder = workspace.getWorkspaceFolder(uri);
-      if (folder) {
-        const fc = this.folders.get(folder);
-        if (fc) {
-          await fc.onCloseTab(uri);
-        }
+    const folder = workspace.getWorkspaceFolder(uri);
+    if (folder) {
+      const fc = this.folders.get(folder);
+      if (fc) {
+        this.logger.debug(fileOperation(uri.fsPath, 'close'));
+        await fc.onCloseTab(uri);
       }
     }
   }
@@ -148,8 +150,8 @@ export class WorkspaceController implements Disposable, LoggerController {
     if (folder) {
       const fc = this.folders.get(folder);
       if (fc) {
-        this.logger.trace(`Document changed: ${document.uri.fsPath}`);
-        await fc.updateTab(document.uri);
+        this.logger.debug(fileOperation(document.uri.fsPath, 'changed'));
+        await fc.updateDiagnosticsForTab(document.uri);
       }
     }
   }

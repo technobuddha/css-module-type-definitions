@@ -41,16 +41,13 @@
   },
   "dependencies": {
     "@technobuddha/library": "2.1.0-171",
-    "@technobuddha/project": "1.0.0-165",
     "@vitejs/devtools": "0.3.4",
-    "@vitest/coverage-v8": "4.1.10",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
     "commander": "15.0.0",
     "esbuild": "0.28.1",
     "glob": "13.0.6",
     "ignore": "7.0.5",
-    "jsdom": "30.0.1",
     "json5": "2.2.3",
     "less": "4.8.1",
     "magic-string": "0.30.21",
@@ -69,6 +66,7 @@
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.1",
+    "@technobuddha/project": "1.0.0-169",
     "@types/less": "3.0.8",
     "@types/node": "26.1.2",
     "@types/postcss-import": "^14.0.3",
@@ -80,7 +78,6 @@
     "tsx": "4.23.1",
     "type-fest": "5.8.0",
     "vite-plugin-inspect": "12.0.2",
-    "vitest": "4.1.10",
     "webpack-cli": "7.2.2"
   },
   "resolutions": {
