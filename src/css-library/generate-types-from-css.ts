@@ -131,14 +131,12 @@ export async function generateTypesFromCss(
           ];
 
           const { dir, name, ext } = path.parse(file);
-          const dtsFile = `${name}.d${ext}.ts`;
-          const mapFile = `${dtsFile}.map`;
-          const hasDts = await fileExists(path.join(dir, dtsFile));
-          const hasMap = await fileExists(path.join(dir, mapFile));
+          const dtsFilename = `${name}.d${ext}.ts`;
+          const hasDts = await fileExists(path.join(dir, dtsFilename));
 
           const dtsRange: Map<string, CMTDRange> = new Map();
 
-          const smg = new SourceMapGenerator({ file: dtsFile, logger });
+          const smg = new SourceMapGenerator({ file: dtsFilename, logger });
 
           const classEntries = Array.from(
             extractedCss,
@@ -187,7 +185,6 @@ export async function generateTypesFromCss(
             empty,
             `${space.repeat(0)}export default ${variable};`,
             empty,
-            //`//# sourceMappingURL=${path.basename(mapFile)}`,
             `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${encodeBase64(JSON.stringify(smg.sourceMap()), 'utf-8')}`,
             empty,
             ...splitLines(options.css.dtsFooter ?? empty),
@@ -195,23 +192,19 @@ export async function generateTypesFromCss(
           );
 
           return {
-            files: {
-              [path.resolve(dir, dtsFile)]: dts.join('\n'),
-              //[path.resolve(dir, mapFile)]: JSON.stringify(smg.sourceMap()),
-            },
-            dtsFile,
-            mapFile,
+            dtsContents: dts.join('\n'),
+            dtsFilename: path.resolve(dir, dtsFilename),
             hasDts,
-            hasMap,
             locationsOfClass,
             includedFiles,
             classLocal,
             localClass,
             dtsRange,
+            classScope,
           };
         })
         .catch((error) => {
-          logger.error(toError(error), ' <== From gtcss');
+          logger.error(toError(error), `Failed to generate type definitions for ${file}`);
           throw toError(error);
         });
     },

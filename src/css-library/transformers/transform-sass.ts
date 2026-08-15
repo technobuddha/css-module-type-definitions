@@ -13,7 +13,7 @@ export async function transformSass(
   { filename, directory, options, cssImporter, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
   const ext = path.parse(filename).ext.replace(/^\./v, empty) as 'scss' | 'sass';
-  const { additionalData, ...sassOptions } = options.preprocessor?.[ext] ?? {};
+  const { additionalData, ...sassOptions } = options.css.preprocessor?.[ext] ?? {};
 
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     compileStringAsync(content, {

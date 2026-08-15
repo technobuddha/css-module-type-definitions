@@ -27,7 +27,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
     document: TextDocument,
     position: Position,
     context: ReferenceContext,
-    token: CancellationToken,
+    _token: CancellationToken,
   ): Promise<Location[]> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
@@ -36,7 +36,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
         const { localName, importUri, accessorType } = localInfo;
         const locations: Location[] = [];
 
-        const cssInfo = await folderController.cssInformationForFile(importUri);
+        const cssInfo = await folderController.cssInformation(importUri);
         if (cssInfo) {
           const cssLocations = cssInfo.cssLocations({ localName, importUri });
           if (cssLocations) {
@@ -44,25 +44,19 @@ export class CodeReferenceProvider implements ReferenceProvider {
               locations.push(...cssLocations);
             }
 
-            for (const [file, codeInfo] of await folderController.allCodeInformation()) {
-              if (token.isCancellationRequested) {
-                return [];
-              }
-
-              if (codeInfo.cssModuleImports.some((i) => i.fsPath === importUri.fsPath)) {
-                const localUsages = await cssInfo.classUsage({ localName, file, importUri });
-                if (localUsages) {
-                  for (const usage of localUsages.usages) {
-                    if (accessorType === 'property' || usage.accessorType !== accessorType) {
-                      locations.push(new Location(file, usage.range));
-                    }
+            for (const { file } of await folderController.codeInformationForCssModule(importUri)) {
+              const localUsages = await cssInfo.classUsage({ localName, file, importUri });
+              if (localUsages) {
+                for (const usage of localUsages.usages) {
+                  if (accessorType === 'property' || usage.accessorType !== accessorType) {
+                    locations.push(new Location(file, usage.range));
                   }
                 }
               }
             }
           }
 
-          const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFile);
+          const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFilename);
           if (await fileExists(dtsFile)) {
             const ranges = cssInfo.dtsRanges({ localName });
             for (const range of ranges) {

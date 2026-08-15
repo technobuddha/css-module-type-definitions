@@ -13,7 +13,7 @@ export async function transformLess(
   source: string,
   { filename, directory, options, cssImporter, logger }: TransformerArguments,
 ): Promise<TransformerReturn> {
-  const additionalData = options.preprocessor?.less?.additionalData;
+  const additionalData = options.css.preprocessor?.less?.additionalData;
 
   return getSource({ source, filename, additionalData }).then(async ({ content }) =>
     less
@@ -24,7 +24,7 @@ export async function transformLess(
         ...options,
         plugins: [
           ...(cssImporter?.less ? [cssImporter.less] : []),
-          ...(options.preprocessor?.less?.plugins ?? []),
+          ...(options.css.preprocessor?.less?.plugins ?? []),
         ],
       })
       .then(({ css, map, imports }) => {

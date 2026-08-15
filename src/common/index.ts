@@ -21,10 +21,16 @@ export {
   type LoggerController,
   type LogLevel,
   LOGLEVELS,
+  RANKS,
 } from './logger.ts';
 export { operation } from './operation.ts';
 export { Optionator } from './optionator.ts';
-export { defaultOptions, type Options, type PartialOptions } from './options.ts';
+export {
+  defaultOptions,
+  type Options,
+  type PartialOptions,
+  type SeverityLevel,
+} from './options.ts';
 export { parseFilename } from './parse-filename.ts';
 export { locateCMTDConfigurationFile, readCMTDConfig } from './read-cmtd-config.ts';
 export {

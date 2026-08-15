@@ -8,7 +8,7 @@ import { type RawSourceMap } from '../source-map.ts';
 
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
-import { transformStylus } from './transform-stylus.ts';
+// import { transformStylus } from './transform-stylus.ts';
 
 export type CssImporter = {
   less: Less.Plugin;
@@ -50,13 +50,14 @@ export async function transformer(
       return transformSass(css, args);
     }
 
-    case '.styl': {
-      return transformStylus(css, args);
-    }
+    // TODO
+    // case '.styl': {
+    //   return transformStylus(css, args);
+    // }
 
-    case '.stylus': {
-      return transformStylus(css, args);
-    }
+    // case '.stylus': {
+    //   return transformStylus(css, args);
+    //}
 
     default: {
       return { css, includedFiles: new Set() };

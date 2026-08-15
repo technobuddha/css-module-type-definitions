@@ -28,14 +28,14 @@ export type CssLocation = {
   location: CMTDLocation;
 };
 
-export type ELFCArguments = {
+type Arguments = {
   options: Options;
   file: string;
   logger: Logger;
   cssImporter?: CssImporter;
 };
 
-type ELFCReturn = {
+type Return = {
   css: string;
   sourceMap: RawSourceMap | undefined;
   classLocations: Map<string, CssLocation[]>;
@@ -46,8 +46,8 @@ const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
 
 export async function extractLocationsFromCss(
   css: string,
-  { file, options, logger, cssImporter }: ELFCArguments,
-): Promise<ELFCReturn> {
+  { file, options, logger, cssImporter }: Arguments,
+): Promise<Return> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
 
@@ -161,7 +161,9 @@ export async function extractLocationsFromCss(
               start = { line: poo.line, column: poo.column + 1 };
               end = { line: start.line, column: start.column + className.length };
             } else {
-              logger.warn(`Source file ${file} (${source})`);
+              logger.warn(
+                `Source file ${file}::${filename} (${source}) [${directory}] [[${sourcePath}]]`,
+              );
             }
             extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }

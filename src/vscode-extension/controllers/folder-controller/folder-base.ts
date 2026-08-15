@@ -1,4 +1,4 @@
-import { CustomEventTarget } from '@technobuddha/library';
+import { CustomEventBase } from '@technobuddha/library';
 import {
   type DiagnosticCollection,
   type Disposable,
@@ -11,61 +11,84 @@ import {
 
 import {
   type Action,
+  // fileOperation,
   type Logger,
   type LoggerController,
   type Options,
 } from '../../../common/index.ts';
 
+import { type CodeInformation } from '../../code-information/code-information.ts';
+import { type CssInformation } from '../../css-information/css-information.ts';
 import { UriSet } from '../../helpers/index.ts';
 
 import { type WorkspaceController } from '../workspace-controller.ts';
 
 export type FolderBaseArguments = {
-  folder: WorkspaceFolder;
   workspaceController: WorkspaceController;
+  folder: WorkspaceFolder;
 };
 
-type WatcherEvent = {
-  action: Action;
-  uri: Uri;
+type CustomEvents = {
+  watcher: {
+    action: Action;
+    uri: Uri;
+  };
+  options: {
+    oldOptions: Options;
+    newOptions: Options;
+  };
+  ignored: undefined;
+  openTab: Uri;
+  closeTab: Uri;
+  editTab: Uri;
+  cssInformationChanged: {
+    uri: Uri;
+    oldCssInformation: CssInformation | undefined;
+    newCssInformation: CssInformation | undefined;
+  };
+  codeInformationChanged: {
+    uri: Uri;
+    oldCodeInformation: CodeInformation | undefined;
+    newCodeInformation: CodeInformation | undefined;
+  };
 };
 
-type OptionsEvent = {
-  options: Options;
-};
-
-export abstract class FolderBase implements LoggerController, Disposable {
-  protected readonly folder: WorkspaceFolder;
+export abstract class FolderBase
+  extends CustomEventBase<CustomEvents>
+  implements LoggerController, Disposable
+{
   protected readonly workspaceController: WorkspaceController;
-  protected readonly eventTarget = new CustomEventTarget<{
-    watcher: WatcherEvent;
-    options: OptionsEvent;
-    ignored: undefined;
-  }>();
-  protected readonly openTabs: UriSet = new UriSet();
 
-  protected readonly disposables: Disposable[] = [];
+  protected readonly openTabs: UriSet = new UriSet();
+  protected readonly passTabs: UriSet = new UriSet();
   protected readonly diagnostics: DiagnosticCollection;
+  protected readonly disposables: Disposable[] = [];
+
+  public readonly folder: WorkspaceFolder;
 
   public constructor({ workspaceController, folder }: FolderBaseArguments) {
+    super();
     this.workspaceController = workspaceController;
     this.folder = folder;
 
     this.diagnostics = languages.createDiagnosticCollection(folder.name);
-    this.disposables.push(this.diagnostics);
-  }
-
-  public get logger(): Logger {
-    return this.workspaceController.logger;
   }
 
   public async init(): Promise<void> {
     const watcher = workspace.createFileSystemWatcher(new RelativePattern(this.folder, '**/*'));
 
     const respond = (action: Action) => async (uri: Uri) => {
-      if (!this.isIgnored(uri)) {
-        this.eventTarget.dispatchEvent('watcher', { action, uri });
+      if (this.isIgnored(uri)) {
+        return;
       }
+
+      if (this.openTabs.has(uri)) {
+        if (action === 'change' || action === 'add') {
+          this.workspaceController.onSaveTab(uri);
+        }
+      }
+
+      await this.fire('watcher', { action, uri });
     };
 
     this.disposables.push(
@@ -74,24 +97,22 @@ export abstract class FolderBase implements LoggerController, Disposable {
       watcher.onDidChange(respond('change')),
       watcher.onDidDelete(respond('unlink')),
     );
+
+    this.on('openTab', async (uri) => {
+      this.openTabs.add(uri);
+    }).on('closeTab', async (uri) => {
+      this.openTabs.delete(uri);
+    });
   }
+
+  public abstract close(): Promise<void>;
+  public abstract get logger(): Logger;
 
   public abstract isIgnored(uri: Uri): boolean;
 
-  public async onOpenTab(uri: Uri): Promise<void> {
-    this.openTabs.add(uri);
-    return this.updateDiagnosticsForTab(uri);
-  }
-
-  public async onCloseTab(uri: Uri): Promise<void> {
-    this.diagnostics.delete(uri);
-    this.openTabs.delete(uri);
-  }
-
-  public abstract updateDiagnosticsForTab(uri: Uri): Promise<void>;
-
   public async dispose(): Promise<void> {
     this.diagnostics.clear();
+    this.diagnostics.dispose();
 
     for (const disposable of this.disposables) {
       await disposable.dispose();

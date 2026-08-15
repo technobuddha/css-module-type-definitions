@@ -73,7 +73,14 @@ export function correspondingSource(filename: string | URI): string | URI | unde
   const file = toPathname(filename);
   const { ext, root, dir, name } = parseFilename(file);
 
-  const sourcePath = ext === '.d.ts' || ext === '.d.*.ts' ? path.format({ root, dir, name }) : file;
+  const sourcePath =
+    ext === '.d.ts' || ext === '.d.*.ts' ? path.format({ root, dir, name }) : undefined;
 
-  return typeof filename === 'string' ? sourcePath : URI.file(sourcePath);
+  return (
+    sourcePath ?
+      typeof filename === 'string' ?
+        sourcePath
+      : URI.file(sourcePath)
+    : undefined
+  );
 }

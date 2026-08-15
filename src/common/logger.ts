@@ -4,7 +4,7 @@ export const LOGLEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'off'] as c
 
 export type LogLevel = (typeof LOGLEVELS)[number];
 
-const Ranks: Record<LogLevel, number> = {
+export const RANKS: Record<LogLevel, number> = {
   trace: 0,
   debug: 1,
   info: 2,
@@ -44,7 +44,7 @@ export const stdioLogger: Logger = {
 };
 
 export function loggerForLevel(baseLogger: Logger, level: LogLevel): Logger {
-  const rank = Ranks[level] ?? 2;
+  const rank = RANKS[level] ?? 2;
 
   return {
     trace: rank <= 0 ? baseLogger.trace : noop,

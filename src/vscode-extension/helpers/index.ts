@@ -1,6 +1,7 @@
 export { canonicalPath } from './canonical-path.ts';
 export { codePointLength } from './code-point-length.ts';
 export { collectImportBindings } from './collect-import-bindings.ts';
+export { createLogger } from './create-logger.ts';
 export { createRange } from './create-range.ts';
 export {
   type AccessExpressionLike,
@@ -31,6 +32,7 @@ export { requireCallModule } from './require-call-module.ts';
 export { resolveImportPath } from './resolve-import-path.ts';
 export { scanImports } from './scan-imports.ts';
 export { scriptKind } from './script-kind.ts';
+export { toDiagnosticSeverity } from './to-diagnostic-severity.ts';
 export { unwrapExpression } from './unwrap-expression.ts';
 export { ReadonlyUriMap, UriMap } from './uri-map.ts';
 export { ReadonlyUriSet, UriSet } from './uri-set.ts';

@@ -70,8 +70,8 @@ if (import.meta.main) {
           ],
         },
         configuration: {
+          title: 'CSS Module Type Definitions SETTINGS***',
           type: 'object',
-          title: 'CSS Module Type Definitions',
           properties: {
             'cmtd.logLevel': {
               type: 'string',

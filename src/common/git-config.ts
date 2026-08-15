@@ -58,7 +58,7 @@ export class GitConfig implements AsyncDisposable {
           case gco.#gitRepoExcludeFilename: {
             gco.logger.debug(fileOperation(gco.#gitRepoExcludeFilename, action));
 
-            void gco.#readRepoIgnore(action).then((content) => {
+            void gco.#readRepoIgnore().then((content) => {
               if (gco.#repoIgnore !== content) {
                 gco.#repoIgnore = content;
                 gco.#changed();
@@ -70,7 +70,7 @@ export class GitConfig implements AsyncDisposable {
           case gco.#gitGlobalExcludesFilename: {
             gco.logger.debug(fileOperation(gco.#gitGlobalExcludesFilename!, action));
 
-            void gco.#readGlobalIgnore(action).then((content) => {
+            void gco.#readGlobalIgnore().then((content) => {
               if (gco.#globalIgnore !== content) {
                 gco.#globalIgnore = content;
                 gco.#changed();
@@ -140,10 +140,8 @@ export class GitConfig implements AsyncDisposable {
       );
   }
 
-  async #readGlobalIgnore(action?: Action): Promise<string | undefined> {
+  async #readGlobalIgnore(): Promise<string | undefined> {
     if (this.#gitGlobalExcludesFilename) {
-      this.logger.debug(fileOperation(this.#gitGlobalExcludesFilename, action ?? 'configuration'));
-
       return fs.readFile(this.#gitGlobalExcludesFilename, 'utf-8').catch((e) => {
         if (e.code !== 'ENOENT') {
           this.logger.error(toError(e));
@@ -154,9 +152,8 @@ export class GitConfig implements AsyncDisposable {
     return undefined;
   }
 
-  async #readRepoIgnore(action?: Action): Promise<string | undefined> {
+  async #readRepoIgnore(): Promise<string | undefined> {
     if (this.#gitRepoExcludeFilename) {
-      this.logger.debug(fileOperation(this.#gitRepoExcludeFilename, action ?? 'configuration'));
       return fs.readFile(this.#gitRepoExcludeFilename, 'utf-8').catch((e) => {
         if (e.code !== 'ENOENT') {
           this.logger.error(toError(e));

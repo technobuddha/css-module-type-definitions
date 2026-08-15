@@ -1,6 +1,7 @@
 import {
   type CancellationToken,
   type Position,
+  Range,
   type RenameProvider,
   type TextDocument,
   WorkspaceEdit,
@@ -18,6 +19,24 @@ export class CssRenameProvider implements RenameProvider {
 
   public constructor(options: Arguments) {
     this.#workspaceController = options.workspaceController;
+  }
+
+  public async prepareRename(
+    document: TextDocument,
+    position: Position,
+    _token: CancellationToken,
+  ): Promise<Range | null> {
+    const range = document.getWordRangeAtPosition(position);
+
+    if (range) {
+      return new Range(
+        range.start.line,
+        range.start.character + 1,
+        range.end.line,
+        range.end.character,
+      );
+    }
+    return null;
   }
 
   public async provideRenameEdits(

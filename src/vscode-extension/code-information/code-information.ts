@@ -1,3 +1,4 @@
+import { deepEquals } from '@technobuddha/library';
 import { type TextDocument, type Uri, workspace } from 'vscode';
 
 import { isCssModule } from '../../common/index.ts';
@@ -14,8 +15,8 @@ import {
 } from '../helpers/index.ts';
 
 export class CodeInformation {
-  public static async create(uri: Uri): Promise<CodeInformation> {
-    const document = await workspace.openTextDocument(uri);
+  public static async create(file: Uri): Promise<CodeInformation> {
+    const document = await workspace.openTextDocument(file);
     const cssModuleImports = scanImports(document).filter((u) => isCssModule(u));
 
     const sourceFile = getSourceFile(document);
@@ -42,15 +43,21 @@ export class CodeInformation {
       usages.getOrInsert(importPath, []).push(...state.usages);
     }
 
-    return new CodeInformation(document, cssModuleImports, usages);
+    return new CodeInformation(file, document, cssModuleImports, usages);
   }
 
+  public readonly file: Uri;
   public readonly document: TextDocument;
-
   public readonly cssModuleImports: Uri[];
   public readonly usages: UriMap<Usage[]> = new UriMap();
 
-  protected constructor(document: TextDocument, cssModuleImports: Uri[], usages: UriMap<Usage[]>) {
+  protected constructor(
+    file: Uri,
+    document: TextDocument,
+    cssModuleImports: Uri[],
+    usages: UriMap<Usage[]>,
+  ) {
+    this.file = file;
     this.document = document;
     this.usages = usages;
     this.cssModuleImports = cssModuleImports;
@@ -64,5 +71,20 @@ export class CodeInformation {
     importUri: Uri;
   }): Promise<Usage[] | undefined> {
     return this.usages.get(importUri)?.filter((usage) => localNames.has(usage.localName));
+  }
+
+  public equals(that: CodeInformation | undefined): boolean {
+    if (that) {
+      const s1 = new Set(this.cssModuleImports.map((uri) => uri.fsPath));
+      const s2 = new Set(that.cssModuleImports.map((uri) => uri.fsPath));
+
+      return (
+        s1.size === s2.size &&
+        s1.values().every((v) => s2.has(v)) &&
+        this.usages.size === that.usages.size &&
+        this.usages.entries().every(([uri, usages]) => deepEquals(usages, that.usages.get(uri)))
+      );
+    }
+    return false;
   }
 }

@@ -1,12 +1,16 @@
-import { deepEquals } from '@technobuddha/library';
-import { type Disposable } from 'vscode';
+import { deepEquals, noop } from '@technobuddha/library';
+import { type Disposable, workspace, type WorkspaceConfiguration } from 'vscode';
 
 import {
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
   locateViteConfigurationFile,
+  type Logger,
+  type LogLevel,
+  operation,
   type Options,
+  RANKS,
   readCMTDConfig,
   readViteConfig,
   type ViteCss,
@@ -22,6 +26,7 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
   #cmtdConfig: Options | undefined;
   #viteConfigFile: string | undefined;
   #viteConfig: ViteCss | undefined;
+  #vscodeSettings: WorkspaceConfiguration | undefined;
 
   public constructor({ workspaceController, folder }: FolderOptionsArguments) {
     super({ workspaceController, folder });
@@ -49,45 +54,55 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
       this.#viteConfigFile ? await readViteConfig(this.#viteConfigFile) : undefined;
   }
 
-  private changeOptions(): void {
-    const options = this.buildOptions();
-    if (!deepEquals(this.#options, options)) {
-      this.#options = options;
-      this.eventTarget.dispatchEvent('options', { options });
+  private readVscodeSettings(): void {
+    this.#vscodeSettings = workspace.getConfiguration('cmtd', this.folder.uri);
+  }
+
+  private async changeOptions(): Promise<void> {
+    const oldOptions = this.#options;
+    const newOptions = this.buildOptions();
+    if (deepEquals(oldOptions, newOptions)) {
+      return;
     }
+
+    this.#options = newOptions;
+    await this.fire('options', { oldOptions, newOptions });
   }
 
   private buildOptions(): Options {
     return {
-      logLevel: defaultOptions.logLevel,
-      preprocessor: {
-        less: {
-          ...this.#cmtdConfig?.preprocessor?.less,
-          ...this.#viteConfig?.preprocessorOptions?.less,
-          ...defaultOptions.preprocessor.less,
-        },
-        sass: {
-          ...this.#cmtdConfig?.preprocessor?.sass,
-          ...this.#viteConfig?.preprocessorOptions?.sass,
-          ...defaultOptions.preprocessor.sass,
-        },
-        scss: {
-          ...this.#cmtdConfig?.preprocessor?.scss,
-          ...this.#viteConfig?.preprocessorOptions?.scss,
-          ...defaultOptions.preprocessor.scss,
-        },
-        styl: {
-          ...this.#cmtdConfig?.preprocessor?.styl,
-          ...this.#viteConfig?.preprocessorOptions?.styl,
-          ...defaultOptions.preprocessor.styl,
-        },
-        stylus: {
-          ...this.#cmtdConfig?.preprocessor?.stylus,
-          ...this.#viteConfig?.preprocessorOptions?.stylus,
-          ...defaultOptions.preprocessor.stylus,
-        },
-      },
+      logLevel:
+        this.#cmtdConfig?.logLevel ??
+        this.#vscodeSettings?.get<LogLevel>('logLevel') ??
+        defaultOptions.logLevel,
       css: {
+        preprocessor: {
+          less: {
+            ...this.#cmtdConfig?.css?.preprocessor?.less,
+            ...this.#viteConfig?.preprocessorOptions?.less,
+            ...defaultOptions.css?.preprocessor.less,
+          },
+          sass: {
+            ...this.#cmtdConfig?.css?.preprocessor?.sass,
+            ...this.#viteConfig?.preprocessorOptions?.sass,
+            ...defaultOptions.css?.preprocessor.sass,
+          },
+          scss: {
+            ...this.#cmtdConfig?.css?.preprocessor?.scss,
+            ...this.#viteConfig?.preprocessorOptions?.scss,
+            ...defaultOptions.css?.preprocessor.scss,
+          },
+          styl: {
+            ...this.#cmtdConfig?.css?.preprocessor?.styl,
+            ...this.#viteConfig?.preprocessorOptions?.styl,
+            ...defaultOptions.css?.preprocessor.styl,
+          },
+          stylus: {
+            ...this.#cmtdConfig?.css?.preprocessor?.stylus,
+            ...this.#viteConfig?.preprocessorOptions?.stylus,
+            ...defaultOptions.css?.preprocessor.stylus,
+          },
+        },
         modules: {
           scopeBehaviour:
             this.#cmtdConfig?.css?.modules?.scopeBehaviour ??
@@ -119,6 +134,12 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
         generateDts: this.#cmtdConfig?.css?.generateDts ?? defaultOptions.css.generateDts,
         classesConvention:
           this.#cmtdConfig?.css?.classesConvention ?? defaultOptions.css.classesConvention,
+        unusedClassesDiagnostics:
+          this.#cmtdConfig?.css?.unusedClassesDiagnostics ??
+          defaultOptions.css.unusedClassesDiagnostics,
+        unusedImportedClassesDiagnostics:
+          this.#cmtdConfig?.css?.unusedImportedClassesDiagnostics ??
+          defaultOptions.css.unusedImportedClassesDiagnostics,
       },
     };
   }
@@ -131,26 +152,53 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
 
     await this.readCMTDConfig();
     await this.readViteConfig();
+    this.readVscodeSettings();
+
     this.setOptions(this.buildOptions());
 
-    this.eventTarget.addEventListener('watcher', async ({ detail: { action, uri } }) => {
+    this.disposables.push(
+      workspace.onDidChangeConfiguration(async (event) => {
+        if (event.affectsConfiguration('cmtd', this.folder)) {
+          this.logger.trace(operation(`${this.folder.name}::configuration`, 'changed'));
+          this.readVscodeSettings();
+          await this.changeOptions();
+        }
+      }),
+    );
+
+    this.on('watcher', async ({ action, uri }) => {
       if (uri.fsPath === this.#viteConfigFile) {
         this.logger.debug(fileOperation(uri.fsPath, action));
         await this.readViteConfig();
-        this.changeOptions();
+        await this.changeOptions();
         return;
       }
 
       if (uri.fsPath === this.#cmtdConfigFile) {
         this.logger.debug(fileOperation(uri.fsPath, action));
         await this.readCMTDConfig();
-        this.changeOptions();
+        await this.changeOptions();
       }
     });
   }
 
   public get options(): Options {
     return this.#options;
+  }
+
+  public get logger(): Logger {
+    const { logLevel } = this.options;
+    const { logger } = this.workspaceController;
+
+    const rank = RANKS[logLevel] ?? 2;
+
+    return {
+      trace: rank <= 0 ? logger.trace : noop,
+      debug: rank <= 1 ? logger.debug : noop,
+      info: rank <= 2 ? logger.info : noop,
+      warn: rank <= 3 ? logger.warn : noop,
+      error: rank <= 4 ? logger.error : noop,
+    };
   }
 
   public override async dispose(): Promise<void> {

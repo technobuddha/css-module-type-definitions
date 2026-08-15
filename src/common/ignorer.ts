@@ -7,7 +7,6 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import ignore, { type Ignore } from 'ignore';
 
 import { type Action } from './action.ts';
-import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController } from './logger.ts';
 
 type IgnorerOptions = {
@@ -45,17 +44,17 @@ export abstract class Ignorer<T> implements AsyncDisposable {
       });
 
       const respond =
-        (action: Action) =>
+        (_action: Action) =>
         (file: string): void => {
           (async () => {
             switch (file) {
               case this.#gitLocalExcludeFilename: {
-                await this.#loadRepoIgnore(action);
+                await this.#loadRepoIgnore();
                 break;
               }
 
               case this.#gitGlobalExcludesFilename: {
-                await this.#loadGlobalIgnore(action);
+                await this.#loadGlobalIgnore();
                 break;
               }
 
@@ -101,12 +100,10 @@ export abstract class Ignorer<T> implements AsyncDisposable {
     }
   }
 
-  async #loadGlobalIgnore(action?: Action): Promise<void> {
+  async #loadGlobalIgnore(): Promise<void> {
     this.#globalIgnore = undefined;
 
     if (this.#gitGlobalExcludesFilename) {
-      this.logger.debug(fileOperation(this.#gitGlobalExcludesFilename, action ?? 'configuration'));
-
       return fs
         .readFile(this.#gitGlobalExcludesFilename, 'utf-8')
         .then((content) => {
@@ -120,11 +117,10 @@ export abstract class Ignorer<T> implements AsyncDisposable {
     }
   }
 
-  async #loadRepoIgnore(action?: Action): Promise<void> {
+  async #loadRepoIgnore(): Promise<void> {
     this.#localIgnore = undefined;
 
     if (this.#gitLocalExcludeFilename) {
-      this.logger.debug(fileOperation(this.#gitLocalExcludeFilename, action ?? 'configuration'));
       return fs
         .readFile(this.#gitLocalExcludeFilename, 'utf-8')
         .then((content) => {

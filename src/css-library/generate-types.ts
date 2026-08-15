@@ -18,18 +18,18 @@ export async function generateTypes(
   return fs
     .readFile(file, 'utf-8')
     .then(async (content) => {
-      await generateTypesFromCss(content, file, { options, logger }).then(async ({ files }) => {
-        for (const [filename, content] of Object.entries(files)) {
-          typedefs?.delete(path.relative('.', filename));
+      await generateTypesFromCss(content, file, { options, logger }).then(
+        async ({ dtsFilename, dtsContents }) => {
+          typedefs?.delete(path.relative('.', dtsFilename));
 
           await fs
-            .readFile(filename, 'utf-8')
+            .readFile(dtsFilename, 'utf-8')
             .then(async (existingContent) => {
-              if (existingContent !== content) {
+              if (existingContent !== dtsContents) {
                 return fs
-                  .writeFile(filename, content, 'utf-8')
+                  .writeFile(dtsFilename, dtsContents, 'utf-8')
                   .then(() => {
-                    logger.info(fileOperation(filename, 'updated'));
+                    logger.info(fileOperation(dtsFilename, 'updated'));
                   })
                   .catch((error) => {
                     logger.error(error, ' <== from generateTypes I');
@@ -38,16 +38,16 @@ export async function generateTypes(
             })
             .catch(async () =>
               fs
-                .writeFile(filename, content, 'utf-8')
+                .writeFile(dtsFilename, content, 'utf-8')
                 .then(() => {
-                  logger.info(fileOperation(filename, 'created'));
+                  logger.info(fileOperation(dtsFilename, 'created'));
                 })
                 .catch((error) => {
                   logger.error(error, ' <== from generateTypes II');
                 }),
             );
-        }
-      });
+        },
+      );
     })
     .catch((error) => {
       logger.error(

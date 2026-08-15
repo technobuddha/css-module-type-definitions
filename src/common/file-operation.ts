@@ -8,14 +8,17 @@ type Operation =
   | 'created'
   | 'updated'
   | 'deleted'
-  | 'configuration'
+  | 'diagnostics'
+  | 'omit-add'
+  | 'omit-change'
+  | 'omit-unlink'
+  | 'examined'
   | 'add'
   | 'change'
   | 'unlink'
-  | 'ignored'
-  | 'open'
-  | 'close'
-  | 'changed';
+  | 'opened'
+  | 'closed'
+  | 'edited';
 
 export function fileOperation(file: string, action: Operation, error?: unknown): string {
   const aFile = path.resolve(file);
@@ -47,8 +50,12 @@ export function fileOperation(file: string, action: Operation, error?: unknown):
       return `${chalk.red(pad('[deleted]'))} ${display}`;
     }
 
-    case 'configuration': {
-      return `${chalk.blue(pad('⟦configuration⟧'))} ${display}`;
+    case 'omit-add':
+    case 'omit-change':
+    case 'omit-unlink':
+    case 'diagnostics':
+    case 'examined': {
+      return `${chalk.blue(pad(`⟪${action}⟫`))} ${display}`;
     }
 
     case 'add':
@@ -57,15 +64,13 @@ export function fileOperation(file: string, action: Operation, error?: unknown):
       return `${chalk.cyan(pad(`⟦${action}⟧`))} ${display}`;
     }
 
-    case 'open':
-    case 'close':
-    case 'changed': {
-      return `${chalk.green(pad(`【${action}】`))} ${display}`;
+    case 'opened':
+    case 'closed':
+    case 'edited': {
+      return `${chalk.magenta(pad(`【${action}】`))} ${display}`;
     }
 
-    case 'ignored': {
-      return `${chalk.gray(pad('︽ ignored ︾'))} ${display}`;
-    }
+    //return `${chalk.gray(pad('︽ ignored ︾'))} ${display}`;
 
     // no default
   }

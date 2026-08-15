@@ -1,26 +1,26 @@
 import { debounce } from '@technobuddha/library';
 import {
   type Disposable,
+  type Tab,
+  type TabChangeEvent,
   TabInputText,
-  type TextDocument,
-  type TextEditor,
   type Uri,
   window,
   workspace,
   type WorkspaceFolder,
 } from 'vscode';
 
-import {
-  fileOperation,
-  type Logger,
-  type LoggerController,
-  operation,
-} from '../../common/index.ts';
+import { type Logger, type LoggerController, operation } from '../../common/index.ts';
 
-import { createLogger } from '../create-logger.ts';
-import { UriSet } from '../helpers/index.ts';
+import { createLogger, UriMap } from '../helpers/index.ts';
 
 import { FolderController } from './folder-controller/index.ts';
+
+type TabInput = Omit<Tab, 'input'> & { input: TabInputText };
+type TabState = {
+  count: number;
+  workspaceFolder: WorkspaceFolder | undefined;
+};
 
 export class WorkspaceController implements Disposable, LoggerController {
   public static async create(): Promise<WorkspaceController> {
@@ -39,20 +39,18 @@ export class WorkspaceController implements Disposable, LoggerController {
     }
 
     wc.disposables.push(
-      // workspace.onDidChangeConfiguration(async (event) => {
-      //   if (event.affectsConfiguration(SETTINGS_PREFIX)) {
-      //     this.logger.info('Relevant configuration change detected, updating options...');
-      //     await this.loadOptions();
-      //     this.onDidChangeEmitter.fire(event);
-      //   }
-      // }),
       workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
-        wc.logger.trace(operation('Workspace folders changed', 'start'));
         for (const folder of removed) {
           const fc = wc.folders.get(folder);
           if (fc) {
-            await fc.dispose();
+            for (const state of wc.openTabs.values()) {
+              if (state.workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
+                state.workspaceFolder = undefined;
+              }
+            }
+            await fc.close();
             wc.folders.delete(folder);
+            wc.logger.trace(operation(fc.folder.name, 'stop'));
           }
         }
 
@@ -60,100 +58,147 @@ export class WorkspaceController implements Disposable, LoggerController {
           const fc = new FolderController({ workspaceController: wc, folder });
           wc.folders.set(folder, fc);
           await fc.init();
+          for (const [uri, state] of wc.openTabs) {
+            if (state.workspaceFolder == null) {
+              const workspaceFolder = workspace.getWorkspaceFolder(uri);
+              if (workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
+                state.workspaceFolder = workspaceFolder;
+                await wc.onOpenTab(uri);
+              }
+            }
+          }
         }
-        wc.logger.trace(operation('Workspace folders changed', 'finish'));
       }),
 
-      window.tabGroups.onDidChangeTabGroups(async () => {
-        await wc.examineTabs();
-      }),
-      window.tabGroups.onDidChangeTabs(async () => {
-        await wc.examineTabs();
-      }),
+      // window.tabGroups.onDidChangeTabGroups(async (event) => {
+      //   await wc.examineTabs();
+      // }),
+      window.tabGroups.onDidChangeTabs(async (event) => wc.onChangeTabs(event)),
 
       workspace.onDidChangeTextDocument(
-        debounce(async (change) => wc.onTextDocumentChange(change.document), 1000),
+        debounce(async (change) => {
+          const state = wc.openTabs.get(change.document.uri);
+          if (state?.workspaceFolder) {
+            const fc = wc.folders.get(state.workspaceFolder);
+            if (fc) {
+              await fc.fire('editTab', change.document.uri);
+            }
+          }
+        }, 1000),
       ),
     );
 
-    wc.logger.trace(operation('Examining open tabs for workspace folders', 'start'));
     for (const group of window.tabGroups.all) {
       for (const tab of group.tabs) {
-        if (tab.input instanceof TabInputText) {
-          wc.openDocuments.add(tab.input.uri);
+        if (isTabInput(tab)) {
+          await wc.onOpenTab(tab.input.uri);
         }
       }
     }
-
-    for (const uri of wc.openDocuments) {
-      await wc.onOpenTab(uri);
-    }
-    wc.logger.trace(operation('Examining open tabs for workspace folders', 'finish'));
 
     return wc;
   }
 
   protected readonly disposables: Disposable[] = [];
-  protected readonly textEditors: Set<TextEditor> = new Set();
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
   public readonly logger: Logger = createLogger();
-  public readonly openDocuments: UriSet = new UriSet();
+  public readonly openTabs: UriMap<TabState> = new UriMap();
 
-  private async examineTabs(): Promise<void> {
-    const current = new UriSet(this.openDocuments);
+  // private async examineTabs(): Promise<void> {
+  //   const current = new Set(this.openTabs.keys());
 
-    for (const group of window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (tab.input instanceof TabInputText) {
-          if (this.openDocuments.has(tab.input.uri)) {
-            current.delete(tab.input.uri);
-          } else {
-            this.openDocuments.add(tab.input.uri);
-            await this.onOpenTab(tab.input.uri);
-          }
-        }
+  //   for (const group of window.tabGroups.all) {
+  //     for (const tab of group.tabs) {
+  //       if (isTabInput(tab)) {
+  //         if (this.openTabs.has(tab)) {
+  //           current.delete(tab);
+  //         } else {
+  //           this.openTabs.set(tab, workspace.getWorkspaceFolder(tab.input.uri));
+  //           await this.onOpenTab(tab);
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   for (const tab of current) {
+  //     await this.onCloseTab(tab);
+  //   }
+  // }
+
+  private async onChangeTabs(event: TabChangeEvent): Promise<void> {
+    for (const tab of event.opened) {
+      if (isTabInput(tab)) {
+        await this.onOpenTab(tab.input.uri);
       }
     }
 
-    for (const uri of current) {
-      this.openDocuments.delete(uri);
-      await this.onCloseTab(uri);
+    for (const tab of event.closed) {
+      if (isTabInput(tab)) {
+        await this.onCloseTab(tab.input.uri);
+      }
     }
+
+    // for (const tab of event.changed) {
+    //   if (isTabInput(tab)) {
+    //     const state = this.openTabs.get(tab.input.uri);
+    //     if (state) {
+    //       if (state.isDirty !== tab.isDirty) {
+    //         state.wasDirty = state.isDirty;
+    //         state.isDirty ||= tab.isDirty;
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   private async onOpenTab(uri: Uri): Promise<void> {
-    const folder = workspace.getWorkspaceFolder(uri);
-    if (folder) {
-      const fc = this.folders.get(folder);
+    let state = this.openTabs.get(uri);
+    if (state) {
+      if (state.count > 0) {
+        state.count++;
+        return;
+      }
+
+      state.count = 1;
+    } else {
+      state = {
+        count: 1,
+        workspaceFolder: workspace.getWorkspaceFolder(uri),
+      };
+      this.openTabs.set(uri, state);
+    }
+
+    if (state.workspaceFolder) {
+      const fc = this.folders.get(state.workspaceFolder);
       if (fc) {
         if (!fc.isIgnored(uri)) {
-          this.logger.debug(fileOperation(uri.fsPath, 'open'));
-          await fc.onOpenTab(uri);
+          await fc.fire('openTab', uri);
         }
       }
     }
   }
 
   private async onCloseTab(uri: Uri): Promise<void> {
-    const folder = workspace.getWorkspaceFolder(uri);
-    if (folder) {
-      const fc = this.folders.get(folder);
-      if (fc) {
-        this.logger.debug(fileOperation(uri.fsPath, 'close'));
-        await fc.onCloseTab(uri);
+    const state = this.openTabs.get(uri);
+    if (state) {
+      if (state.count > 1) {
+        state.count--;
+        return;
       }
+
+      if (state?.workspaceFolder) {
+        const fc = this.folders.get(state.workspaceFolder);
+        if (fc) {
+          await fc.fire('closeTab', uri);
+        }
+      }
+
+      this.openTabs.delete(uri);
     }
   }
 
-  private async onTextDocumentChange(document: TextDocument): Promise<void> {
-    const folder = workspace.getWorkspaceFolder(document.uri);
-    if (folder) {
-      const fc = this.folders.get(folder);
-      if (fc) {
-        this.logger.debug(fileOperation(document.uri.fsPath, 'changed'));
-        await fc.updateDiagnosticsForTab(document.uri);
-      }
-    }
+  public onSaveTab(_uri: Uri): void {
+    // nothig to do here, but this is a hook for future use
   }
 
   public folderController(file: Uri): FolderController | undefined {
@@ -182,4 +227,8 @@ export class WorkspaceController implements Disposable, LoggerController {
     }
     this.folders.clear();
   }
+}
+
+function isTabInput(tab: Tab): tab is TabInput {
+  return tab.input instanceof TabInputText;
 }

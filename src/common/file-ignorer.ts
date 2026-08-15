@@ -29,10 +29,6 @@ export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
     await super.init(ignorer);
     await ignorer.gatherGitIgnores();
 
-    for (const { dir } of ignorer.gitIgnores) {
-      ignorer.logger.debug(fileOperation(path.join(dir, '.gitignore'), 'configuration'));
-    }
-
     ignorer.buildIgnored();
 
     return ignorer;

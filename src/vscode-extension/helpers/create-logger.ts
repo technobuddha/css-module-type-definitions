@@ -1,7 +1,7 @@
 import { empty, space, toError } from '@technobuddha/library';
 import { window } from 'vscode';
 
-import { type Logger } from '../common/index.ts';
+import { type Logger } from '../../common/index.ts';
 
 export function createLogger(): Logger {
   const outputChannel = window.createOutputChannel('CMTD' /*, { log: true }*/);

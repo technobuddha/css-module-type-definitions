@@ -20,6 +20,8 @@ type Arguments = {
   workspaceController: WorkspaceController;
 };
 
+// TODO not providing camel-cased completion items
+
 export class CodeCompletionItemProvider implements CompletionItemProvider {
   readonly #workspaceController: WorkspaceController;
 
@@ -40,12 +42,12 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const types = await folderController.cssInformationForFile(importUri);
-          if (types) {
-            const { locationsOfClass: classLocations } = types;
+          const cssInfo = await folderController.cssInformation(importUri);
+          if (cssInfo) {
+            const { localClass } = cssInfo;
 
             return new CompletionList(
-              Array.from(classLocations.keys(), (key) =>
+              Array.from(localClass.keys(), (key) =>
                 toCompletionItem(key, triggerCharacter, position),
               ),
             );

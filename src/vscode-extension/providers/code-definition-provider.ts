@@ -33,23 +33,19 @@ export class CodeDefinitionProvider implements DefinitionProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = await folderController.cssInformationForFile(importUri);
+        const cssInfo = await folderController.cssInformation(importUri);
         if (cssInfo?.hasDts === false) {
-          const { locationsOfClass: classLocations } = cssInfo;
-          const extracted = classLocations.get(localName);
+          const { locationsOfClass } = cssInfo;
+          const extracted = locationsOfClass.get(localName);
           if (extracted) {
-            const [
-              {
-                location: {
-                  source,
-                  range: { start },
-                },
-              },
-            ] = extracted;
+            const [{ location }] = extracted;
 
-            const target = Uri.joinPath(Utils.dirname(importUri), source);
+            const target = Uri.joinPath(Utils.dirname(importUri), location.source);
 
-            return new Location(target, new Position(start.line, start.column));
+            return new Location(
+              target,
+              new Position(location.range.start.line, location.range.start.column),
+            );
           }
         }
       }

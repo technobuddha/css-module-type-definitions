@@ -1,6 +1,3 @@
-/* eslint-disable require-atomic-updates */
-import path from 'node:path';
-
 import { cull, deepEquals, locatePackageRoot } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
@@ -40,17 +37,12 @@ export class Optionator implements LoggerController, AsyncDisposable {
     } else {
       viteConfigPath = await locateViteConfigurationFile(root);
       if (viteConfigPath) {
-        optionator.logger?.debug(
-          fileOperation(path.relative(root, viteConfigPath), 'configuration'),
-        );
-
         optionator.#vite = await readViteConfig(viteConfigPath);
       }
     }
 
     const cmtdConfigPath = await locateCMTDConfigurationFile(root);
     if (cmtdConfigPath) {
-      optionator.logger?.debug(fileOperation(path.relative(root, cmtdConfigPath), 'configuration'));
       optionator.#cmtd = await reImport<Options>(cmtdConfigPath);
     }
 
@@ -112,34 +104,35 @@ export class Optionator implements LoggerController, AsyncDisposable {
   private compileOptions(): Options {
     return {
       logLevel: this.#top.logLevel ?? defaultOptions.logLevel,
-      preprocessor: {
-        less:
-          this.#top.preprocessor?.less ??
-          this.#cmtd?.preprocessor?.less ??
-          this.#vite?.preprocessorOptions?.less ??
-          defaultOptions.preprocessor.less,
-        sass:
-          this.#top.preprocessor?.sass ??
-          this.#cmtd?.preprocessor?.sass ??
-          this.#vite?.preprocessorOptions?.sass ??
-          defaultOptions.preprocessor.sass,
-        scss:
-          this.#top.preprocessor?.scss ??
-          this.#cmtd?.preprocessor?.scss ??
-          this.#vite?.preprocessorOptions?.scss ??
-          defaultOptions.preprocessor.scss,
-        styl:
-          this.#top.preprocessor?.styl ??
-          this.#cmtd?.preprocessor?.styl ??
-          this.#vite?.preprocessorOptions?.styl ??
-          defaultOptions.preprocessor.styl,
-        stylus:
-          this.#top?.preprocessor?.stylus ??
-          this.#cmtd?.preprocessor?.stylus ??
-          this.#vite?.preprocessorOptions?.stylus ??
-          defaultOptions.preprocessor.stylus,
-      },
+
       css: {
+        preprocessor: {
+          less:
+            this.#top.css?.preprocessor?.less ??
+            this.#cmtd?.css?.preprocessor?.less ??
+            this.#vite?.preprocessorOptions?.less ??
+            defaultOptions.css?.preprocessor.less,
+          sass:
+            this.#top.css?.preprocessor?.sass ??
+            this.#cmtd?.css?.preprocessor?.sass ??
+            this.#vite?.preprocessorOptions?.sass ??
+            defaultOptions.css?.preprocessor.sass,
+          scss:
+            this.#top.css?.preprocessor?.scss ??
+            this.#cmtd?.css?.preprocessor?.scss ??
+            this.#vite?.preprocessorOptions?.scss ??
+            defaultOptions.css?.preprocessor.scss,
+          styl:
+            this.#top.css?.preprocessor?.styl ??
+            this.#cmtd?.css?.preprocessor?.styl ??
+            this.#vite?.preprocessorOptions?.styl ??
+            defaultOptions.css?.preprocessor.styl,
+          stylus:
+            this.#top?.css?.preprocessor?.stylus ??
+            this.#cmtd?.css?.preprocessor?.stylus ??
+            this.#vite?.preprocessorOptions?.stylus ??
+            defaultOptions.css?.preprocessor.stylus,
+        },
         modules: {
           scopeBehaviour:
             this.#top?.css?.modules?.scopeBehaviour ??
@@ -184,6 +177,14 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#top?.css?.classesConvention ??
           this.#cmtd?.css?.classesConvention ??
           defaultOptions.css.classesConvention,
+        unusedClassesDiagnostics:
+          this.#top?.css?.unusedClassesDiagnostics ??
+          this.#cmtd?.css?.unusedClassesDiagnostics ??
+          defaultOptions.css.unusedClassesDiagnostics,
+        unusedImportedClassesDiagnostics:
+          this.#top?.css?.unusedImportedClassesDiagnostics ??
+          this.#cmtd?.css?.unusedImportedClassesDiagnostics ??
+          defaultOptions.css.unusedImportedClassesDiagnostics,
       },
     };
   }

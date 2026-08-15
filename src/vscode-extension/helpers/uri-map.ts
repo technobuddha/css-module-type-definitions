@@ -39,6 +39,10 @@ export class ReadonlyUriMap<T> {
     return this.map.has(uri.fsPath);
   }
 
+  public get size(): number {
+    return this.map.size;
+  }
+
   public [Symbol.iterator](): Generator<[Uri, T]> {
     return this.entries();
   }

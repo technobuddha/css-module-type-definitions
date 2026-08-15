@@ -15,69 +15,64 @@ import { visit } from './visit.ts';
 type Arguments = CssInfo & {};
 
 export class CssInformation implements CssInfo {
-  public files: CssInfo['files'];
+  public dtsContents: CssInfo['dtsContents'];
   public locationsOfClass: CssInfo['locationsOfClass'];
   public includedFiles: CssInfo['includedFiles'];
   public classLocal: CssInfo['classLocal'];
+  public classScope: CssInfo['classScope'];
   public localClass: CssInfo['localClass'];
   public dtsRange: CssInfo['dtsRange'];
-  public dtsFile: CssInfo['dtsFile'];
-  public mapFile: CssInfo['mapFile'];
+  public dtsFilename: CssInfo['dtsFilename'];
   public hasDts: boolean;
-  public hasMap: boolean;
 
   public constructor({
-    files,
-    locationsOfClass: classLocations,
+    dtsFilename,
+    dtsContents,
+    locationsOfClass,
     includedFiles,
     classLocal,
+    classScope,
     localClass,
     dtsRange,
-    dtsFile,
-    mapFile,
+    dtsFilename: dtsFile,
     hasDts,
-    hasMap,
   }: Arguments) {
-    this.files = files;
-    this.locationsOfClass = classLocations;
+    this.dtsFilename = dtsFilename;
+    this.dtsContents = dtsContents;
+    this.locationsOfClass = locationsOfClass;
     this.includedFiles = includedFiles;
     this.classLocal = classLocal;
+    this.classScope = classScope;
     this.localClass = localClass;
     this.dtsRange = dtsRange;
-    this.dtsFile = dtsFile;
-    this.mapFile = mapFile;
+    this.dtsFilename = dtsFile;
     this.hasDts = hasDts;
-    this.hasMap = hasMap;
   }
 
   public async writeTypeDefinitionFiles(logger: Logger): Promise<void> {
-    const { files } = this;
+    const { dtsFilename, dtsContents } = this;
+    const fileUri = Uri.file(dtsFilename);
 
-    await Promise.all(
-      Object.entries(files).map(async ([filename, content]) => {
-        const fileUri = Uri.file(filename);
-
-        try {
-          await workspace.fs
-            .readFile(fileUri)
-            .then(workspace.decode)
-            .then(async (existingContent) => {
-              if (existingContent !== content) {
-                await workspace.fs.writeFile(fileUri, await workspace.encode(content));
-                logger.info(fileOperation(filename, 'updated'));
-              }
-            });
-        } catch (e) {
+    await workspace.fs
+      .readFile(fileUri)
+      .then(workspace.decode)
+      .then(
+        async (existingContent) => {
+          if (existingContent !== dtsContents) {
+            await workspace.fs.writeFile(fileUri, await workspace.encode(dtsContents));
+            logger.info(fileOperation(dtsFilename, 'updated'));
+          }
+        },
+        async (e) => {
           const error = toError(e);
           if (error.code === 'FileNotFound') {
-            await workspace.fs.writeFile(fileUri, await workspace.encode(content));
-            logger.info(fileOperation(filename, 'created'));
+            await workspace.fs.writeFile(fileUri, await workspace.encode(dtsContents));
+            logger.info(fileOperation(dtsFilename, 'created'));
           } else {
             logger.error(error, `Failed to read file ${fileUri.fsPath}`);
           }
-        }
-      }),
-    );
+        },
+      );
   }
 
   public cssLocations({
