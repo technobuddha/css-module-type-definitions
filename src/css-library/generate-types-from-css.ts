@@ -204,7 +204,9 @@ export async function generateTypesFromCss(
           };
         })
         .catch((error) => {
-          logger.error(toError(error), `Failed to generate type definitions for ${file}`);
+          logger.error(
+            `${toError(error).message}: Failed to generate type definitions for ${file}`,
+          );
           throw toError(error);
         });
     },

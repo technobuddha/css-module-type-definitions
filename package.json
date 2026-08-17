@@ -39,7 +39,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-179",
+    "@technobuddha/library": "2.1.0-181",
     "@vitejs/devtools": "0.3.4",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
@@ -65,11 +65,10 @@
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-178",
+    "@technobuddha/project": "1.0.0-180",
     "@types/less": "3.0.8",
     "@types/node": "26.2.0",
     "@types/postcss-import": "^14.0.3",
-    "@types/stylus": "^0.48.43",
     "@types/vscode": "1.125.0",
     "cspell": "10.0.1",
     "husky": "9.1.7",

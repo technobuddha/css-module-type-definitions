@@ -3,7 +3,7 @@ import { Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { type CssImporter } from '../../../../css-library/index.ts';
-import { type Logger } from '../../../../index.ts';
+import { fileOperation, type Logger } from '../../../../index.ts';
 
 import { fileExists } from '../../../helpers/file-exists.ts';
 
@@ -14,13 +14,16 @@ type Arguments = {
   logger: Logger;
 };
 
-export function cssImporter({ root }: Arguments): CssImporter {
+export function cssImporter({ root, logger }: Arguments): CssImporter {
   return {
     less: new LessPluginVscode(root),
     css: async (filename: string): Promise<string> =>
       workspace.openTextDocument(filename).then(
         (doc) => doc.getText(),
-        () => empty,
+        (error) => {
+          logger.error(fileOperation(filename, 'error', error));
+          return empty;
+        },
       ),
     sass: [
       {
@@ -61,6 +64,7 @@ export function cssImporter({ root }: Arguments): CssImporter {
               return new URL(possibles[0].toString(false));
             }
 
+            logger.error(fileOperation(uri, 'error', `Could not resolve ${url} to a single file.`));
             return null;
           }
 
@@ -69,10 +73,12 @@ export function cssImporter({ root }: Arguments): CssImporter {
         load: async (canonicalUrl: URL) => {
           const uri = Uri.parse(canonicalUrl.href);
           const ext = Utils.extname(uri);
-
           const contents = await workspace.openTextDocument(uri).then(
             (doc) => doc.getText(),
-            () => empty,
+            (error) => {
+              logger.error(fileOperation(uri, 'error', error));
+              return empty;
+            },
           );
           const syntax =
             ext === '.scss' ? 'scss'

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 268 310" xmlns="http://www.w3.org/2000/svg">
+   <!-- Shield -->
+  <path d="
+    M8 8
+    L260 8
+    L238 239
+    L124 298
+    L40 238
+    Z
+  "
+  fill="none"
+  stroke="white"
+  stroke-width="16"
+  stroke-linejoin="round"/>
+
+  <!-- CSS text -->
+  <text x="134" y="108"
+        font-family="Segoe UI, Arial, Helvetica, sans-serif"
+        font-size="76"
+        font-weight="700"
+        fill="white"
+        text-anchor="middle">
+    CSS
+  </text>
+
+  <!-- Three bars -->
+  <rect x="78" y="138" width="120" height="14" rx="7" fill="white"/>
+  <rect x="78" y="173" width="120" height="14" rx="7" fill="white"/>
+  <rect x="78" y="208" width="120" height="14" rx="7" fill="white"/>
+</svg>

@@ -37,7 +37,7 @@ export class CssReferenceProvider implements ReferenceProvider {
       if (classInfo) {
         const { className } = classInfo;
 
-        for (const importUri of await folderController.importers(document.uri)) {
+        for (const importUri of await folderController.cssImporters(document.uri)) {
           const cssInfo = await folderController.cssInformation(importUri);
           if (cssInfo) {
             const { classLocal } = cssInfo;

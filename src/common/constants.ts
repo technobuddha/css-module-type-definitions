@@ -42,6 +42,6 @@ export const CODE_EXTENSIONS = [
 export const TEST_EXTENSIONS = [...TEST_JS_EXTENSIONS, ...TEST_TS_EXTENSIONS];
 
 export const CSS_EXTENSIONS = ['.css', '.less', '.sass', '.scss'];
-// TODO , '.styl', '.stylus'];
+// , '.styl', '.stylus'];
 
 export const MODULE_PATTERN = '*.module' as const;

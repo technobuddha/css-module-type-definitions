@@ -2252,16 +2252,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-179":
-  version: 2.1.0-179
-  resolution: "@technobuddha/library@npm:2.1.0-179"
-  checksum: 10c0/16b355495fa61f1e32f4d20b73c9a1623518137386284f3f5b275fcf8d0dfca934b1d69f8449b7056b79b76c5c8adc2c5a5322727e2ab8ed66732a78a4427074
+"@technobuddha/library@npm:2.1.0-181":
+  version: 2.1.0-181
+  resolution: "@technobuddha/library@npm:2.1.0-181"
+  checksum: 10c0/2826d6e22bcc855436f3c2c5e33e7f7c574a7a50b8b722d8fa6e8409dfdcea4cebf8ce92f3d809cb055ecfc5d4abcf08067b9c7644acbd490c95f2ad1eaaa8c5
   languageName: node
   linkType: hard
 
-"@technobuddha/project@npm:1.0.0-178":
-  version: 1.0.0-178
-  resolution: "@technobuddha/project@npm:1.0.0-178"
+"@technobuddha/project@npm:1.0.0-180":
+  version: 1.0.0-180
+  resolution: "@technobuddha/project@npm:1.0.0-180"
   dependencies:
     "@commander-js/extra-typings": "npm:15.0.0"
     "@cspell/cspell-types": "npm:10.0.1"
@@ -2271,7 +2271,7 @@ __metadata:
     "@eslint/css": "npm:1.4.0"
     "@eslint/markdown": "npm:8.0.3"
     "@html-eslint/eslint-plugin": "npm:0.64.0"
-    "@technobuddha/library": "npm:2.1.0-179"
+    "@technobuddha/library": "npm:2.1.0-181"
     "@types/cli-progress": "npm:^3.11.6"
     "@types/eslint": "npm:9.6.1"
     "@types/ignore-walk": "npm:4.0.3"
@@ -2309,7 +2309,7 @@ __metadata:
     eslint-plugin-react-web-api: "npm:5.18.6"
     eslint-plugin-react-x: "npm:5.18.6"
     eslint-plugin-simple-import-sort: "npm:14.0.0"
-    eslint-plugin-technobuddha: "npm:2.0.0-60"
+    eslint-plugin-technobuddha: "npm:2.0.0-62"
     eslint-plugin-unicorn: "npm:73.0.0"
     globals: "npm:17.11.0"
     husky: "npm:9.1.7"
@@ -2340,7 +2340,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/bdf19c5b6c42a15104c2c27896269706a5906500dc402879ce0408aa5c30c7b967f03c0ed2fdced831d68b2a91c2785354d5e29c448de9f65c48fd29cfcfc811
+  checksum: 10c0/9db6657140197710c722a9441f1a25ab32a073e23e7302b1dd301d6c5cf99162fa67f3250e5fc5f4925fc0296d8d65cdad5bf75caacf2d1b819a3b66aa3d8c38
   languageName: node
   linkType: hard
 
@@ -2519,15 +2519,6 @@ __metadata:
   version: 7.8.0
   resolution: "@types/semver@npm:7.8.0"
   checksum: 10c0/46a1f38e36013448b279798e8b134e7e8de3b3630b1f40683903b9d57d36dd1d70838515570ed9a149fa09e9c381b9e39319b58d7b9f3b929b42ae2becff7aa3
-  languageName: node
-  linkType: hard
-
-"@types/stylus@npm:^0.48.43":
-  version: 0.48.43
-  resolution: "@types/stylus@npm:0.48.43"
-  dependencies:
-    "@types/node": "npm:*"
-  checksum: 10c0/a5319b829a008a5b3e624919a53ad52bbefdd171e29aa0cadfab20eadf1a18d94ed9b6b7abfebf91adb89b83eec6409b118bb61fb9b2e72bcc3c54ee549eeca0
   languageName: node
   linkType: hard
 
@@ -4477,12 +4468,11 @@ __metadata:
   resolution: "css-module-type-definitions@workspace:."
   dependencies:
     "@cspell/cspell-types": "npm:10.0.1"
-    "@technobuddha/library": "npm:2.1.0-179"
-    "@technobuddha/project": "npm:1.0.0-178"
+    "@technobuddha/library": "npm:2.1.0-181"
+    "@technobuddha/project": "npm:1.0.0-180"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:26.2.0"
     "@types/postcss-import": "npm:^14.0.3"
-    "@types/stylus": "npm:^0.48.43"
     "@types/vscode": "npm:1.125.0"
     "@vitejs/devtools": "npm:0.3.4"
     chalk: "npm:6.0.0"
@@ -5708,17 +5698,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-technobuddha@npm:2.0.0-60":
-  version: 2.0.0-60
-  resolution: "eslint-plugin-technobuddha@npm:2.0.0-60"
+"eslint-plugin-technobuddha@npm:2.0.0-62":
+  version: 2.0.0-62
+  resolution: "eslint-plugin-technobuddha@npm:2.0.0-62"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@microsoft/tsdoc-config": "npm:0.18.1"
-    "@technobuddha/library": "npm:2.1.0-179"
+    "@technobuddha/library": "npm:2.1.0-181"
     eslint: "npm:10.8.1"
     eslint-vitest-rule-tester: "npm:3.1.0"
     get-tsconfig: "npm:4.14.0"
-  checksum: 10c0/71a9bad475e15028d61a31f80463e299e6596f8704e83d6246515f8e07d5377d157c298fcc034e434465f23e47a2bf8b62db9c31690598f11ce2ee8ce0031f41
+  checksum: 10c0/c48ef20a27acc4d0f3a7ec14b597de2af03e2d573f40786f3a9fad09ecaab4408c18b111f429716e1f9ae947f9ce45e10067024d8b6c9e3d6dfcaec0a73ff26e
   languageName: node
   linkType: hard
 

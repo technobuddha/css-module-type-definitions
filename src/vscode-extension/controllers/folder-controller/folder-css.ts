@@ -27,80 +27,78 @@ export type FolderCssArguments = FolderOptionsArguments;
 export abstract class FolderCss extends FolderOptions implements Disposable {
   readonly #cssInformation: UriMap<CssInformation> = new UriMap();
 
-  public constructor({ workspaceController, folder }: FolderCssArguments) {
-    super({ workspaceController, folder });
-  }
+  protected async updateDiagnostics(uri: Uri): Promise<void> {
+    if (isCssModule(uri) && this.openTabs.has(uri)) {
+      if (this.options.unusedClassesDiagnostics === 'none') {
+        this.diagnostics.delete(uri);
+        return;
+      }
 
-  private async updateDiagnosticsForCssModule(uri: Uri): Promise<void> {
-    if (this.options.css.unusedClassesDiagnostics === 'none') {
-      this.diagnostics.delete(uri);
-      return;
-    }
+      if (this.openTabs.has(uri)) {
+        this.logger.trace(fileOperation(uri, 'diagnostics'));
 
-    if (this.openTabs.has(uri)) {
-      this.logger.trace(fileOperation(uri.fsPath, 'diagnostics'));
+        const cssInfo = await this.cssInformation(uri);
+        if (cssInfo) {
+          const classes = new Set(cssInfo.classLocal.keys());
 
-      const cssInfo = await this.cssInformation(uri);
-      if (cssInfo) {
-        const classes = new Set(cssInfo.classLocal.keys());
-
-        for (const codeInfo of await this.codeInformationForCssModule(uri)) {
-          const usages = codeInfo.usages.get(uri);
-          if (usages) {
-            for (const usage of usages) {
-              const classNames = cssInfo.localClass.get(usage.localName);
-              if (classNames) {
-                for (const className of classNames) {
-                  classes.delete(className);
+          for (const codeInfo of await this.codeInformationForCssModule(uri)) {
+            const usages = codeInfo.usages.get(uri);
+            if (usages) {
+              for (const usage of usages) {
+                const classNames = cssInfo.localClass.get(usage.localName);
+                if (classNames) {
+                  for (const className of classNames) {
+                    classes.delete(className);
+                  }
                 }
               }
             }
           }
-        }
 
-        if (classes.size > 0) {
-          const diagnostics: Diagnostic[] = [];
-          for (const className of classes) {
-            const locations = cssInfo.locationsOfClass.get(className);
-            if (locations) {
-              for (const { location } of locations) {
-                let range: Range;
-                let message: string;
+          if (classes.size > 0) {
+            const diagnostics: Diagnostic[] = [];
+            for (const className of classes) {
+              const locations = cssInfo.locationsOfClass.get(className);
+              if (locations) {
+                for (const { location } of locations) {
+                  let range: Range;
+                  let message: string;
 
-                if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
-                  range = new Range(
-                    location.range.start.line,
-                    location.range.start.column,
-                    location.range.end.line,
-                    location.range.end.column,
-                  );
-                  message = `Class "${className}" is not used.`;
-                } else {
-                  if (!this.options.css.unusedImportedClassesDiagnostics) {
-                    continue;
+                  if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
+                    range = new Range(
+                      location.range.start.line,
+                      location.range.start.column,
+                      location.range.end.line,
+                      location.range.end.column,
+                    );
+                    message = `Class "${className}" is not used.`;
+                  } else {
+                    if (!this.options.unusedImportedClassesDiagnostics) {
+                      continue;
+                    }
+
+                    range = new Range(0, 0, 0, 0);
+                    message = `Class "${className}" imported from "${location.source}" is not used.`;
                   }
 
-                  range = new Range(0, 0, 0, 0);
-                  message = `Class "${className}" imported from "${location.source}" is not used.`;
+                  const diagnostic = new Diagnostic(
+                    range,
+                    message,
+                    toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+                  );
+                  diagnostic.source = 'cmtd';
+                  diagnostics.push(diagnostic);
                 }
-
-                const diagnostic = new Diagnostic(
-                  range,
-                  message,
-                  toDiagnosticSeverity(this.options.css.unusedClassesDiagnostics),
-                );
-                diagnostic.source = 'cmtd';
-                diagnostics.push(diagnostic);
               }
             }
-          }
-          if (diagnostics.length > 0) {
-            this.diagnostics.set(uri, diagnostics);
+            if (diagnostics.length > 0) {
+              this.diagnostics.set(uri, diagnostics);
+            } else {
+              this.diagnostics.delete(uri);
+            }
           } else {
             this.diagnostics.delete(uri);
           }
-        } else {
-          this.diagnostics.delete(uri);
         }
       }
     }
@@ -119,7 +117,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       for (const uri of Array.from(this.#cssInformation.keys())) {
         await this.updateCssInformationAndWriteTypeDefinitions(uri).then(async (cssInfo) => {
           if (cssInfo) {
-            await this.updateDiagnosticsForCssModule(uri);
+            await this.updateDiagnostics(uri);
           }
         });
       }
@@ -136,12 +134,12 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
         //#region CssModue
         if (isCssModule(uri)) {
           if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
-            this.logger.trace(fileOperation(uri.fsPath, `omit-${action}`));
+            this.logger.trace(fileOperation(uri, `omit-${action}`));
             return;
           }
           this.passTabs.delete(uri);
 
-          this.logger.debug(fileOperation(`${uri.fsPath} => cssmodule`, action));
+          this.logger.debug(fileOperation(uri, action));
           if (action === 'unlink') {
             const { dir, name, ext } = path.parse(uri.fsPath);
 
@@ -156,7 +154,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
             ]) {
               const generatedUri = uri.with({ path: file });
               await workspace.fs.delete(generatedUri).then(() => {
-                this.logger.debug(fileOperation(generatedUri.fsPath, 'deleted'));
+                this.logger.debug(fileOperation(generatedUri, 'deleted'));
               }, noop);
             }
           } else {
@@ -171,15 +169,15 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
         //#region Css
         if (isCss(uri)) {
           if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
-            this.logger.trace(fileOperation(uri.fsPath, `omit-${action}`));
+            this.logger.trace(fileOperation(uri, `omit-${action}`));
             return;
           }
           this.passTabs.delete(uri);
 
-          this.logger.debug(fileOperation(`${uri.fsPath} => css`, action));
+          this.logger.debug(fileOperation(uri, action));
           for (const [file, { includedFiles }] of this.#cssInformation) {
             if (includedFiles.has(uri.fsPath)) {
-              await this.updateDiagnosticsForCssModule(file);
+              await this.updateDiagnostics(file);
             }
           }
         }
@@ -187,10 +185,9 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
         //#region DTS
         const cssFile = correspondingSource(uri);
         if (cssFile) {
-          this.logger.debug(fileOperation(`${uri.fsPath} => dts`, action));
+          this.logger.debug(fileOperation(uri, action));
           const oldCssInformation = this.#cssInformation.get(cssFile);
           if (oldCssInformation) {
-            this.logger.debug(fileOperation(`${uri.fsPath} => dts => info`, action));
             if (action === 'add' || action === 'unlink') {
               const hasDts = action === 'add';
 
@@ -211,32 +208,32 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       })
       .on('openTab', async (uri) => {
         if (isCssModule(uri)) {
-          this.logger.debug(fileOperation(uri.fsPath, 'opened'));
+          this.logger.debug(fileOperation(uri, 'opened'));
           await this.updateCssInformation(uri);
         }
       })
       .on('editTab', async (uri) => {
         if (isCssModule(uri)) {
-          this.logger.debug(fileOperation(uri.fsPath, 'edited'));
+          this.logger.debug(fileOperation(uri, 'edited'));
           await this.updateCssInformation(uri);
         }
       })
       .on('closeTab', async (uri) => {
         if (isCssModule(uri)) {
-          this.logger.debug(fileOperation(uri.fsPath, 'closed'));
+          this.logger.debug(fileOperation(uri, 'closed'));
           this.diagnostics.delete(uri);
           await this.updateCssInformation(uri);
         }
       })
       .on('cssInformationChanged', async ({ uri }) => {
-        await this.updateDiagnosticsForCssModule(uri);
+        await this.updateDiagnostics(uri);
       })
       .on('codeInformationChanged', async ({ newCodeInformation, oldCodeInformation }) => {
         for (const uri of new UriSet([
           ...(newCodeInformation?.cssModuleImports ?? []),
           ...(oldCodeInformation?.cssModuleImports ?? []),
         ])) {
-          await this.updateDiagnosticsForCssModule(uri);
+          await this.updateDiagnostics(uri);
         }
       });
   }
@@ -256,13 +253,13 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
               logger,
               cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
             }).then((cssInfo) => new CssInformation(cssInfo)),
-          () => undefined,
+          noop,
         )
       : undefined;
 
     if (newCssInformation) {
       if (!deepEquals(newCssInformation, oldCssInformation)) {
-        logger.trace(fileOperation(uri.fsPath, 'examined'));
+        logger.trace(fileOperation(uri, 'examined'));
         this.#cssInformation.set(uri, newCssInformation);
         await this.fire('cssInformationChanged', { uri, oldCssInformation, newCssInformation });
       }
@@ -340,22 +337,22 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
     return this.#cssInformation;
   }
 
-  public async deleteAllCssDts(): Promise<void> {
+  public async deleteAllDts(): Promise<void> {
     await this.findUnignoredFiles(`**/${globIsCssTypeDefinition()}`).then(async (uris) => {
       for (const uri of uris) {
         await workspace.fs.delete(uri).then(
           () => {
-            this.logger.info(fileOperation(uri.fsPath, 'deleted'));
+            this.logger.info(fileOperation(uri, 'deleted'));
           },
           (error) => {
-            this.logger.error(error, fileOperation(uri.fsPath, 'deleted'));
+            this.logger.error(fileOperation(uri, 'error', error));
           },
         );
       }
     });
   }
 
-  public async importers(uri: Uri): Promise<Uri[]> {
+  public async cssImporters(uri: Uri): Promise<Uri[]> {
     return isCssModule(uri) ?
         [uri]
       : this.getAllCssInformation().then((imports) =>

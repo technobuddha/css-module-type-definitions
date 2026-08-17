@@ -1,6 +1,6 @@
-import { type PartialOptions } from './src/common/index.ts';
+import { type CMTDOptions } from './src/common/index.ts';
 
-const options: PartialOptions = {
+const options: CMTDOptions = {
   css: {
     generateDts: true,
     classesConvention: 'kebabCase',

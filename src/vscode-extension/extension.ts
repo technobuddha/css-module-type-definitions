@@ -1,4 +1,4 @@
-import { type DocumentSelector, type ExtensionContext, languages, window } from 'vscode';
+import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
 
 import {
   commandDeleteTypes,
@@ -67,8 +67,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
   );
 
   // commands.executeCommand('cmtd.updateTypes');
-
-  window.showInformationMessage('css-module-type-definitions is ready');
 }
 
 export function deactivate(): void {

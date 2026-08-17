@@ -144,7 +144,7 @@ export class GitConfig implements AsyncDisposable {
     if (this.#gitGlobalExcludesFilename) {
       return fs.readFile(this.#gitGlobalExcludesFilename, 'utf-8').catch((e) => {
         if (e.code !== 'ENOENT') {
-          this.logger.error(toError(e));
+          this.logger.error(toError(e).message);
         }
         return undefined;
       });
@@ -156,7 +156,7 @@ export class GitConfig implements AsyncDisposable {
     if (this.#gitRepoExcludeFilename) {
       return fs.readFile(this.#gitRepoExcludeFilename, 'utf-8').catch((e) => {
         if (e.code !== 'ENOENT') {
-          this.logger.error(toError(e));
+          this.logger.error(toError(e).message);
         }
         return undefined;
       });

@@ -8,6 +8,6 @@ type CommandDeleteTypesOptions = {
 
 export function commandDeleteTypes({ controller }: CommandDeleteTypesOptions): Disposable {
   return commands.registerCommand('cmtd.deleteTypes', async () =>
-    Promise.all(controller.folderControllers().map(async (folder) => folder.deleteAllCssDts())),
+    Promise.all(controller.folderControllers().map(async (folder) => folder.deleteAllDts())),
   );
 }

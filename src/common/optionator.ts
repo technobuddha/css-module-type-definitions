@@ -6,7 +6,7 @@ import { type Action } from './action.ts';
 import { CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
 import { fileOperation } from './file-operation.ts';
 import { type Logger, type LoggerController, loggerForLevel, stdioLogger } from './logger.ts';
-import { defaultOptions, type Options, type PartialOptions } from './options.ts';
+import { type CMTDOptions, defaultOptions, type Options, type PartialOptions } from './options.ts';
 import { locateCMTDConfigurationFile } from './read-cmtd-config.ts';
 import {
   locateViteConfigurationFile,
@@ -24,7 +24,7 @@ type OptionatorOptions = {
 
 export class Optionator implements LoggerController, AsyncDisposable {
   public static async create(
-    top: PartialOptions = {},
+    top: CMTDOptions = {},
     { watch = false, vite, logger = stdioLogger }: OptionatorOptions = {},
   ): Promise<Optionator> {
     const root = (await locatePackageRoot()) ?? process.cwd();
@@ -92,7 +92,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   readonly #baseLogger: Logger;
   #watcher: FSWatcher | undefined;
   #vite: ViteCss | undefined;
-  #cmtd: Options | undefined;
+  #cmtd: CMTDOptions | undefined;
   #options = defaultOptions;
 
   private constructor(top: PartialOptions, baseLogger: Logger) {
@@ -104,7 +104,11 @@ export class Optionator implements LoggerController, AsyncDisposable {
   private compileOptions(): Options {
     return {
       logLevel: this.#top.logLevel ?? defaultOptions.logLevel,
-
+      unusedClassesDiagnostics:
+        this.#top?.unusedClassesDiagnostics ?? defaultOptions.unusedClassesDiagnostics,
+      unusedImportedClassesDiagnostics:
+        this.#top?.unusedImportedClassesDiagnostics ??
+        defaultOptions.unusedImportedClassesDiagnostics,
       css: {
         preprocessor: {
           less:
@@ -122,16 +126,16 @@ export class Optionator implements LoggerController, AsyncDisposable {
             this.#cmtd?.css?.preprocessor?.scss ??
             this.#vite?.preprocessorOptions?.scss ??
             defaultOptions.css?.preprocessor.scss,
-          styl:
-            this.#top.css?.preprocessor?.styl ??
-            this.#cmtd?.css?.preprocessor?.styl ??
-            this.#vite?.preprocessorOptions?.styl ??
-            defaultOptions.css?.preprocessor.styl,
-          stylus:
-            this.#top?.css?.preprocessor?.stylus ??
-            this.#cmtd?.css?.preprocessor?.stylus ??
-            this.#vite?.preprocessorOptions?.stylus ??
-            defaultOptions.css?.preprocessor.stylus,
+          // styl:
+          //   this.#top.css?.preprocessor?.styl ??
+          //   this.#cmtd?.css?.preprocessor?.styl ??
+          //   this.#vite?.preprocessorOptions?.styl ??
+          //   defaultOptions.css?.preprocessor.styl,
+          // stylus:
+          //   this.#top?.css?.preprocessor?.stylus ??
+          //   this.#cmtd?.css?.preprocessor?.stylus ??
+          //   this.#vite?.preprocessorOptions?.stylus ??
+          //   defaultOptions.css?.preprocessor.stylus,
         },
         modules: {
           scopeBehaviour:
@@ -177,14 +181,6 @@ export class Optionator implements LoggerController, AsyncDisposable {
           this.#top?.css?.classesConvention ??
           this.#cmtd?.css?.classesConvention ??
           defaultOptions.css.classesConvention,
-        unusedClassesDiagnostics:
-          this.#top?.css?.unusedClassesDiagnostics ??
-          this.#cmtd?.css?.unusedClassesDiagnostics ??
-          defaultOptions.css.unusedClassesDiagnostics,
-        unusedImportedClassesDiagnostics:
-          this.#top?.css?.unusedImportedClassesDiagnostics ??
-          this.#cmtd?.css?.unusedImportedClassesDiagnostics ??
-          defaultOptions.css.unusedImportedClassesDiagnostics,
       },
     };
   }

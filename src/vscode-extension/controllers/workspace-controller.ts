@@ -1,6 +1,9 @@
 import { debounce } from '@technobuddha/library';
 import {
+  commands,
   type Disposable,
+  StatusBarAlignment,
+  type StatusBarItem,
   type Tab,
   type TabChangeEvent,
   TabInputText,
@@ -10,7 +13,7 @@ import {
   type WorkspaceFolder,
 } from 'vscode';
 
-import { type Logger, type LoggerController, operation } from '../../common/index.ts';
+import { type LoggerController, operation } from '../../common/index.ts';
 
 import { createLogger, UriMap } from '../helpers/index.ts';
 
@@ -38,56 +41,6 @@ export class WorkspaceController implements Disposable, LoggerController {
       await fc.init();
     }
 
-    wc.disposables.push(
-      workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
-        for (const folder of removed) {
-          const fc = wc.folders.get(folder);
-          if (fc) {
-            for (const state of wc.openTabs.values()) {
-              if (state.workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
-                state.workspaceFolder = undefined;
-              }
-            }
-            await fc.close();
-            wc.folders.delete(folder);
-            wc.logger.trace(operation(fc.folder.name, 'stop'));
-          }
-        }
-
-        for (const folder of added) {
-          const fc = new FolderController({ workspaceController: wc, folder });
-          wc.folders.set(folder, fc);
-          await fc.init();
-          for (const [uri, state] of wc.openTabs) {
-            if (state.workspaceFolder == null) {
-              const workspaceFolder = workspace.getWorkspaceFolder(uri);
-              if (workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
-                state.workspaceFolder = workspaceFolder;
-                await wc.onOpenTab(uri);
-              }
-            }
-          }
-        }
-      }),
-
-      // window.tabGroups.onDidChangeTabGroups(async (event) => {
-      //   await wc.examineTabs();
-      // }),
-      window.tabGroups.onDidChangeTabs(async (event) => wc.onChangeTabs(event)),
-
-      workspace.onDidChangeTextDocument(
-        debounce(async (change) => {
-          const state = wc.openTabs.get(change.document.uri);
-          if (state?.workspaceFolder) {
-            const fc = wc.folders.get(state.workspaceFolder);
-            if (fc) {
-              await fc.fire('editTab', change.document.uri);
-            }
-          }
-        }, 1000),
-      ),
-    );
-
     for (const group of window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (isTabInput(tab)) {
@@ -96,34 +49,78 @@ export class WorkspaceController implements Disposable, LoggerController {
       }
     }
 
+    wc.statusBar.command = 'cmtd.showOutput';
+    wc.statusBar.text = '$(cmtd-logo)';
+
     return wc;
   }
 
+  private readonly statusBar: StatusBarItem = window.createStatusBarItem(
+    StatusBarAlignment.Right,
+    99,
+  );
+
   protected readonly disposables: Disposable[] = [];
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
-  public readonly logger: Logger = createLogger();
+
+  public readonly logger = createLogger();
   public readonly openTabs: UriMap<TabState> = new UriMap();
 
-  // private async examineTabs(): Promise<void> {
-  //   const current = new Set(this.openTabs.keys());
+  private constructor() {
+    this.statusBar.text = '$(loading~spin)';
+    this.statusBar.show();
 
-  //   for (const group of window.tabGroups.all) {
-  //     for (const tab of group.tabs) {
-  //       if (isTabInput(tab)) {
-  //         if (this.openTabs.has(tab)) {
-  //           current.delete(tab);
-  //         } else {
-  //           this.openTabs.set(tab, workspace.getWorkspaceFolder(tab.input.uri));
-  //           await this.onOpenTab(tab);
-  //         }
-  //       }
-  //     }
-  //   }
+    this.disposables.push(
+      this.statusBar,
+      commands.registerCommand('cmtd.showOutput', () => {
+        this.logger.outputChannel.show(true);
+      }),
+      workspace.onDidChangeWorkspaceFolders(async ({ added, removed }) => {
+        for (const folder of removed) {
+          const fc = this.folders.get(folder);
+          if (fc) {
+            for (const state of this.openTabs.values()) {
+              if (state.workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
+                state.workspaceFolder = undefined;
+              }
+            }
+            await fc.close();
+            this.folders.delete(folder);
+            this.logger.trace(operation(fc.folder.name, 'stop'));
+          }
+        }
 
-  //   for (const tab of current) {
-  //     await this.onCloseTab(tab);
-  //   }
-  // }
+        for (const folder of added) {
+          const fc = new FolderController({ workspaceController: this, folder });
+          this.folders.set(folder, fc);
+          await fc.init();
+          for (const [uri, state] of this.openTabs) {
+            if (state.workspaceFolder == null) {
+              const workspaceFolder = workspace.getWorkspaceFolder(uri);
+              if (workspaceFolder?.uri.fsPath === folder.uri.fsPath) {
+                state.workspaceFolder = workspaceFolder;
+                await this.onOpenTab(uri);
+              }
+            }
+          }
+        }
+      }),
+
+      window.tabGroups.onDidChangeTabs(async (event) => this.onChangeTabs(event)),
+
+      workspace.onDidChangeTextDocument(
+        debounce(async (change) => {
+          const state = this.openTabs.get(change.document.uri);
+          if (state?.workspaceFolder) {
+            const fc = this.folders.get(state.workspaceFolder);
+            if (fc) {
+              await fc.fire('editTab', change.document.uri);
+            }
+          }
+        }, 1000),
+      ),
+    );
+  }
 
   private async onChangeTabs(event: TabChangeEvent): Promise<void> {
     for (const tab of event.opened) {
@@ -137,18 +134,6 @@ export class WorkspaceController implements Disposable, LoggerController {
         await this.onCloseTab(tab.input.uri);
       }
     }
-
-    // for (const tab of event.changed) {
-    //   if (isTabInput(tab)) {
-    //     const state = this.openTabs.get(tab.input.uri);
-    //     if (state) {
-    //       if (state.isDirty !== tab.isDirty) {
-    //         state.wasDirty = state.isDirty;
-    //         state.isDirty ||= tab.isDirty;
-    //       }
-    //     }
-    //   }
-    // }
   }
 
   private async onOpenTab(uri: Uri): Promise<void> {
@@ -195,10 +180,6 @@ export class WorkspaceController implements Disposable, LoggerController {
 
       this.openTabs.delete(uri);
     }
-  }
-
-  public onSaveTab(_uri: Uri): void {
-    // nothig to do here, but this is a hook for future use
   }
 
   public folderController(file: Uri): FolderController | undefined {

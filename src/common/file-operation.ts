@@ -3,8 +3,10 @@ import path from 'node:path';
 
 import { space, toError, unicodeLength } from '@technobuddha/library';
 import chalk from 'chalk';
+import { type URI } from 'vscode-uri';
 
 type Operation =
+  | 'error'
   | 'created'
   | 'updated'
   | 'deleted'
@@ -20,10 +22,11 @@ type Operation =
   | 'closed'
   | 'edited';
 
-export function fileOperation(file: string, action: Operation, error?: unknown): string {
-  const aFile = path.resolve(file);
-  const cFile = path.relative(process.cwd(), file);
-  const hFile = `~/${path.relative(os.homedir(), file)}`;
+export function fileOperation(file: string | URI, action: Operation, error?: unknown): string {
+  const filename = typeof file === 'string' ? file : file.fsPath;
+  const aFile = path.resolve(filename);
+  const cFile = path.relative(process.cwd(), filename);
+  const hFile = `~/${path.relative(os.homedir(), filename)}`;
 
   const display =
     aFile.length < cFile.length ?
@@ -32,10 +35,6 @@ export function fileOperation(file: string, action: Operation, error?: unknown):
       : hFile
     : cFile.length < hFile.length ? cFile
     : hFile;
-
-  if (error) {
-    return `${chalk.red(pad(`[${action}]`))} ${display}\n${chalk.red(pad('[ERROR]'))} ${toError(error).message}`;
-  }
 
   switch (action) {
     case 'created': {
@@ -70,7 +69,12 @@ export function fileOperation(file: string, action: Operation, error?: unknown):
       return `${chalk.magenta(pad(`【${action}】`))} ${display}`;
     }
 
-    //return `${chalk.gray(pad('︽ ignored ︾'))} ${display}`;
+    case 'error': {
+      if (error) {
+        return `${chalk.red(pad('[error]'))} ${display}: ${toError(error).message}`;
+      }
+      return `${chalk.red(pad('[error]'))} ${display}`;
+    }
 
     // no default
   }

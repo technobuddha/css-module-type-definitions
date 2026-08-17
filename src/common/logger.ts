@@ -18,7 +18,7 @@ export interface Logger {
   debug: (...message: string[]) => void;
   info: (...message: string[]) => void;
   warn: (...message: string[]) => void;
-  error: (error: string | Error, ...message: string[]) => void;
+  error: (...message: string[]) => void;
 }
 
 export interface LoggerController {
@@ -29,9 +29,8 @@ export const defaultLogger: Logger = {
   trace: outln,
   debug: outln,
   info: outln,
-  warn: (message: string, ...args: string[]) => outln('Warning:', space, message, ...args),
-  error: (error: string | Error, ...args: string[]) =>
-    errln('Error:', space, toError(error).message, ...args),
+  warn: errln,
+  error: errln,
 };
 
 export const stdioLogger: Logger = {

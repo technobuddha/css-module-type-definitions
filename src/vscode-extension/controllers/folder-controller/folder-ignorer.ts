@@ -1,9 +1,9 @@
-import { empty, isWithinDirectory, pathDepth, toError } from '@technobuddha/library';
+import { isWithinDirectory, pathDepth, toError } from '@technobuddha/library';
 import ignore, { type Ignore } from 'ignore';
 import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation } from '../../../common/index.ts';
+import { fileOperation, operation } from '../../../common/index.ts';
 
 import { UriMap } from '../../helpers/index.ts';
 
@@ -24,9 +24,8 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
   private async scanIgnores(): Promise<void> {
     this.ignorers.clear();
 
-    return workspace
-      .findFiles(new RelativePattern(this.folder, '**/.gitignore'))
-      .then(async (files) => {
+    return workspace.findFiles(new RelativePattern(this.folder, '**/.gitignore')).then(
+      async (files) => {
         for (const file of files.sort((a, b) => pathDepth(a.fsPath) - pathDepth(b.fsPath))) {
           const ignorer = this.ignorer(file);
           if (ignorer?.ignores(workspace.asRelativePath(file, false))) {
@@ -34,21 +33,27 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
           }
 
           const dir = Utils.dirname(file);
-          try {
-            const content = await workspace.fs.readFile(file).then(workspace.decode);
-            this.ignorers.set(
-              dir,
-              ignore()
-                .add(ignorer ?? empty)
-                .add(content),
-            );
-          } catch (error) {
-            this.logger.error(toError(error), `Failed to read ignore file: ${file}`);
-          }
+          await workspace.openTextDocument(file).then(
+            (doc) => {
+              const ign = ignore();
+              if (ignorer) {
+                ign.add(ignorer);
+              }
+              ign.add(doc.getText());
+              this.ignorers.set(dir, ign);
+            },
+            (error) => {
+              this.logger.error(fileOperation(file, 'error', toError(error)));
+            },
+          );
         }
 
         await this.fire('ignored');
-      });
+      },
+      (error) => {
+        this.logger.error(fileOperation(this.folder.uri, 'error', toError(error)));
+      },
+    );
   }
 
   private ignorer(file: Uri): Ignore | undefined {
@@ -73,7 +78,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
 
     this.on('watcher', async ({ action, uri }) => {
       if (Utils.basename(uri) === '.gitignore') {
-        this.logger.debug(fileOperation(uri.fsPath, action));
+        this.logger.debug(fileOperation(uri, action));
         await this.scanIgnores();
       }
     });
@@ -90,11 +95,21 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
   public async findUnignoredFiles(pattern: string): Promise<Uri[]> {
     const result: Uri[] = [];
 
-    for (const file of await workspace.findFiles(new RelativePattern(this.folder, pattern))) {
-      if (!this.isIgnored(file)) {
-        result.push(file);
-      }
-    }
+    await workspace.findFiles(new RelativePattern(this.folder, pattern)).then(
+      (files) => {
+        for (const file of files) {
+          if (!this.isIgnored(file)) {
+            result.push(file);
+          }
+        }
+      },
+      (error) => {
+        this.logger.error(
+          operation(`${this.folder.name}::findUnignoredFiles`, 'error', toError(error)),
+        );
+        return [];
+      },
+    );
     return result;
   }
 }

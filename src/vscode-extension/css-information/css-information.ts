@@ -69,7 +69,7 @@ export class CssInformation implements CssInfo {
             await workspace.fs.writeFile(fileUri, await workspace.encode(dtsContents));
             logger.info(fileOperation(dtsFilename, 'created'));
           } else {
-            logger.error(error, `Failed to read file ${fileUri.fsPath}`);
+            logger.error(fileOperation(fileUri, 'error', error));
           }
         },
       );

@@ -86,6 +86,22 @@ if (import.meta.main) {
             },
           },
         },
+        icons: {
+          'cmtd-wait': {
+            description: 'Waiting',
+            default: {
+              fontPath: './cmtd.ttf',
+              fontCharacter: '\\F001',
+            },
+          },
+          'cmtd-logo': {
+            description: 'CMTD',
+            default: {
+              fontPath: './cmtd.ttf',
+              fontCharacter: '\\F000',
+            },
+          },
+        },
       };
       await fs.writeFile(
         './dist/vscode-extension/package.json',
@@ -94,10 +110,10 @@ if (import.meta.main) {
       );
 
       packageJson.type = 'commonjs';
-      packageJson.dependencies = Object.fromEntries(
-        Object.entries(packageJson.dependencies ?? {}).filter(([key]) => key === 'stylus'),
-      );
-      //delete packageJson.dependencies;
+      // packageJson.dependencies = Object.fromEntries(
+      //   Object.entries(packageJson.dependencies ?? {}).filter(([key]) => key === 'stylus'),
+      // );
+      delete packageJson.dependencies;
       packageJson.devDependencies = {
         '@types/vscode': packageJson.devDependencies?.['@types/vscode'] ?? 'latest',
       };

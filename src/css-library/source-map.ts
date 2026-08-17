@@ -52,7 +52,7 @@ export class SourceMapConsumer {
 
         return { line: line - 1, column, source };
       } catch (e) {
-        this.#logger.error(toError(e), ' <== from originalPosition');
+        this.#logger.error(toError(e).message);
         throw e;
       }
     }

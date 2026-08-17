@@ -82,12 +82,6 @@ export abstract class FolderBase
         return;
       }
 
-      if (this.openTabs.has(uri)) {
-        if (action === 'change' || action === 'add') {
-          this.workspaceController.onSaveTab(uri);
-        }
-      }
-
       await this.fire('watcher', { action, uri });
     };
 

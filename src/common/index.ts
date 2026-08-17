@@ -26,6 +26,7 @@ export {
 export { operation } from './operation.ts';
 export { Optionator } from './optionator.ts';
 export {
+  type CMTDOptions,
   defaultOptions,
   type Options,
   type PartialOptions,

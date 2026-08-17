@@ -1,6 +1,6 @@
 import { type Disposable } from 'vscode';
 
-import { operation } from '../../../index.ts';
+import { operation } from '../../../common/index.ts';
 
 import { FolderCode, type FolderCodeArguments } from './folder-code.ts';
 

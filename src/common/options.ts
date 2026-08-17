@@ -2,7 +2,7 @@ import { empty } from '@technobuddha/library';
 import {
   type LessPreprocessorOptions,
   type SassPreprocessorOptions,
-  type StylusPreprocessorOptions,
+  // type StylusPreprocessorOptions,
 } from 'vite';
 
 import { type LogLevel } from './logger.ts';
@@ -17,6 +17,7 @@ type LocalsConvention =
   | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
 
 type ClassConvention = 'kebabCase' | 'none';
+
 export type SeverityLevel = 'error' | 'warning' | 'information' | 'none';
 
 type CMTDLessPreprocessorOptions = Omit<
@@ -40,20 +41,19 @@ type CMTDSassPreprocessorOptions = Omit<
   'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
 >;
 
-type CMTDStylusPreprocessorOptions = Omit<
-  StylusPreprocessorOptions,
-  'imports' | 'paths' | 'filename' | 'Evaluator'
->;
+// type CMTDStylusPreprocessorOptions = Omit<
+//   StylusPreprocessorOptions,
+//   'imports' | 'paths' | 'filename' | 'Evaluator'
+// >;
 
 export interface Options {
-  logLevel: LogLevel;
   css: {
     preprocessor: {
       less: CMTDLessPreprocessorOptions;
       sass: CMTDSassPreprocessorOptions;
       scss: CMTDSassPreprocessorOptions;
-      styl: CMTDStylusPreprocessorOptions;
-      stylus: CMTDStylusPreprocessorOptions;
+      // styl: CMTDStylusPreprocessorOptions;
+      // stylus: CMTDStylusPreprocessorOptions;
     };
     modules: {
       scopeBehaviour: 'global' | 'local';
@@ -68,28 +68,31 @@ export interface Options {
     dtsFooter: string;
     generateDts: boolean;
     classesConvention: ClassConvention;
-    unusedClassesDiagnostics: SeverityLevel;
-    unusedImportedClassesDiagnostics: boolean;
   };
+  logLevel: LogLevel;
+  unusedClassesDiagnostics: SeverityLevel;
+  unusedImportedClassesDiagnostics: boolean;
 }
 
-export type PartialOptions = {
-  logLevel?: Options['logLevel'];
+export type CMTDOptions = {
   css?: {
     preprocessor?: Partial<Options['css']['preprocessor']>;
     modules?: Partial<Options['css']['modules']>;
   } & Partial<Omit<Options['css'], 'modules' | 'preprocessor'>>;
 };
 
+export type PartialOptions = CMTDOptions & {
+  logLevel?: Options['logLevel'];
+  unusedClassesDiagnostics?: Options['unusedClassesDiagnostics'];
+  unusedImportedClassesDiagnostics?: Options['unusedImportedClassesDiagnostics'];
+};
+
 export const defaultOptions = Object.freeze<Options>({
-  logLevel: 'info',
   css: {
     preprocessor: {
       less: {},
       sass: {},
       scss: {},
-      styl: {},
-      stylus: {},
     },
     modules: {
       scopeBehaviour: 'local',
@@ -103,7 +106,8 @@ export const defaultOptions = Object.freeze<Options>({
     dtsFooter: empty,
     generateDts: true,
     classesConvention: 'none',
-    unusedClassesDiagnostics: 'warning',
-    unusedImportedClassesDiagnostics: false,
   },
+  logLevel: 'info',
+  unusedClassesDiagnostics: 'warning',
+  unusedImportedClassesDiagnostics: false,
 });

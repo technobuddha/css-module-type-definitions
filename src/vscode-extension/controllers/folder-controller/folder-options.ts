@@ -2,6 +2,7 @@ import { deepEquals, noop } from '@technobuddha/library';
 import { type Disposable, workspace, type WorkspaceConfiguration } from 'vscode';
 
 import {
+  type CMTDOptions,
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
@@ -23,25 +24,13 @@ export type FolderOptionsArguments = FolderIgnorerArguments;
 export abstract class FolderOptions extends FolderIgnorer implements Disposable {
   #options = defaultOptions;
   #cmtdConfigFile: string | undefined;
-  #cmtdConfig: Options | undefined;
+  #cmtdConfig: CMTDOptions | undefined;
   #viteConfigFile: string | undefined;
   #viteConfig: ViteCss | undefined;
   #vscodeSettings: WorkspaceConfiguration | undefined;
 
   public constructor({ workspaceController, folder }: FolderOptionsArguments) {
     super({ workspaceController, folder });
-  }
-
-  private setCMTDConfigFile(file: string | undefined): void {
-    this.#cmtdConfigFile = file;
-  }
-
-  private setViteConfigFile(file: string | undefined): void {
-    this.#viteConfigFile = file;
-  }
-
-  private setOptions(options: Options): void {
-    this.#options = options;
   }
 
   private async readCMTDConfig(): Promise<void> {
@@ -58,23 +47,11 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     this.#vscodeSettings = workspace.getConfiguration('cmtd', this.folder.uri);
   }
 
-  private async changeOptions(): Promise<void> {
-    const oldOptions = this.#options;
-    const newOptions = this.buildOptions();
-    if (deepEquals(oldOptions, newOptions)) {
-      return;
-    }
-
-    this.#options = newOptions;
-    await this.fire('options', { oldOptions, newOptions });
-  }
-
-  private buildOptions(): Options {
+  private readOptions(): Options {
     return {
-      logLevel:
-        this.#cmtdConfig?.logLevel ??
-        this.#vscodeSettings?.get<LogLevel>('logLevel') ??
-        defaultOptions.logLevel,
+      logLevel: this.#vscodeSettings?.get<LogLevel>('logLevel') ?? defaultOptions.logLevel,
+      unusedClassesDiagnostics: defaultOptions.unusedClassesDiagnostics,
+      unusedImportedClassesDiagnostics: defaultOptions.unusedImportedClassesDiagnostics,
       css: {
         preprocessor: {
           less: {
@@ -92,16 +69,16 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
             ...this.#viteConfig?.preprocessorOptions?.scss,
             ...defaultOptions.css?.preprocessor.scss,
           },
-          styl: {
-            ...this.#cmtdConfig?.css?.preprocessor?.styl,
-            ...this.#viteConfig?.preprocessorOptions?.styl,
-            ...defaultOptions.css?.preprocessor.styl,
-          },
-          stylus: {
-            ...this.#cmtdConfig?.css?.preprocessor?.stylus,
-            ...this.#viteConfig?.preprocessorOptions?.stylus,
-            ...defaultOptions.css?.preprocessor.stylus,
-          },
+          // styl: {
+          //   ...this.#cmtdConfig?.css?.preprocessor?.styl,
+          //   ...this.#viteConfig?.preprocessorOptions?.styl,
+          //   ...defaultOptions.css?.preprocessor.styl,
+          // },
+          // stylus: {
+          //   ...this.#cmtdConfig?.css?.preprocessor?.stylus,
+          //   ...this.#viteConfig?.preprocessorOptions?.stylus,
+          //   ...defaultOptions.css?.preprocessor.stylus,
+          // },
         },
         modules: {
           scopeBehaviour:
@@ -134,27 +111,32 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
         generateDts: this.#cmtdConfig?.css?.generateDts ?? defaultOptions.css.generateDts,
         classesConvention:
           this.#cmtdConfig?.css?.classesConvention ?? defaultOptions.css.classesConvention,
-        unusedClassesDiagnostics:
-          this.#cmtdConfig?.css?.unusedClassesDiagnostics ??
-          defaultOptions.css.unusedClassesDiagnostics,
-        unusedImportedClassesDiagnostics:
-          this.#cmtdConfig?.css?.unusedImportedClassesDiagnostics ??
-          defaultOptions.css.unusedImportedClassesDiagnostics,
       },
     };
+  }
+
+  private async changeOptions(): Promise<void> {
+    const oldOptions = this.#options;
+    const newOptions = this.readOptions();
+    if (deepEquals(oldOptions, newOptions)) {
+      return;
+    }
+
+    this.#options = newOptions;
+    await this.fire('options', { oldOptions, newOptions });
   }
 
   public override async init(): Promise<void> {
     await super.init();
 
-    this.setCMTDConfigFile(await locateCMTDConfigurationFile(this.folder.uri.fsPath));
-    this.setViteConfigFile(await locateViteConfigurationFile(this.folder.uri.fsPath));
+    this.#viteConfigFile = await locateViteConfigurationFile(this.folder.uri.fsPath);
+    this.#cmtdConfigFile = await locateCMTDConfigurationFile(this.folder.uri.fsPath);
 
     await this.readCMTDConfig();
     await this.readViteConfig();
     this.readVscodeSettings();
 
-    this.setOptions(this.buildOptions());
+    this.#options = this.readOptions();
 
     this.disposables.push(
       workspace.onDidChangeConfiguration(async (event) => {
@@ -168,14 +150,14 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
 
     this.on('watcher', async ({ action, uri }) => {
       if (uri.fsPath === this.#viteConfigFile) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
+        this.logger.debug(fileOperation(uri, action));
         await this.readViteConfig();
         await this.changeOptions();
         return;
       }
 
       if (uri.fsPath === this.#cmtdConfigFile) {
-        this.logger.debug(fileOperation(uri.fsPath, action));
+        this.logger.debug(fileOperation(uri, action));
         await this.readCMTDConfig();
         await this.changeOptions();
       }
@@ -199,13 +181,5 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
       warn: rank <= 3 ? logger.warn : noop,
       error: rank <= 4 ? logger.error : noop,
     };
-  }
-
-  public override async dispose(): Promise<void> {
-    await super.dispose();
-    for (const disposable of this.disposables) {
-      await disposable.dispose();
-    }
-    this.disposables.length = 0;
   }
 }

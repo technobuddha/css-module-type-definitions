@@ -16,7 +16,9 @@ export type ViteCss = Partial<
 >;
 
 export async function readViteConfig(file: string): Promise<ViteCss | undefined> {
-  return reImport<UserConfig>(file).then(transformViteConfig);
+  return reImport<UserConfig>(file)
+    .then(transformViteConfig)
+    .catch(() => undefined);
 }
 
 export async function locateViteConfigurationFile(root: string): Promise<string | undefined> {

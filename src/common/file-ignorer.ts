@@ -78,7 +78,7 @@ export class FileIgnorer extends Ignorer<string> implements AsyncDisposable {
           this.gitIgnores.push({ dir: path.dirname(file), ignored: ignore().add(content) });
         })
         .catch((error) => {
-          this.logger.error(toError(error), `Failed to read ignore file: ${file}`);
+          this.logger.error(`${toError(error).message}: Failed to read ignore file: ${file}`);
         });
     }
   }

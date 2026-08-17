@@ -111,7 +111,7 @@ export abstract class Ignorer<T> implements AsyncDisposable {
         })
         .catch((e) => {
           if (e.code !== 'ENOENT') {
-            this.logger.error(toError(e));
+            this.logger.error(toError(e).message);
           }
         });
     }
@@ -128,7 +128,7 @@ export abstract class Ignorer<T> implements AsyncDisposable {
         })
         .catch((e) => {
           if (e.code !== 'ENOENT') {
-            this.logger.error(toError(e));
+            this.logger.error(toError(e).message);
           }
         });
     }

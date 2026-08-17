@@ -7,7 +7,7 @@ import { type Options } from './options.ts';
 import { reImport } from './reimport.ts';
 
 export async function readCMTDConfig(file: string): Promise<Options | undefined> {
-  return reImport<Options>(file);
+  return reImport<Options>(file).catch(() => undefined);
 }
 
 export async function locateCMTDConfigurationFile(root: string): Promise<string | undefined> {
