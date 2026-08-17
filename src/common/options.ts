@@ -1,9 +1,7 @@
-import { empty } from '@technobuddha/library';
-import {
-  type LessPreprocessorOptions,
-  type SassPreprocessorOptions,
-  // type StylusPreprocessorOptions,
-} from 'vite';
+import { defaultBanner, empty, space } from '@technobuddha/library';
+import { type LessPreprocessorOptions, type SassPreprocessorOptions } from 'vite';
+
+import { BANNER_MESSAGE } from '../css-library/constants.ts';
 
 import { type LogLevel } from './logger.ts';
 
@@ -16,9 +14,12 @@ type LocalsConvention =
   | 'none'
   | ((originalClassName: string, generatedClassName: string, inputFile: string) => string);
 
-type ClassConvention = 'kebabCase' | 'none';
+export const CLASSCONVENTIONS = ['kebabCase', 'none'] as const;
+type ClassConvention = (typeof CLASSCONVENTIONS)[number];
 
-export type SeverityLevel = 'error' | 'warning' | 'information' | 'none';
+export const SEVERITYLEVELS = ['error', 'warning', 'information', 'none'] as const;
+
+export type SeverityLevel = (typeof SEVERITYLEVELS)[number];
 
 type CMTDLessPreprocessorOptions = Omit<
   LessPreprocessorOptions,
@@ -41,19 +42,16 @@ type CMTDSassPreprocessorOptions = Omit<
   'importers' | 'importer' | 'loadPaths' | 'sourceMap' | 'syntax' | 'url'
 >;
 
-// type CMTDStylusPreprocessorOptions = Omit<
-//   StylusPreprocessorOptions,
-//   'imports' | 'paths' | 'filename' | 'Evaluator'
-// >;
-
 export interface Options {
+  logLevel: LogLevel;
+  unusedClassesDiagnostics: SeverityLevel;
+  unusedImportedClassesDiagnostics: boolean;
+
   css: {
     preprocessor: {
       less: CMTDLessPreprocessorOptions;
       sass: CMTDSassPreprocessorOptions;
       scss: CMTDSassPreprocessorOptions;
-      // styl: CMTDStylusPreprocessorOptions;
-      // stylus: CMTDStylusPreprocessorOptions;
     };
     modules: {
       scopeBehaviour: 'global' | 'local';
@@ -64,14 +62,11 @@ export interface Options {
       hashPrefix: string;
       localsConvention: LocalsConvention;
     };
+    generateDts: boolean;
     dtsHeader: string;
     dtsFooter: string;
-    generateDts: boolean;
     classesConvention: ClassConvention;
   };
-  logLevel: LogLevel;
-  unusedClassesDiagnostics: SeverityLevel;
-  unusedImportedClassesDiagnostics: boolean;
 }
 
 export type CMTDOptions = {
@@ -88,6 +83,9 @@ export type PartialOptions = CMTDOptions & {
 };
 
 export const defaultOptions = Object.freeze<Options>({
+  logLevel: 'info',
+  unusedClassesDiagnostics: 'warning',
+  unusedImportedClassesDiagnostics: false,
   css: {
     preprocessor: {
       less: {},
@@ -102,12 +100,22 @@ export const defaultOptions = Object.freeze<Options>({
       hashPrefix: empty,
       localsConvention: 'none',
     },
-    dtsHeader: empty,
+    dtsHeader: [
+      '// cspell:disable',
+      '/* eslint eslint-comments/no-unlimited-disable: "off" */',
+      '/* eslint-disable */',
+      '{',
+      ...defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`),
+      '}',
+      empty,
+      '// prettier-ignore',
+    ].join('\n'),
     dtsFooter: empty,
     generateDts: true,
     classesConvention: 'none',
   },
-  logLevel: 'info',
-  unusedClassesDiagnostics: 'warning',
-  unusedImportedClassesDiagnostics: false,
 });
+
+export function defineConfig(options: CMTDOptions): CMTDOptions {
+  return options;
+}

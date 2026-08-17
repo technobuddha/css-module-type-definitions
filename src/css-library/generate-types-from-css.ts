@@ -2,7 +2,6 @@ import path from 'node:path';
 
 import {
   camelCase,
-  defaultBanner,
   empty,
   encodeBase64,
   fileExists,
@@ -17,14 +16,13 @@ import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 import { type CompilerOptions } from 'typescript';
 
-import { type Logger, type Options, removeInlineSourceMap } from '../common/index.ts';
+import { type Logger, type Options } from '../common/index.ts';
 
-import { BANNER_MESSAGE } from './constants.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
 import { type CssLocation, extractLocationsFromCss } from './extract-locations-from-css.ts';
 import { type CMTDPosition, type CMTDRange } from './position.ts';
-import { SourceMapGenerator } from './source-map.ts';
+import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
 import { type CssImporter } from './transformers/index.ts';
 
 type Arguments = {
@@ -118,15 +116,7 @@ export async function generateTypesFromCss(
           }
 
           const dts: string[] = [
-            '// cspell:disable',
-            '/* eslint eslint-comments/no-unlimited-disable: "off" */',
-            '/* eslint-disable */',
-            '{',
-            ...defaultBanner(BANNER_MESSAGE).map((line) => `${space.repeat(2)}// ${line}`),
-            '}',
-            ...(options.css.dtsHeader ? splitLines(options.css.dtsHeader) : []),
-            empty,
-            '// prettier-ignore',
+            ...splitLines(options.css.dtsHeader),
             `${space.repeat(0)}type ${classname} = {`,
           ];
 

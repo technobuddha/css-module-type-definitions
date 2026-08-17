@@ -3,7 +3,13 @@
 import { cull, locatePackageRoot } from '@technobuddha/library';
 import { Argument, Option, program } from 'commander';
 
-import { FileIgnorer, LOGLEVELS, Optionator, remove, update, watch } from '../common/index.ts';
+import { LOGLEVELS } from '../common/index.ts';
+
+import { FileIgnorer } from './file-ignorer.ts';
+import { Optionator } from './optionator.ts';
+import { remove } from './remove.ts';
+import { update } from './update.ts';
+import { watch } from './watch.ts';
 
 if (import.meta.main) {
   program

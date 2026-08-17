@@ -9,24 +9,24 @@
 
 // prettier-ignore
 type Options = {
-  readonly 'a1': '_a1_89f092';
-  readonly 'a2': '_a2_89f092';
-  readonly 'a3': '_a3_89f092';
-  readonly 'abmigigous': '_abmigigous_89f092';
-  readonly 'local': '_local_89f092';
+  readonly 'a1': 'options-module_a1_Df7PT';
+  readonly 'a2': 'options-module_a2_P9GTk';
+  readonly 'a3': 'options-module_a3_WRvHe';
+  readonly 'abmigigous': 'options-module_abmigigous_-mPRD';
+  readonly 'local': 'options-module_local_m-vNK';
   readonly 'global': 'global';
-  readonly 'camelCase': '_camelCase_89f092';
-  readonly 'pascalCase': '_PascalCase_89f092';
-  readonly 'kebabCase': '_kebab-case_89f092';
-  readonly 'snakeCase': '_snake_case_89f092';
-  readonly 'uppercase': '_UPPERCASE_89f092';
-  readonly 'lowercase': '_lowercase_89f092';
-  readonly 'screamingSnakeCase': '_SCREAMING_SNAKE_CASE_89f092';
+  readonly 'camelCase': 'options-module_camelCase_fVi10';
+  readonly 'pascalCase': 'options-module_PascalCase_bAM48';
+  readonly 'kebabCase': 'options-module_kebab-case_iyYyS';
+  readonly 'snakeCase': 'options-module_snake_case_3Zal4';
+  readonly 'uppercase': 'options-module_UPPERCASE_2Y0ua';
+  readonly 'lowercase': 'options-module_lowercase_jLtgh';
+  readonly 'screamingSnakeCase': 'options-module_SCREAMING_SNAKE_CASE_eolrA';
 };
 
 declare const options: Options;
 
 export default options;
 
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL3NjcmF0Y2gvb3B0aW9ucy5tb2R1bGUuY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7O1dBQUE7V0FBQTtXQUFBO1dBTUE7V0FJQTtXQUlBO1dBSUE7V0FJQTtXQUlBO1dBSUE7V0FJQTtXQUlBO1dBSUEiLCJmaWxlIjoib3B0aW9ucy5tb2R1bGUuZC5jc3MudHMiLCJzb3VyY2VSb290IjoiIn0=
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm9wdGlvbnMubW9kdWxlLmNzcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7OztXQUFDO1dBQ0E7V0FDQTtXQUlBO1dBSU87V0FJQztXQUlSO1dBSUE7V0FJQTtXQUlBO1dBSUE7V0FJQTtXQUlBIiwiZmlsZSI6Im9wdGlvbnMubW9kdWxlLmQuY3NzLnRzIiwic291cmNlUm9vdCI6IiJ9
 

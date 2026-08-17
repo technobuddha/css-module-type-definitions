@@ -4,8 +4,12 @@ import fs from 'node:fs/promises';
 
 import { type PackageJson } from 'type-fest';
 
-// import { defaultOptions, type Options } from '../src/common/index.ts';
-import { LOGLEVELS } from '../src/common/logger.ts';
+import {
+  CLASSCONVENTIONS,
+  defaultOptions,
+  LOGLEVELS,
+  SEVERITYLEVELS,
+} from '../src/common/index.ts';
 
 if (import.meta.main) {
   await fs
@@ -26,7 +30,7 @@ if (import.meta.main) {
 
       packageJson.displayName = 'CSS Module Type Definitions';
       packageJson.preview = true;
-      packageJson.icon = 'cmtd.png';
+      packageJson.icon = './assets/cmtd.png';
       packageJson.categories = ['Programming Languages', 'Other'];
       packageJson.publisher = 'technobuddha';
       packageJson.activationEvents = ['onStartupFinished'];
@@ -70,34 +74,64 @@ if (import.meta.main) {
           ],
         },
         configuration: {
-          title: 'CSS Module Type Definitions SETTINGS***',
+          title: 'CSS Module Type Definitions',
           type: 'object',
           properties: {
             'cmtd.logLevel': {
               type: 'string',
               enum: LOGLEVELS,
-              default: 'info',
+              default: defaultOptions.logLevel,
               description: 'Logging level.',
+              order: 1,
             },
+            'cmtd.unusedClassesDiagnostics': {
+              type: 'string',
+              enum: SEVERITYLEVELS,
+              default: defaultOptions.unusedClassesDiagnostics,
+              description: 'Severity level for unused classes diagnostics.',
+              order: 2,
+            },
+            'cmtd.unusedImportedClassesDiagnostics': {
+              type: 'boolean',
+              default: defaultOptions.unusedImportedClassesDiagnostics,
+              description: 'Whether to show diagnostics for unused imported classes.',
+              order: 3,
+            },
+            'cmtd.css.dtsHeader': {
+              type: 'string',
+              editPresentation: 'multilineText',
+              default: defaultOptions.css.dtsHeader,
+              description: 'Header for generated type definition files.',
+              order: 4,
+            },
+            'cmtd.css.dtsFooter': {
+              type: 'string',
+              editPresentation: 'multilineText',
+              default: defaultOptions.css.dtsFooter,
+              description: 'Footer for generated type definition files.',
+              order: 5,
+            },
+            'cmtd.css.classesConvention': {
+              type: 'string',
+              default: defaultOptions.css.classesConvention,
+              enum: CLASSCONVENTIONS,
+              description: 'Convention for class names in generated type definition files.',
+              order: 6,
+            },
+
             'cmtd.showTypeFiles': {
               type: 'boolean',
               default: true,
               description: 'Whether to show type files in the explorer.',
+              order: 99,
             },
           },
         },
         icons: {
-          'cmtd-wait': {
-            description: 'Waiting',
-            default: {
-              fontPath: './cmtd.ttf',
-              fontCharacter: '\\F001',
-            },
-          },
           'cmtd-logo': {
             description: 'CMTD',
             default: {
-              fontPath: './cmtd.ttf',
+              fontPath: './assets/cmtd.ttf',
               fontCharacter: '\\F000',
             },
           },

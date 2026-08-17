@@ -1,20 +1,27 @@
-import { cull, deepEquals, locatePackageRoot } from '@technobuddha/library';
+import { cull, deepEquals, liveImport, locatePackageRoot } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { type ResolvedConfig, type UserConfig } from 'vite';
 
-import { type Action } from './action.ts';
-import { CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
-import { fileOperation } from './file-operation.ts';
-import { type Logger, type LoggerController, loggerForLevel, stdioLogger } from './logger.ts';
-import { type CMTDOptions, defaultOptions, type Options, type PartialOptions } from './options.ts';
-import { locateCMTDConfigurationFile } from './read-cmtd-config.ts';
 import {
+  type Action,
+  type CMTDOptions,
+  CSS_EXTENSIONS,
+  defaultOptions,
+  fileOperation,
+  locateCMTDConfigurationFile,
   locateViteConfigurationFile,
+  type Logger,
+  type LoggerController,
+  loggerForLevel,
+  MODULE_PATTERN,
+  type Options,
+  type PartialOptions,
+  readCMTDConfig,
   readViteConfig,
+  stdioLogger,
   transformViteConfig,
   type ViteCss,
-} from './read-vite-config.ts';
-import { reImport } from './reimport.ts';
+} from '../common/index.ts';
 
 type OptionatorOptions = {
   watch?: boolean;
@@ -43,7 +50,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
 
     const cmtdConfigPath = await locateCMTDConfigurationFile(root);
     if (cmtdConfigPath) {
-      optionator.#cmtd = await reImport<Options>(cmtdConfigPath);
+      optionator.#cmtd = await liveImport<Options>(cmtdConfigPath);
     }
 
     if (watch) {
@@ -66,7 +73,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
             }
 
             if (cmtdConfigPath && file === cmtdConfigPath) {
-              optionator.#cmtd = await reImport<Options>(cmtdConfigPath);
+              optionator.#cmtd = await readCMTDConfig(cmtdConfigPath);
               void optionator.optionsChanged();
             }
           })();
@@ -126,16 +133,6 @@ export class Optionator implements LoggerController, AsyncDisposable {
             this.#cmtd?.css?.preprocessor?.scss ??
             this.#vite?.preprocessorOptions?.scss ??
             defaultOptions.css?.preprocessor.scss,
-          // styl:
-          //   this.#top.css?.preprocessor?.styl ??
-          //   this.#cmtd?.css?.preprocessor?.styl ??
-          //   this.#vite?.preprocessorOptions?.styl ??
-          //   defaultOptions.css?.preprocessor.styl,
-          // stylus:
-          //   this.#top?.css?.preprocessor?.stylus ??
-          //   this.#cmtd?.css?.preprocessor?.stylus ??
-          //   this.#vite?.preprocessorOptions?.stylus ??
-          //   defaultOptions.css?.preprocessor.stylus,
         },
         modules: {
           scopeBehaviour:

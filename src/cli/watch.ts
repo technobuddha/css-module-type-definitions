@@ -4,10 +4,10 @@ import path from 'node:path';
 import { empty, noop } from '@technobuddha/library';
 import chokidar from 'chokidar';
 
+import { fileOperation } from '../common/index.ts';
 import { generateTypes } from '../css-library/index.ts';
 
 import { type FileIgnorer } from './file-ignorer.ts';
-import { fileOperation } from './file-operation.ts';
 import { type Optionator } from './optionator.ts';
 import { update } from './update.ts';
 

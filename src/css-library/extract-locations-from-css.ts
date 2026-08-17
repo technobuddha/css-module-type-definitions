@@ -6,7 +6,7 @@ import postcss, { AtRule, type Node, Rule } from 'postcss';
 import postcssImport from 'postcss-import';
 import selectorParser from 'postcss-selector-parser';
 
-import { type Logger, type Options, removeInlineSourceMap } from '../common/index.ts';
+import { type Logger, type Options } from '../common/index.ts';
 
 import {
   type CMTDLocation,
@@ -15,7 +15,12 @@ import {
   positionAdd,
   positionOfOffset,
 } from './position.ts';
-import { fixSourceMap, type RawSourceMap, SourceMapConsumer } from './source-map.ts';
+import {
+  fixSourceMap,
+  type RawSourceMap,
+  removeInlineSourceMap,
+  SourceMapConsumer,
+} from './source-map.ts';
 import { type CssImporter, transformer } from './transformers/transformer.ts';
 
 type ClassPosition = {

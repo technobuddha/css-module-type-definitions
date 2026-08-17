@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { fileExists } from '@technobuddha/library';
+import { fileExists, liveImport } from '@technobuddha/library';
 import {
   type CSSModulesOptions,
   type ResolvedConfig,
@@ -9,14 +9,13 @@ import {
 } from 'vite';
 
 import { CONFIG_EXTENSIONS } from './constants.ts';
-import { reImport } from './reimport.ts';
 
 export type ViteCss = Partial<
   Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { modules?: CSSModulesOptions }
 >;
 
 export async function readViteConfig(file: string): Promise<ViteCss | undefined> {
-  return reImport<UserConfig>(file)
+  return liveImport<UserConfig>(file)
     .then(transformViteConfig)
     .catch(() => undefined);
 }

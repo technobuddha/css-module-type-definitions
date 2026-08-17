@@ -27,8 +27,10 @@ const config = {
         command: [
           'cp LICENSE.md out/LICENSE.md',
           'cp README.md out/README.md',
-          'cp assets/icon/cmtd.png assets/icon/cmtd.ttf assets/extension/* out',
-          'cp assets/icon/cmtd.png assets/icon/cmtd.ttf dist/vscode-extension'
+          'cp extension/* out',
+          'mkdir out/assets dist/vscode-extension/assets',
+          'cp assets/cmtd.png assets/cmtd.ttf out/assets',
+          'cp assets/cmtd.png assets/cmtd.ttf dist/vscode-extension/assets'
         ],
       },
     ],
@@ -39,10 +41,6 @@ const config = {
         display: 'webpack',
         command: 'webpack --mode=production',
       },
-      // {
-      //   display: 'install',
-      //   command: 'cd out && npm install',
-      // },
       {
         display: 'vsix',
         command: 'cd out && vsce package',

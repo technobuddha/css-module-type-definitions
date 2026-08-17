@@ -14,6 +14,7 @@ import {
   RANKS,
   readCMTDConfig,
   readViteConfig,
+  type SeverityLevel,
   type ViteCss,
 } from '../../../common/index.ts';
 
@@ -50,8 +51,12 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
   private readOptions(): Options {
     return {
       logLevel: this.#vscodeSettings?.get<LogLevel>('logLevel') ?? defaultOptions.logLevel,
-      unusedClassesDiagnostics: defaultOptions.unusedClassesDiagnostics,
-      unusedImportedClassesDiagnostics: defaultOptions.unusedImportedClassesDiagnostics,
+      unusedClassesDiagnostics:
+        this.#vscodeSettings?.get<SeverityLevel>('unusedClassesDiagnostics') ??
+        defaultOptions.unusedClassesDiagnostics,
+      unusedImportedClassesDiagnostics:
+        this.#vscodeSettings?.get<boolean>('unusedImportedClassesDiagnostics') ??
+        defaultOptions.unusedImportedClassesDiagnostics,
       css: {
         preprocessor: {
           less: {

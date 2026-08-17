@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "css-module-type-definitions",
-  "version": "2.0.0-19",
+  "version": "2.0.0-21",
   "description": "All-in-one Solution for using CSS Modules and TypeScript",
   "license": "MIT",
   "type": "module",
@@ -39,7 +39,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-181",
+    "@technobuddha/library": "2.1.0-182",
     "@vitejs/devtools": "0.3.4",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
@@ -60,12 +60,11 @@
     "sugarss": "5.0.1",
     "typescript": "6.0.3",
     "vite": "8.2.1",
-    "vscode-uri": "3.1.0",
-    "webpack": "5.109.2"
+    "vscode-uri": "3.1.0"
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-180",
+    "@technobuddha/project": "1.0.0-181",
     "@types/less": "3.0.8",
     "@types/node": "26.2.0",
     "@types/postcss-import": "^14.0.3",
@@ -76,6 +75,7 @@
     "tsx": "4.23.12",
     "type-fest": "5.8.0",
     "vite-plugin-inspect": "12.0.2",
+    "webpack": "5.109.2",
     "webpack-cli": "7.2.2"
   },
   "resolutions": {

@@ -1,10 +1,8 @@
-import { type CMTDOptions } from './src/common/index.ts';
+import { defineConfig } from './src/common/index.ts';
 
-const options: CMTDOptions = {
+export default defineConfig({
   css: {
     generateDts: true,
     classesConvention: 'kebabCase',
   },
-};
-
-export default options;
+});

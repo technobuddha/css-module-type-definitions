@@ -162,4 +162,10 @@ export function dumpSourceMap(sourceMap: RawSourceMap | undefined): string {
   return output.join('\n');
 }
 
+const reSourceMap = /\n\s*\/[\/*][@#]\s*sourceMappingURL=[^\n]*/v;
+
+export function removeInlineSourceMap(code: string): string {
+  return code.replace(reSourceMap, empty);
+}
+
 export { type RawSourceMap } from 'source-map-js';

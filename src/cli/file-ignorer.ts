@@ -6,10 +6,9 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { glob } from 'glob';
 import ignore, { type Ignore } from 'ignore';
 
-import { type Action } from './action.ts';
-import { fileOperation } from './file-operation.ts';
+import { type Action, fileOperation, type LoggerController } from '../common/index.ts';
+
 import { Ignorer } from './ignorer.ts';
-import { type LoggerController } from './logger.ts';
 
 type GitIgnore = {
   dir: string;
