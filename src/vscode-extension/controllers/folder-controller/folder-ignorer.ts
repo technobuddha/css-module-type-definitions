@@ -93,16 +93,8 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
   }
 
   public async findUnignoredFiles(pattern: string): Promise<Uri[]> {
-    const result: Uri[] = [];
-
-    await workspace.findFiles(new RelativePattern(this.folder, pattern)).then(
-      (files) => {
-        for (const file of files) {
-          if (!this.isIgnored(file)) {
-            result.push(file);
-          }
-        }
-      },
+    return workspace.findFiles(new RelativePattern(this.folder, pattern)).then(
+      (files) => files.filter((file) => !this.isIgnored(file)),
       (error) => {
         this.logger.error(
           operation(`${this.folder.name}::findUnignoredFiles`, 'error', toError(error)),
@@ -110,6 +102,5 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
         return [];
       },
     );
-    return result;
   }
 }

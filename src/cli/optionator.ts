@@ -1,11 +1,9 @@
-import { cull, deepEquals, liveImport, locatePackageRoot } from '@technobuddha/library';
+import { cull, deepEquals } from '@technobuddha/library';
 import chokidar, { type FSWatcher } from 'chokidar';
-import { type ResolvedConfig, type UserConfig } from 'vite';
 
 import {
   type Action,
   type CMTDOptions,
-  CSS_EXTENSIONS,
   defaultOptions,
   fileOperation,
   locateCMTDConfigurationFile,
@@ -13,44 +11,35 @@ import {
   type Logger,
   type LoggerController,
   loggerForLevel,
-  MODULE_PATTERN,
   type Options,
   type PartialOptions,
   readCMTDConfig,
   readViteConfig,
   stdioLogger,
-  transformViteConfig,
   type ViteCss,
 } from '../common/index.ts';
 
-type OptionatorOptions = {
+type OptionatorArguments = {
+  root: string;
   watch?: boolean;
-  vite?: UserConfig | ResolvedConfig;
   logger?: Logger;
 };
 
 export class Optionator implements LoggerController, AsyncDisposable {
   public static async create(
-    top: CMTDOptions = {},
-    { watch = false, vite, logger = stdioLogger }: OptionatorOptions = {},
+    top: CMTDOptions,
+    { root, watch = false, logger = stdioLogger }: OptionatorArguments,
   ): Promise<Optionator> {
-    const root = (await locatePackageRoot()) ?? process.cwd();
-
     const optionator = new Optionator(top, logger);
 
-    let viteConfigPath: string | undefined = undefined;
-    if (vite) {
-      optionator.#vite = transformViteConfig(vite);
-    } else {
-      viteConfigPath = await locateViteConfigurationFile(root);
-      if (viteConfigPath) {
-        optionator.#vite = await readViteConfig(viteConfigPath);
-      }
+    const viteConfigPath = await locateViteConfigurationFile(root);
+    if (viteConfigPath) {
+      optionator.#vite = await readViteConfig(viteConfigPath);
     }
 
     const cmtdConfigPath = await locateCMTDConfigurationFile(root);
     if (cmtdConfigPath) {
-      optionator.#cmtd = await liveImport<Options>(cmtdConfigPath);
+      optionator.#cmtd = await readCMTDConfig(cmtdConfigPath);
     }
 
     if (watch) {
@@ -66,13 +55,13 @@ export class Optionator implements LoggerController, AsyncDisposable {
           optionator.logger?.debug(fileOperation(file, reason));
 
           (async () => {
-            if (viteConfigPath && file === viteConfigPath) {
+            if (file === viteConfigPath) {
               optionator.#vite = await readViteConfig(viteConfigPath);
               void optionator.optionsChanged();
               return;
             }
 
-            if (cmtdConfigPath && file === cmtdConfigPath) {
+            if (file === cmtdConfigPath) {
               optionator.#cmtd = await readCMTDConfig(cmtdConfigPath);
               void optionator.optionsChanged();
             }
@@ -102,7 +91,7 @@ export class Optionator implements LoggerController, AsyncDisposable {
   #cmtd: CMTDOptions | undefined;
   #options = defaultOptions;
 
-  private constructor(top: PartialOptions, baseLogger: Logger) {
+  private constructor(top: CMTDOptions, baseLogger: Logger) {
     this.#top = top;
     this.#baseLogger = baseLogger;
     this.#options = this.compileOptions();
@@ -197,14 +186,6 @@ export class Optionator implements LoggerController, AsyncDisposable {
 
   public get options(): Options {
     return this.#options;
-  }
-
-  public get globIsCssModule(): string {
-    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.join(',')}}`;
-  }
-
-  public get globIsTypeDefinition(): string {
-    return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `d${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
   }
 
   public onChange(listener: () => void): void {

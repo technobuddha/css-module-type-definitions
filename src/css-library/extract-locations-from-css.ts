@@ -38,6 +38,7 @@ type Arguments = {
   file: string;
   logger: Logger;
   cssImporter?: CssImporter;
+  relativeTo: string;
 };
 
 type Return = {
@@ -51,7 +52,7 @@ const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
 
 export async function extractLocationsFromCss(
   css: string,
-  { file, options, logger, cssImporter }: Arguments,
+  { file, options, logger, cssImporter, relativeTo }: Arguments,
 ): Promise<Return> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
@@ -84,7 +85,7 @@ export async function extractLocationsFromCss(
         );
 
         const source = path.relative(directory, file);
-        const sourceMap = fixSourceMap(map?.toJSON(), { directory, relativeTo: 'home', logger });
+        const sourceMap = fixSourceMap(map?.toJSON(), directory, relativeTo);
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);

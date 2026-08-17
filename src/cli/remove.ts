@@ -1,18 +1,18 @@
 import fs from 'node:fs/promises';
 
-import { fileOperation } from '../common/index.ts';
+import { fileOperation, globIsCssTypeDefinition } from '../common/index.ts';
 
-import { type FileIgnorer } from './file-ignorer.ts';
+import { type Ignorer } from './ignorer.ts';
 import { type Optionator } from './optionator.ts';
 
 type RemoveOptions = {
-  ignorer: FileIgnorer;
+  ignorer: Ignorer;
   optionator: Optionator;
 };
 
 export async function remove({ ignorer, optionator }: RemoveOptions): Promise<void> {
   await ignorer
-    .findUnignoredFiles(`**/${optionator.globIsTypeDefinition}`)
+    .findUnignoredFiles(`**/${globIsCssTypeDefinition()}`)
     .then(async (files) =>
       Promise.all(
         files.map(async (file) =>

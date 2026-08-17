@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 
 import { deepEquals, noop } from '@technobuddha/library';
@@ -252,6 +253,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
               options,
               logger,
               cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
+              relativeTo: os.homedir(),
             }).then((cssInfo) => new CssInformation(cssInfo)),
           noop,
         )

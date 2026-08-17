@@ -5,7 +5,7 @@ import { Argument, Option, program } from 'commander';
 
 import { LOGLEVELS } from '../common/index.ts';
 
-import { FileIgnorer } from './file-ignorer.ts';
+import { Ignorer } from './ignorer.ts';
 import { Optionator } from './optionator.ts';
 import { remove } from './remove.ts';
 import { update } from './update.ts';
@@ -37,8 +37,6 @@ if (import.meta.main) {
         'asIs',
       ]),
     )
-    .option('--extensions <extensions...>', 'File extensions to process')
-    .option('--module-pattern <modulePattern>', 'Glob pattern to identify CSS modules')
     .option('--dts-header <dtsHeader>', 'Content to include at the top of generated .d.ts files')
     .option('--dts-footer <dtsFooter>', 'Content to include at the bottom of generated .d.ts files')
     .action(
@@ -51,8 +49,6 @@ if (import.meta.main) {
           generateScopedName,
           hashPrefix,
           localsConvention,
-          extensions,
-          modulePattern,
           dtsHeader,
           dtsFooter,
         },
@@ -70,15 +66,14 @@ if (import.meta.main) {
                 hashPrefix,
                 localsConvention,
               },
-              extensions,
-              modulePattern,
               dtsHeader,
               dtsFooter,
             },
           }),
-          { watch: action === 'watch' },
+          { root, watch: action === 'watch' },
         );
-        await using ignorer = await FileIgnorer.create({
+
+        await using ignorer = await Ignorer.create({
           root,
           logger: optionator,
           watch: action === 'watch',
@@ -86,7 +81,12 @@ if (import.meta.main) {
 
         switch (action) {
           case 'update': {
-            return await update({ ignorer, optionator });
+            return await update({
+              ignorer,
+              root,
+              logger: optionator.logger,
+              options: optionator.options,
+            });
           }
           case 'watch': {
             return await watch({ root, ignorer, optionator });

@@ -1,33 +1,36 @@
 import fs from 'node:fs/promises';
 
-import { fileOperation } from '../common/index.ts';
-import { generateTypes } from '../css-library/index.ts';
+import {
+  fileOperation,
+  globIsCssModule,
+  globIsCssTypeDefinition,
+  type Logger,
+  type Options,
+} from '../common/index.ts';
 
-import { type FileIgnorer } from './file-ignorer.ts';
-import { type Optionator } from './optionator.ts';
+import { generateTypes } from './generate-types.ts';
+import { type Ignorer } from './ignorer.ts';
 
-type UpdateOptions = {
-  optionator: Optionator;
-  ignorer: FileIgnorer;
+type UpdateArguments = {
+  logger: Logger;
+  root: string;
+  options: Options;
+  ignorer: Ignorer;
 };
 
-export async function update({ optionator, ignorer }: UpdateOptions): Promise<void> {
-  const typedefs = new Set(
-    await ignorer.findUnignoredFiles(`**/${optionator.globIsTypeDefinition}`),
-  );
+export async function update({ logger, root, options, ignorer }: UpdateArguments): Promise<void> {
+  const typedefs = new Set(await ignorer.findUnignoredFiles(`**/${globIsCssTypeDefinition()}`));
 
   await ignorer
-    .findUnignoredFiles(`**/${optionator.globIsCssModule}`)
+    .findUnignoredFiles(`**/${globIsCssModule()}`)
     .then(async (files) =>
       Promise.all(
-        files.map(async (file) =>
-          generateTypes(file, { options: optionator.options, logger: optionator.logger }, typedefs),
-        ),
+        files.map(async (file) => generateTypes(file, { options, root, logger }, typedefs)),
       ),
     );
 
   for (const file of typedefs) {
     await fs.rm(file);
-    optionator.logger.info(fileOperation(file, 'deleted'));
+    logger.info(fileOperation(file, 'deleted'));
   }
 }

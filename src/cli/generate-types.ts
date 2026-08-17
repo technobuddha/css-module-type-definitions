@@ -2,23 +2,23 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
-
-import { generateTypesFromCss } from './generate-types-from-css.ts';
+import { generateTypesFromCss } from '../css-library/generate-types-from-css.ts';
 
 type GenerateTypesOptions = {
   options: Options;
+  root: string;
   logger: Logger;
 };
 
 export async function generateTypes(
   file: string,
-  { options, logger }: GenerateTypesOptions,
+  { options, root, logger }: GenerateTypesOptions,
   typedefs?: Set<string>,
 ): Promise<void> {
   return fs
     .readFile(file, 'utf-8')
     .then(async (content) => {
-      await generateTypesFromCss(content, file, { options, logger }).then(
+      await generateTypesFromCss(content, file, { options, logger, relativeTo: root }).then(
         async ({ dtsFilename, dtsContents }) => {
           typedefs?.delete(path.relative('.', dtsFilename));
 

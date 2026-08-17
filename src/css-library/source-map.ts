@@ -1,4 +1,3 @@
-import os from 'node:os';
 import path from 'node:path';
 
 import { empty, toError } from '@technobuddha/library';
@@ -7,7 +6,6 @@ import {
   SourceMapConsumer as JSSourceMapConsumer,
   SourceMapGenerator as JSSourceMapGenerator,
 } from 'source-map-js';
-import { URI } from 'vscode-uri';
 
 import { type Logger } from '../common/index.ts';
 
@@ -97,54 +95,24 @@ export class SourceMapGenerator {
   }
 }
 
-type FixSourceMapOptions = {
-  directory: string;
-  relativeTo: 'directory' | 'home' | 'uri';
-  filename?: string;
-  logger: Logger;
-};
-
 export function fixSourceMap(
   sourceMap: RawSourceMap | undefined,
-  options: FixSourceMapOptions,
+  directory: string,
+  relativeTo: string,
 ): RawSourceMap | undefined {
   if (sourceMap) {
     if (sourceMap.file) {
-      sourceMap.file = fixSource(sourceMap.file, options);
+      sourceMap.file = fixSource(sourceMap.file, directory, relativeTo);
     }
     for (let i = 0; i < sourceMap.sources.length; i++) {
-      sourceMap.sources[i] = fixSource(sourceMap.sources[i], options);
+      sourceMap.sources[i] = fixSource(sourceMap.sources[i], directory, relativeTo);
     }
   }
   return sourceMap;
 }
 
-function fixSource(
-  pathname: string,
-  { directory, relativeTo, filename }: FixSourceMapOptions,
-): string {
-  let file = pathname;
-
-  switch (relativeTo) {
-    case 'directory': {
-      file = path.resolve(directory, file);
-      break;
-    }
-
-    case 'home': {
-      file = path.resolve(os.homedir(), file);
-      break;
-    }
-
-    case 'uri': {
-      file = pathname.startsWith('data:') ? (filename ?? empty) : URI.parse(pathname).fsPath;
-      break;
-    }
-
-    // no default
-  }
-
-  return path.relative(directory, file);
+function fixSource(pathname: string, directory: string, relativeTo: string): string {
+  return path.relative(directory, path.resolve(relativeTo, pathname));
 }
 
 export function dumpSourceMap(sourceMap: RawSourceMap | undefined): string {

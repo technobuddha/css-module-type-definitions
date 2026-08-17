@@ -1,4 +1,4 @@
-import { errln, noop, outln, space, toError } from '@technobuddha/library';
+import { errln, noop, outln } from '@technobuddha/library';
 
 export const LOGLEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'off'] as const;
 
@@ -37,9 +37,8 @@ export const stdioLogger: Logger = {
   trace: outln,
   debug: outln,
   info: outln,
-  warn: (message: string, ...args: string[]) => outln('Warning:', space, message, ...args),
-  error: (error: string | Error, ...args: string[]) =>
-    errln('Error:', space, toError(error).message, ...args),
+  warn: (...args: string[]) => outln('Warning: ', ...args),
+  error: (...args: string[]) => errln('Error: ', ...args),
 };
 
 export function loggerForLevel(baseLogger: Logger, level: LogLevel): Logger {

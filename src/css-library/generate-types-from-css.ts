@@ -14,7 +14,6 @@ import {
 } from '@technobuddha/library';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
-import { type CompilerOptions } from 'typescript';
 
 import { type Logger, type Options } from '../common/index.ts';
 
@@ -28,18 +27,18 @@ import { type CssImporter } from './transformers/index.ts';
 type Arguments = {
   options: Options;
   logger: Logger;
-  compilerOptions?: CompilerOptions;
+  relativeTo: string;
   cssImporter?: CssImporter;
 };
 
 export async function generateTypesFromCss(
   css: string,
   filepath: string,
-  { options, logger, cssImporter }: Arguments,
+  { options, logger, cssImporter, relativeTo }: Arguments,
 ): Promise<CssInfo> {
   const file = path.resolve(filepath);
 
-  return extractLocationsFromCss(css, { file, options, logger, cssImporter }).then(
+  return extractLocationsFromCss(css, { file, options, logger, cssImporter, relativeTo }).then(
     async ({ css, classLocations: locationsOfClass, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()

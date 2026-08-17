@@ -4,24 +4,22 @@ import path from 'node:path';
 import { empty, noop } from '@technobuddha/library';
 import chokidar from 'chokidar';
 
-import { fileOperation } from '../common/index.ts';
-import { generateTypes } from '../css-library/index.ts';
+import { fileOperation, globIsCssModule } from '../common/index.ts';
 
-import { type FileIgnorer } from './file-ignorer.ts';
+import { generateTypes } from './generate-types.ts';
+import { type Ignorer } from './ignorer.ts';
 import { type Optionator } from './optionator.ts';
 import { update } from './update.ts';
 
 type UpdateOptions = {
   root: string;
   optionator: Optionator;
-  ignorer: FileIgnorer;
+  ignorer: Ignorer;
 };
 
 export async function watch({ root, optionator, ignorer }: UpdateOptions): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  return new Promise<void>(async () => {
-    await update({ optionator, ignorer });
-
+  await update({ logger: optionator.logger, root, options: optionator.options, ignorer });
+  return new Promise<void>(() => {
     chokidar
       .watch(root, {
         ignoreInitial: true,
@@ -41,8 +39,7 @@ export async function watch({ root, optionator, ignorer }: UpdateOptions): Promi
 
           if (stats?.isFile()) {
             return (
-              ignorer.isIgnored(rPath) ||
-              !path.matchesGlob(path.basename(rPath), optionator.globIsCssModule)
+              ignorer.isIgnored(rPath) || !path.matchesGlob(path.basename(rPath), globIsCssModule())
             );
           }
 
@@ -50,27 +47,24 @@ export async function watch({ root, optionator, ignorer }: UpdateOptions): Promi
         },
       })
       .on('change', (file) => {
-        void generateTypes(file, { options: optionator.options, logger: optionator.logger });
+        void generateTypes(file, { options: optionator.options, root, logger: optionator.logger });
       })
       .on('add', (file) => {
-        void generateTypes(file, { options: optionator.options, logger: optionator.logger });
+        void generateTypes(file, { options: optionator.options, root, logger: optionator.logger });
       })
       .on('unlink', (file) => {
         const { dir, name, ext } = path.parse(file);
 
-        const f1 = path.join(dir, `${name}.d${ext}.ts`);
-        const f2 = path.join(dir, `${name}.d${ext}.ts.map`);
+        const dts = path.join(dir, `${name}.d${ext}.ts`);
 
-        fs.rm(f1)
-          .then(() => optionator.logger.info(fileOperation(f1, 'deleted')))
-          .catch(noop);
-        fs.rm(f2)
-          .then(() => optionator.logger.info(fileOperation(f2, 'deleted')))
+        void fs
+          .rm(dts)
+          .then(() => optionator.logger.info(fileOperation(dts, 'deleted')))
           .catch(noop);
       });
 
     optionator.onChange(() => {
-      void update({ optionator, ignorer });
+      void update({ logger: optionator.logger, root, options: optionator.options, ignorer });
     });
   });
 }
