@@ -140,7 +140,7 @@ body {--glyph-size: 32px;}#size {width: 5em;}#test {display: block;margin: 3rem 
             any text:
         </p>
         <div data-lang="HTML">
-        <pre>&lt;span <em>class="icon"</em>&gt;&#xf000;&lt;/span&gt;</pre>
+        <pre>&lt;span <em>class="icon"</em>&gt;&#xf002;&lt;/span&gt;</pre>
         </div>
         <p>
             You could change the size of the glyph using the
@@ -152,11 +152,11 @@ body {--glyph-size: 32px;}#size {width: 5em;}#test {display: block;margin: 3rem 
 }
 </pre></div>
         <div data-lang="HTML">
-        <pre>&lt;span class="icon <em>my-size</em>"&gt;&#xf000;&lt;/span&gt;</pre>
+        <pre>&lt;span class="icon <em>my-size</em>"&gt;&#xf002;&lt;/span&gt;</pre>
         </div>
         <p>You can specify which color palette to use like so:</p>
         <div data-lang="HTML">
-        <pre>&lt;span class="icon <em>palette0</em>"&gt;&#xf000;&lt;/span&gt;</pre>
+        <pre>&lt;span class="icon <em>palette0</em>"&gt;&#xf002;&lt;/span&gt;</pre>
         </div>
         <p>You could also customize a palette in CSS:</p>
 <div data-lang="CSS"><pre>
@@ -170,14 +170,14 @@ body {--glyph-size: 32px;}#size {width: 5em;}#test {display: block;margin: 3rem 
 }
 </pre></div>
         <div data-lang="HTML">
-        <pre>&lt;span class="icon <em>custom</em>"&gt;&#xf000;&lt;/span&gt;</pre>
+        <pre>&lt;span class="icon <em>custom</em>"&gt;&#xf002;&lt;/span&gt;</pre>
         </div>
     </details>
     <details open>
         <noscript>
             <p>Enable JavaScript for easier copying of codes to clipboard.</p>
         </noscript>
-        <summary>List of Glyphs <small>(2)</small></summary>
+        <summary>List of Glyphs <small>(3)</small></summary>
         <div id="copy_settings" style="display: none">
             <label>
                 Click/tap on each glyph to copy:
@@ -222,8 +222,9 @@ body {--glyph-size: 32px;}#size {width: 5em;}#test {display: block;margin: 3rem 
             </p>
         </div>
         <div class="_demo_glyphs">
+            <div><div class="_demo_glyph"><span class="icon">&#xf002;</span> icon-css-eye-off</div><label class="_demo_code">U+ <input readonly value="f002" /></label></div>
+            <div><div class="_demo_glyph"><span class="icon">&#xf001;</span> icon-css-eye</div><label class="_demo_code">U+ <input readonly value="f001" /></label></div>
             <div><div class="_demo_glyph"><span class="icon">&#xf000;</span> icon-cmtd-icon</div><label class="_demo_code">U+ <input readonly value="f000" /></label></div>
-            <div><div class="_demo_glyph"><span class="icon">&#xf001;</span> icon-cmtd-wait</div><label class="_demo_code">U+ <input readonly value="f001" /></label></div>
         </div>
         <label id="test">
             Try the generated font:
@@ -244,8 +245,9 @@ body {--glyph-size: 32px;}#size {width: 5em;}#test {display: block;margin: 3rem 
         const htmlEntity = document.getElementById("html_entity");
         const wrapper = document.querySelector("._demo_glyphs");
         const names = {
-            0xf000: "cmtd-icon",
-            0xf001: "cmtd-wait"
+            0xf002: "css-eye-off",
+            0xf001: "css-eye",
+            0xf000: "cmtd-icon"
         };
         const ligatures = {};
         document.getElementById("copy_settings").removeAttribute("style");

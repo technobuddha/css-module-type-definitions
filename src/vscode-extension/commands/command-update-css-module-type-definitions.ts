@@ -6,8 +6,10 @@ type CommandUpdateTypesOptions = {
   controller: WorkspaceController;
 };
 
-export function commandUpdateTypes({ controller }: CommandUpdateTypesOptions): Disposable {
-  return commands.registerCommand('cmtd.updateTypes', async () =>
+export function commandUpdateCssModuleTypeDefinitions({
+  controller,
+}: CommandUpdateTypesOptions): Disposable {
+  return commands.registerCommand('cmtd.updateCssModuleTypeDefinitions', async () =>
     Promise.all(
       controller
         .folderControllers()

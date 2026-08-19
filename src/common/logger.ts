@@ -4,7 +4,7 @@ export const LOGLEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'off'] as c
 
 export type LogLevel = (typeof LOGLEVELS)[number];
 
-export const RANKS: Record<LogLevel, number> = {
+const RANKS: Record<LogLevel, number> = {
   trace: 0,
   debug: 1,
   info: 2,

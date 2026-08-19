@@ -14,13 +14,12 @@ import {
   isCssModule,
   operation,
 } from '../../../common/index.ts';
-import { generateTypesFromCss } from '../../../css-library/index.ts';
+import { cssImporter, generateTypesFromCss } from '../../../css-library/index.ts';
 
 import { type CodeInformation } from '../../code-information/index.ts';
 import { CssInformation } from '../../css-information/index.ts';
 import { type ReadonlyUriMap, toDiagnosticSeverity, UriMap, UriSet } from '../../helpers/index.ts';
 
-import { cssImporter } from './css-importer/index.ts';
 import { FolderOptions, type FolderOptionsArguments } from './folder-options.ts';
 
 export type FolderCssArguments = FolderOptionsArguments;
@@ -254,6 +253,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
               logger,
               cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
               relativeTo: os.homedir(),
+              root: this.folder.uri.fsPath,
             }).then((cssInfo) => new CssInformation(cssInfo)),
           noop,
         )

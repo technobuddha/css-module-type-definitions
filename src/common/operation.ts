@@ -1,5 +1,7 @@
-import { space, toError, unicodeLength } from '@technobuddha/library';
+import { toError } from '@technobuddha/library';
 import chalk from 'chalk';
+
+import { pad } from './pad.ts';
 
 type Action = 'error' | 'start' | 'stop' | 'changed';
 
@@ -26,8 +28,4 @@ export function operation(display: string, action: Action, error?: unknown): str
 
     // no default
   }
-}
-
-function pad(str: string): string {
-  return `${str}${space.repeat(16 - unicodeLength(str))}`;
 }

@@ -1,4 +1,4 @@
-import { deepEquals, noop } from '@technobuddha/library';
+import { deepEquals } from '@technobuddha/library';
 import { type Disposable, workspace, type WorkspaceConfiguration } from 'vscode';
 
 import {
@@ -8,10 +8,10 @@ import {
   locateCMTDConfigurationFile,
   locateViteConfigurationFile,
   type Logger,
+  loggerForLevel,
   type LogLevel,
   operation,
   type Options,
-  RANKS,
   readCMTDConfig,
   readViteConfig,
   type SeverityLevel,
@@ -177,14 +177,6 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     const { logLevel } = this.options;
     const { logger } = this.workspaceController;
 
-    const rank = RANKS[logLevel] ?? 2;
-
-    return {
-      trace: rank <= 0 ? logger.trace : noop,
-      debug: rank <= 1 ? logger.debug : noop,
-      info: rank <= 2 ? logger.info : noop,
-      warn: rank <= 3 ? logger.warn : noop,
-      error: rank <= 4 ? logger.error : noop,
-    };
+    return loggerForLevel(logger, logLevel);
   }
 }

@@ -10,7 +10,7 @@ import {
 import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/workspace-controller.ts';
-import { fileExists, getLocalInfo, normalizeLocations } from '../helpers/index.ts';
+import { getLocalInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {
   workspaceController: WorkspaceController;
@@ -57,7 +57,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
           }
 
           const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFilename);
-          if (await fileExists(dtsFile)) {
+          if (await vscodeFileExists(dtsFile)) {
             const ranges = cssInfo.dtsRanges({ localName });
             for (const range of ranges) {
               locations.push(new Location(dtsFile, range));

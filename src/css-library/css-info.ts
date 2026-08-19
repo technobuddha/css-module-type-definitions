@@ -1,4 +1,4 @@
-import { type CssLocation } from './extract-locations-from-css.ts';
+import { type CssLocation } from './extract-locations.ts';
 import { type CMTDRange } from './position.ts';
 
 export type CssInfo = {

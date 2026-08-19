@@ -2,7 +2,11 @@ import { empty } from '@technobuddha/library';
 import Less from 'less';
 import { Uri, workspace } from 'vscode';
 
-export class LessPluginVscode implements Less.Plugin {
+export function lessPlugin(root: Uri): Less.Plugin {
+  return new LessPlugin(root);
+}
+
+export class LessPlugin implements Less.Plugin {
   private readonly root: Uri;
 
   public constructor(root: Uri) {

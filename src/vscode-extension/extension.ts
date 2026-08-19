@@ -1,10 +1,10 @@
 import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
 
 import {
-  commandDeleteTypes,
+  commandDeleteCssModuleTypeefinitions,
   commandHideTypeFiles,
   commandShowTypeFiles,
-  commandUpdateTypes,
+  commandUpdateCssModuleTypeDefinitions,
 } from './commands/index.ts';
 import { WorkspaceController } from './controllers/index.ts';
 import {
@@ -38,10 +38,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
   context.subscriptions.push(
     workspaceController,
-    commandDeleteTypes({ controller: workspaceController }),
-    commandUpdateTypes({ controller: workspaceController }),
+    commandDeleteCssModuleTypeefinitions({ controller: workspaceController }),
+    commandUpdateCssModuleTypeDefinitions({ controller: workspaceController }),
     commandShowTypeFiles(),
-    commandHideTypeFiles({ controller: workspaceController }),
+    commandHideTypeFiles(),
 
     languages.registerDefinitionProvider(
       codeSelector,

@@ -1,8 +1,7 @@
 import { defaultBanner, empty, space } from '@technobuddha/library';
 import { type LessPreprocessorOptions, type SassPreprocessorOptions } from 'vite';
 
-import { BANNER_MESSAGE } from '../css-library/constants.ts';
-
+import { BANNER_MESSAGE } from './banner-message.ts';
 import { type LogLevel } from './logger.ts';
 
 type LocalsConvention =

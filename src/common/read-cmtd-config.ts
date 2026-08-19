@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { fileExists, liveImport } from '@technobuddha/library';
 
-import { CONFIG_EXTENSIONS } from './constants.ts';
+import { CONFIG_EXTENSIONS } from './extensions.ts';
 import { type Options } from './options.ts';
 
 export async function readCMTDConfig(file: string): Promise<Options | undefined> {

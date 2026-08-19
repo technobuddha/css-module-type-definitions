@@ -1,10 +1,10 @@
-import { commands, type Disposable, window, workspace } from 'vscode';
+import { commands, ConfigurationTarget, type Disposable, window, workspace } from 'vscode';
 
 export function commandShowTypeFiles(): Disposable {
-  return commands.registerCommand('cmtd.typeFiles.show', async () => {
+  return commands.registerCommand('cmtd.showCssModuleTypeDefinitions', async () => {
     const wsConfig = workspace.getConfiguration();
     window.showInformationMessage('Type files will now be shown in the explorer.');
-    wsConfig.update('cmtd.showTypeFiles', true);
-    wsConfig.update('files.exclude', undefined);
+    wsConfig.update('cmtd.showCssModuleTypeDefinitions', undefined, ConfigurationTarget.Global);
+    wsConfig.update('files.exclude', undefined, ConfigurationTarget.Global);
   });
 }

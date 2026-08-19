@@ -1,5 +1,12 @@
 import path from 'node:path';
 
+import {
+  CODE_JS_EXTENSIONS,
+  CODE_TS_EXTENSIONS,
+  REACT_JS_EXTENSIONS,
+  REACT_TS_EXTENSIONS,
+} from './extensions.ts';
+
 type DirNameAndExtension = {
   dir: string;
   name: string;
@@ -8,8 +15,8 @@ type DirNameAndExtension = {
   root: string;
 };
 
-const tsExtensions = new Set(['.ts', '.tsx', '.mts', '.mtsx', '.cts', '.ctsx']);
-const jsExtensions = new Set(['.js', '.jsx', '.mjs', '.mjsx', '.cjs', '.cjsx']);
+const tsExtensions = new Set([...CODE_TS_EXTENSIONS, ...REACT_TS_EXTENSIONS]);
+const jsExtensions = new Set([...CODE_JS_EXTENSIONS, ...REACT_JS_EXTENSIONS]);
 
 export function parseFilename(file: string): DirNameAndExtension {
   let { dir, name, base, ext, root } = path.parse(file);

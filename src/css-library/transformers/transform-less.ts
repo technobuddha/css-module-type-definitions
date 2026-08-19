@@ -46,15 +46,14 @@ export function fixLessSourceMap(
 ): RawSourceMap | undefined {
   if (sourceMap) {
     if (sourceMap.file) {
-      sourceMap.file = fixSource(sourceMap.file, directory);
+      sourceMap.file = path.relative(directory, path.resolve(directory, sourceMap.file));
     }
     for (let i = 0; i < sourceMap.sources.length; i++) {
-      sourceMap.sources[i] = fixSource(sourceMap.sources[i], directory);
+      sourceMap.sources[i] = path.relative(
+        directory,
+        path.resolve(directory, sourceMap.sources[i]),
+      );
     }
   }
   return sourceMap;
-}
-
-function fixSource(pathname: string, directory: string): string {
-  return path.relative(directory, path.resolve(directory, pathname));
 }

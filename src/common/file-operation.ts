@@ -1,9 +1,12 @@
 import os from 'node:os';
 import path from 'node:path';
 
-import { space, toError, unicodeLength } from '@technobuddha/library';
+import { toError } from '@technobuddha/library';
 import chalk from 'chalk';
 import { type URI } from 'vscode-uri';
+
+import { pad } from './pad.ts';
+import { toPathname } from './to-pathname.ts';
 
 type Operation =
   | 'error'
@@ -23,7 +26,7 @@ type Operation =
   | 'edited';
 
 export function fileOperation(file: string | URI, action: Operation, error?: unknown): string {
-  const filename = typeof file === 'string' ? file : file.fsPath;
+  const filename = toPathname(file);
   const aFile = path.resolve(filename);
   const cFile = path.relative(process.cwd(), filename);
   const hFile = `~/${path.relative(os.homedir(), filename)}`;
@@ -78,8 +81,4 @@ export function fileOperation(file: string | URI, action: Operation, error?: unk
 
     // no default
   }
-}
-
-function pad(str: string): string {
-  return `${str}${space.repeat(16 - unicodeLength(str))}`;
 }

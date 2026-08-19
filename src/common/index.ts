@@ -1,5 +1,10 @@
 export { type Action } from './action.ts';
-export { CODE_EXTENSIONS, CONFIG_EXTENSIONS, CSS_EXTENSIONS, MODULE_PATTERN } from './constants.ts';
+export {
+  CODE_EXTENSIONS,
+  CONFIG_EXTENSIONS,
+  CSS_EXTENSIONS,
+  MODULE_PATTERN,
+} from './extensions.ts';
 export { fileOperation } from './file-operation.ts';
 export {
   correspondingDts,
@@ -19,7 +24,6 @@ export {
   loggerForLevel,
   type LogLevel,
   LOGLEVELS,
-  RANKS,
   stdioLogger,
 } from './logger.ts';
 export { operation } from './operation.ts';

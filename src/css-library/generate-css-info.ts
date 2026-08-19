@@ -12,39 +12,55 @@ import {
   splitLines,
   toError,
 } from '@technobuddha/library';
+import genericNames from 'generic-names';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 
 import { type Logger, type Options } from '../common/index.ts';
 
+import { type CssImporter } from './css-importer/index.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
-import { type CssLocation, extractLocationsFromCss } from './extract-locations-from-css.ts';
+import { type CssLocation, extractLocations } from './extract-locations.ts';
 import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
-import { type CssImporter } from './transformers/index.ts';
 
 type Arguments = {
   options: Options;
   logger: Logger;
   relativeTo: string;
+  root: string;
   cssImporter?: CssImporter;
 };
 
-export async function generateTypesFromCss(
+export async function generateCssInfo(
   css: string,
   filepath: string,
-  { options, logger, cssImporter, relativeTo }: Arguments,
+  { options, logger, cssImporter, relativeTo, root }: Arguments,
 ): Promise<CssInfo> {
   const file = path.resolve(filepath);
 
-  return extractLocationsFromCss(css, { file, options, logger, cssImporter, relativeTo }).then(
-    async ({ css, classLocations: locationsOfClass, includedFiles }) => {
+  // postcss-modules uses process.cwd() as the context for generating scoped names.
+  // However, our cwd will not necessarily be the same as the root of the project,
+  // so we need to set the context explicitly.
+  let { generateScopedName } = options.css.modules;
+  if (generateScopedName) {
+    if (typeof generateScopedName !== 'function') {
+      generateScopedName = genericNames(generateScopedName, {
+        context: root,
+        hashPrefix: options.css.modules.hashPrefix,
+      });
+    }
+  }
+
+  return extractLocations(css, { file, options, logger, cssImporter, relativeTo })
+    .then(async ({ css, classLocations: locationsOfClass, includedFiles }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
           postcssModules({
             ...options.css.modules,
+            generateScopedName,
             getJSON: (_cssFilename, json, _outputFilename) => {
               classScope = json;
             },
@@ -121,6 +137,7 @@ export async function generateTypesFromCss(
 
           const { dir, name, ext } = path.parse(file);
           const dtsFilename = `${name}.d${ext}.ts`;
+
           const hasDts = await fileExists(path.join(dir, dtsFilename));
 
           const dtsRange: Map<string, CMTDRange> = new Map();
@@ -198,6 +215,9 @@ export async function generateTypesFromCss(
           );
           throw toError(error);
         });
-    },
-  );
+    })
+    .catch((error) => {
+      logger.error(`ELFC: ${Error.isError(error) ? error : String(error)}`);
+      throw error;
+    });
 }

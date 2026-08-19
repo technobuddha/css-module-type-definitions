@@ -1,1 +1,1 @@
-export { type CssImporter, transformer } from './transformer.ts';
+export { transformer } from './transformer.ts';

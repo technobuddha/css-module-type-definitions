@@ -9,19 +9,19 @@
 
 // prettier-ignore
 type Options = {
-  readonly 'a1': 'options-module_a1_Df7PT';
-  readonly 'a2': 'options-module_a2_P9GTk';
-  readonly 'a3': 'options-module_a3_WRvHe';
-  readonly 'abmigigous': 'options-module_abmigigous_-mPRD';
-  readonly 'local': 'options-module_local_m-vNK';
+  readonly 'a1': 'options-module_a1_dSEWJ';
+  readonly 'a2': 'options-module_a2_M030-';
+  readonly 'a3': 'options-module_a3_gd3aB';
+  readonly 'abmigigous': 'options-module_abmigigous_lRyl-';
+  readonly 'local': 'options-module_local_ye3I6';
   readonly 'global': 'global';
-  readonly 'camelCase': 'options-module_camelCase_fVi10';
-  readonly 'pascalCase': 'options-module_PascalCase_bAM48';
-  readonly 'kebabCase': 'options-module_kebab-case_iyYyS';
-  readonly 'snakeCase': 'options-module_snake_case_3Zal4';
-  readonly 'uppercase': 'options-module_UPPERCASE_2Y0ua';
-  readonly 'lowercase': 'options-module_lowercase_jLtgh';
-  readonly 'screamingSnakeCase': 'options-module_SCREAMING_SNAKE_CASE_eolrA';
+  readonly 'camelCase': 'options-module_camelCase_8IpK9';
+  readonly 'pascalCase': 'options-module_PascalCase_MylXC';
+  readonly 'kebabCase': 'options-module_kebab-case_cFBuN';
+  readonly 'snakeCase': 'options-module_snake_case_Xgmh6';
+  readonly 'uppercase': 'options-module_UPPERCASE_Wed-g';
+  readonly 'lowercase': 'options-module_lowercase_UyJBX';
+  readonly 'screamingSnakeCase': 'options-module_SCREAMING_SNAKE_CASE_pWNtr';
 };
 
 declare const options: Options;

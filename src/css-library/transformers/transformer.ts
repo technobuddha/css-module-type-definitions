@@ -1,20 +1,12 @@
 import path from 'node:path';
 
-import { type FileImporter, type Importer } from 'sass';
-
 import { type Logger, type Options } from '../../common/index.ts';
 
+import { type CssImporter } from '../css-importer/index.ts';
 import { type RawSourceMap } from '../source-map.ts';
 
 import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
-// import { transformStylus } from './transform-stylus.ts';
-
-export type CssImporter = {
-  less: Less.Plugin;
-  css: (filename: string) => Promise<string>;
-  sass: (FileImporter<'async'> | Importer<'async'>)[];
-};
 
 export type TransformerReturn = {
   css: string;
@@ -49,15 +41,6 @@ export async function transformer(
     case '.scss': {
       return transformSass(css, args);
     }
-
-    // TODO
-    // case '.styl': {
-    //   return transformStylus(css, args);
-    // }
-
-    // case '.stylus': {
-    //   return transformStylus(css, args);
-    //}
 
     default: {
       return { css, includedFiles: new Set() };

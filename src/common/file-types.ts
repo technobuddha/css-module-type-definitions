@@ -8,7 +8,7 @@ import {
   MODULE_PATTERN,
   TEST_EXTENSIONS,
   TYPECHECK_EXTENSIONS,
-} from './constants.ts';
+} from './extensions.ts';
 import { parseFilename } from './parse-filename.ts';
 import { toPathname } from './to-pathname.ts';
 

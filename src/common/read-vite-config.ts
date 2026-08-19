@@ -8,7 +8,7 @@ import {
   type UserConfig,
 } from 'vite';
 
-import { CONFIG_EXTENSIONS } from './constants.ts';
+import { CONFIG_EXTENSIONS } from './extensions.ts';
 
 export type ViteCss = Partial<
   Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { modules?: CSSModulesOptions }

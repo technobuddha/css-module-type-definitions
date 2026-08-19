@@ -102,17 +102,16 @@ export function fixSourceMap(
 ): RawSourceMap | undefined {
   if (sourceMap) {
     if (sourceMap.file) {
-      sourceMap.file = fixSource(sourceMap.file, directory, relativeTo);
+      sourceMap.file = path.relative(directory, path.resolve(relativeTo, sourceMap.file));
     }
     for (let i = 0; i < sourceMap.sources.length; i++) {
-      sourceMap.sources[i] = fixSource(sourceMap.sources[i], directory, relativeTo);
+      sourceMap.sources[i] = path.relative(
+        directory,
+        path.resolve(relativeTo, sourceMap.sources[i]),
+      );
     }
   }
   return sourceMap;
-}
-
-function fixSource(pathname: string, directory: string, relativeTo: string): string {
-  return path.relative(directory, path.resolve(relativeTo, pathname));
 }
 
 export function dumpSourceMap(sourceMap: RawSourceMap | undefined): string {

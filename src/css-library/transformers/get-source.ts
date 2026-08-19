@@ -6,7 +6,7 @@ import { type Options } from '../../common/index.ts';
 import { type RawSourceMap } from '../source-map.ts';
 
 type AdditionalData = NonNullable<
-  NonNullable<Options['css']['preprocessor']>['less']
+  Options['css']['preprocessor']['less' | 'sass' | 'scss']
 >['additionalData'];
 
 type GetSourceArguments = {

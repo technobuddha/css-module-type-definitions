@@ -8,6 +8,7 @@ import selectorParser from 'postcss-selector-parser';
 
 import { type Logger, type Options } from '../common/index.ts';
 
+import { type CssImporter } from './css-importer/index.ts';
 import {
   type CMTDLocation,
   type CMTDPosition,
@@ -21,7 +22,7 @@ import {
   removeInlineSourceMap,
   SourceMapConsumer,
 } from './source-map.ts';
-import { type CssImporter, transformer } from './transformers/transformer.ts';
+import { transformer } from './transformers/index.ts';
 
 type ClassPosition = {
   name: string;
@@ -50,7 +51,7 @@ type Return = {
 
 const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
 
-export async function extractLocationsFromCss(
+export async function extractLocations(
   css: string,
   { file, options, logger, cssImporter, relativeTo }: Arguments,
 ): Promise<Return> {
@@ -65,7 +66,7 @@ export async function extractLocationsFromCss(
     cssImporter,
   }).then(async ({ css, sourceMap, includedFiles }) =>
     postcss()
-      .use(postcssImport({ root: directory, load: cssImporter?.css }))
+      .use(postcssImport({ root: directory, ...(cssImporter?.css && { load: cssImporter.css }) }))
       .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
       .then(async ({ css, map, messages }) => {
         for (const message of messages) {

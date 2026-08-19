@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
-import { generateTypesFromCss } from '../css-library/generate-types-from-css.ts';
+import { generateCssInfo } from '../css-library/generate-css-info.ts';
 
 type GenerateTypesOptions = {
   options: Options;
@@ -18,8 +18,8 @@ export async function generateTypes(
   return fs
     .readFile(file, 'utf-8')
     .then(async (content) => {
-      await generateTypesFromCss(content, file, { options, logger, relativeTo: root }).then(
-        async ({ dtsFilename, dtsContents }) => {
+      await generateCssInfo(content, file, { options, logger, relativeTo: root, root })
+        .then(async ({ dtsFilename, dtsContents }) => {
           typedefs?.delete(path.relative('.', dtsFilename));
 
           await fs
@@ -32,26 +32,28 @@ export async function generateTypes(
                     logger.info(fileOperation(dtsFilename, 'updated'));
                   })
                   .catch((error) => {
-                    logger.error(error, ' <== from generateTypes I');
+                    logger.error(fileOperation(dtsFilename, 'error', error));
                   });
               }
             })
             .catch(async () =>
               fs
-                .writeFile(dtsFilename, content, 'utf-8')
+                .writeFile(dtsFilename, dtsContents, 'utf-8')
                 .then(() => {
                   logger.info(fileOperation(dtsFilename, 'created'));
                 })
                 .catch((error) => {
-                  logger.error(error, ' <== from generateTypes II');
+                  logger.error(fileOperation(dtsFilename, 'error', error));
                 }),
             );
-        },
-      );
+        })
+        .catch((error) => {
+          logger.error(
+            `Error processing file ${file}: ${Error.isError(error) ? error : String(error)}`,
+          );
+        });
     })
     .catch((error) => {
-      logger.error(
-        `Error processing file ${file}: ${Error.isError(error) ? error : String(error)}`,
-      );
+      logger.error(`Error Reading file ${file}: ${Error.isError(error) ? error : String(error)}`);
     });
 }

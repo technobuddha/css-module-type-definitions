@@ -11,7 +11,6 @@ export {
   isPropertyAccessExpressionLike,
   type PropertyAccessExpressionLike,
 } from './expression.ts';
-export { fileExists } from './file-exists.ts';
 export { findAccessExpression } from './find-access-expression.ts';
 export { findDeepestNodeAtPosition } from './find-deepest-node-at-position.ts';
 export { getClassInfo } from './get-class-info.ts';
@@ -37,3 +36,4 @@ export { unwrapExpression } from './unwrap-expression.ts';
 export { ReadonlyUriMap, UriMap } from './uri-map.ts';
 export { ReadonlyUriSet, UriSet } from './uri-set.ts';
 export { variableNameBeforeAccessor } from './variable-name-before-accessor.ts';
+export { vscodeFileExists } from './vscode-file-exists.ts';

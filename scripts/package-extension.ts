@@ -37,39 +37,35 @@ if (import.meta.main) {
       packageJson.contributes = {
         commands: [
           {
-            command: 'cmtd.generateTypes',
-            title: 'CMTD: Generate Type Definitions',
+            command: 'cmtd.deleteCssModuleTypeDefinitions',
+            title: 'CMTD: Delete CSS Module Type Definitions',
           },
           {
-            command: 'cmtd.deleteTypes',
-            title: 'CMTD: Delete Generated Type Definitions',
+            command: 'cmtd.updateCssModuleTypeDefinitions',
+            title: 'CMTD: Update CSS Module Type Definitions',
           },
           {
-            command: 'cmtd.updateTypes',
-            title: 'CMTD: Update Type Definitions',
+            command: 'cmtd.showCssModuleTypeDefinitions',
+            title: 'CMTD: Show CSS Module Type Definitions',
+            icon: '$(css-eye-off)',
           },
           {
-            command: 'cmtd.typeFiles.show',
-            title: 'CMTD: Show Generated Type Definitions',
-            icon: '$(filter-filled)',
-          },
-          {
-            command: 'cmtd.typeFiles.hide',
-            title: 'CMTD: Hide Generated Type Definitions',
-            icon: '$(filter)',
+            command: 'cmtd.hideCssModuleTypeDefinitions',
+            title: 'CMTD: Hide CSS Module Type Definitions',
+            icon: '$(css-eye)',
           },
         ],
         menus: {
           'view/title': [
             {
-              command: 'cmtd.typeFiles.show',
+              command: 'cmtd.showCssModuleTypeDefinitions',
               group: 'navigation@21',
-              when: "view == 'workbench.explorer.fileView' && !config.cmtd.showTypeFiles",
+              when: "view == 'workbench.explorer.fileView' && !config.cmtd.showCssModuleTypeDefinitions",
             },
             {
-              command: 'cmtd.typeFiles.hide',
+              command: 'cmtd.hideCssModuleTypeDefinitions',
               group: 'navigation@21',
-              when: "view == 'workbench.explorer.fileView' && config.cmtd.showTypeFiles",
+              when: "view == 'workbench.explorer.fileView' && config.cmtd.showCssModuleTypeDefinitions",
             },
           ],
         },
@@ -119,7 +115,7 @@ if (import.meta.main) {
               order: 6,
             },
 
-            'cmtd.showTypeFiles': {
+            'cmtd.showCssModuleTypeDefinitions': {
               type: 'boolean',
               default: true,
               description: 'Whether to show type files in the explorer.',
@@ -133,6 +129,20 @@ if (import.meta.main) {
             default: {
               fontPath: './assets/cmtd.ttf',
               fontCharacter: '\\F000',
+            },
+          },
+          'css-eye': {
+            description: 'CMTD',
+            default: {
+              fontPath: './assets/cmtd.ttf',
+              fontCharacter: '\\F001',
+            },
+          },
+          'css-eye-off': {
+            description: 'CMTD',
+            default: {
+              fontPath: './assets/cmtd.ttf',
+              fontCharacter: '\\F002',
             },
           },
         },

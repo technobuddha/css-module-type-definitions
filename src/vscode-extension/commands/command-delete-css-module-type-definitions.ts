@@ -6,8 +6,10 @@ type CommandDeleteTypesOptions = {
   controller: WorkspaceController;
 };
 
-export function commandDeleteTypes({ controller }: CommandDeleteTypesOptions): Disposable {
-  return commands.registerCommand('cmtd.deleteTypes', async () =>
+export function commandDeleteCssModuleTypeefinitions({
+  controller,
+}: CommandDeleteTypesOptions): Disposable {
+  return commands.registerCommand('cmtd.deleteCssModuleTypeDefinitions', async () =>
     Promise.all(controller.folderControllers().map(async (folder) => folder.deleteAllDts())),
   );
 }
