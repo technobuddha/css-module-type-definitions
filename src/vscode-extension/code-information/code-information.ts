@@ -3,9 +3,7 @@ import { type TextDocument, type Uri, workspace } from 'vscode';
 
 import { isCssModule } from '../../common/index.ts';
 
-import { type Usage } from '../css-information/class-usage.ts';
-import { type State } from '../css-information/state.ts';
-import { visit } from '../css-information/visit.ts';
+import { type State, type Usage, visit } from '../css-information/index.ts';
 import {
   collectImportBindings,
   getSourceFile,

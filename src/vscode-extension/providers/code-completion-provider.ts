@@ -20,8 +20,6 @@ type Arguments = {
   workspaceController: WorkspaceController;
 };
 
-// TODO not providing camel-cased completion items
-
 export class CodeCompletionItemProvider implements CompletionItemProvider {
   readonly #workspaceController: WorkspaceController;
 

@@ -59,12 +59,12 @@ if (import.meta.main) {
           'view/title': [
             {
               command: 'cmtd.showCssModuleTypeDefinitions',
-              group: 'navigation@21',
+              group: 'navigation@10',
               when: "view == 'workbench.explorer.fileView' && !config.cmtd.showCssModuleTypeDefinitions",
             },
             {
               command: 'cmtd.hideCssModuleTypeDefinitions',
-              group: 'navigation@21',
+              group: 'navigation@10',
               when: "view == 'workbench.explorer.fileView' && config.cmtd.showCssModuleTypeDefinitions",
             },
           ],

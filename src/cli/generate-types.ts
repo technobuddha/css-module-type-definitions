@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
-import { generateCssInfo } from '../css-library/generate-css-info.ts';
+import { generateCssInfo } from '../css-library/index.ts';
 
 type GenerateTypesOptions = {
   options: Options;

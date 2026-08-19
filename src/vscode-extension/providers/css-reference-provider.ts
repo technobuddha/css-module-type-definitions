@@ -9,7 +9,7 @@ import {
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { type WorkspaceController } from '../controllers/workspace-controller.ts';
+import { type WorkspaceController } from '../controllers/index.ts';
 import { getClassInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {

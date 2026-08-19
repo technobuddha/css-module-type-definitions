@@ -6,7 +6,7 @@ import {
   WorkspaceEdit,
 } from 'vscode';
 
-import { type WorkspaceController } from '../controllers/workspace-controller.ts';
+import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo, replacementName } from '../helpers/index.ts';
 
 type Arguments = {

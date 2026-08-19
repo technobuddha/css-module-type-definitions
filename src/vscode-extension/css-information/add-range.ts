@@ -1,6 +1,6 @@
 import { type MemberName, type Node, type StringLiteralLike } from 'typescript';
 
-import { createRange } from '../helpers/create-range.ts';
+import { createRange } from '../helpers/index.ts';
 
 import { type Usage } from './class-usage.ts';
 import { type State } from './state.ts';

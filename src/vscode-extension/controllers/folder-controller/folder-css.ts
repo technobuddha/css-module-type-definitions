@@ -14,7 +14,7 @@ import {
   isCssModule,
   operation,
 } from '../../../common/index.ts';
-import { cssImporter, generateTypesFromCss } from '../../../css-library/index.ts';
+import { cssImporter, generateCssInfo } from '../../../css-library/index.ts';
 
 import { type CodeInformation } from '../../code-information/index.ts';
 import { CssInformation } from '../../css-information/index.ts';
@@ -248,7 +248,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       isCssModule(uri) && !this.isIgnored(uri) ?
         await workspace.openTextDocument(uri).then(
           async (document) =>
-            generateTypesFromCss(document.getText(), uri.fsPath, {
+            generateCssInfo(document.getText(), uri.fsPath, {
               options,
               logger,
               cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),

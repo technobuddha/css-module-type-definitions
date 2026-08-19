@@ -2,8 +2,7 @@ import { toError } from '@technobuddha/library';
 import { Location, Position, Range, type TextDocument, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation } from '../../common/file-operation.ts';
-import { type Logger } from '../../common/logger.ts';
+import { fileOperation, type Logger } from '../../common/index.ts';
 import { type CMTDLocation, type CssInfo } from '../../css-library/index.ts';
 
 import { getSourceFile, importBindingNames } from '../helpers/index.ts';

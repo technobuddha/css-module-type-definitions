@@ -76,16 +76,6 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
             ...this.#viteConfig?.preprocessorOptions?.scss,
             ...defaultOptions.css?.preprocessor.scss,
           },
-          // styl: {
-          //   ...this.#cmtdConfig?.css?.preprocessor?.styl,
-          //   ...this.#viteConfig?.preprocessorOptions?.styl,
-          //   ...defaultOptions.css?.preprocessor.styl,
-          // },
-          // stylus: {
-          //   ...this.#cmtdConfig?.css?.preprocessor?.stylus,
-          //   ...this.#viteConfig?.preprocessorOptions?.stylus,
-          //   ...defaultOptions.css?.preprocessor.stylus,
-          // },
         },
         modules: {
           scopeBehaviour:

@@ -11,14 +11,13 @@ import {
 
 import {
   type Action,
-  // fileOperation,
   type Logger,
   type LoggerController,
   type Options,
 } from '../../../common/index.ts';
 
-import { type CodeInformation } from '../../code-information/code-information.ts';
-import { type CssInformation } from '../../css-information/css-information.ts';
+import { type CodeInformation } from '../../code-information/index.ts';
+import { type CssInformation } from '../../css-information/index.ts';
 import { UriSet } from '../../helpers/index.ts';
 
 import { type WorkspaceController } from '../workspace-controller.ts';
