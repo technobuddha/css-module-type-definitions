@@ -1,9 +1,9 @@
 import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
 
 import {
-  commandDeleteCssModuleTypeefinitions,
-  commandHideTypeFiles,
-  commandShowTypeFiles,
+  commandDeleteCssModuleTypeDefinitions,
+  commandHideCssModuleTypeDefinitions,
+  commandShowCssModuleTypeDefinitions,
   commandUpdateCssModuleTypeDefinitions,
 } from './commands/index.ts';
 import { WorkspaceController } from './controllers/index.ts';
@@ -29,8 +29,6 @@ const cssSelector: DocumentSelector = [
   { language: 'less', pattern: '**/*.less' },
   { language: 'sass', pattern: '**/*.sass' },
   { language: 'scss', pattern: '**/*.scss' },
-  { language: 'stylus', pattern: '**/*.styl' },
-  { language: 'stylus', pattern: '**/*.stylus' },
 ];
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -38,10 +36,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
   context.subscriptions.push(
     workspaceController,
-    commandDeleteCssModuleTypeefinitions({ controller: workspaceController }),
+    commandDeleteCssModuleTypeDefinitions({ controller: workspaceController }),
     commandUpdateCssModuleTypeDefinitions({ controller: workspaceController }),
-    commandShowTypeFiles(),
-    commandHideTypeFiles(),
+    commandShowCssModuleTypeDefinitions(),
+    commandHideCssModuleTypeDefinitions(),
 
     languages.registerDefinitionProvider(
       codeSelector,
@@ -66,7 +64,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
   );
 
-  // commands.executeCommand('cmtd.updateTypes');
+  await workspaceController.init();
 }
 
 export function deactivate(): void {

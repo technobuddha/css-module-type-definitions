@@ -6,7 +6,7 @@ type CommandDeleteTypesOptions = {
   controller: WorkspaceController;
 };
 
-export function commandDeleteCssModuleTypeefinitions({
+export function commandDeleteCssModuleTypeDefinitions({
   controller,
 }: CommandDeleteTypesOptions): Disposable {
   return commands.registerCommand('cmtd.deleteCssModuleTypeDefinitions', async () =>

@@ -27,32 +27,7 @@ type TabState = {
 
 export class WorkspaceController implements Disposable, LoggerController {
   public static async create(): Promise<WorkspaceController> {
-    const wc = new WorkspaceController();
-
-    if (workspace.workspaceFolders) {
-      for (const folder of workspace.workspaceFolders) {
-        if (!wc.folders.has(folder)) {
-          wc.folders.set(folder, new FolderController({ workspaceController: wc, folder }));
-        }
-      }
-    }
-
-    for (const fc of wc.folders.values()) {
-      await fc.init();
-    }
-
-    for (const group of window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (isTabInput(tab)) {
-          await wc.onOpenTab(tab.input.uri);
-        }
-      }
-    }
-
-    wc.statusBar.command = 'cmtd.showOutput';
-    wc.statusBar.text = '$(cmtd-logo)';
-
-    return wc;
+    return new WorkspaceController();
   }
 
   private readonly statusBar: StatusBarItem = window.createStatusBarItem(
@@ -180,6 +155,31 @@ export class WorkspaceController implements Disposable, LoggerController {
 
       this.openTabs.delete(uri);
     }
+  }
+
+  public async init(): Promise<void> {
+    if (workspace.workspaceFolders) {
+      for (const folder of workspace.workspaceFolders) {
+        if (!this.folders.has(folder)) {
+          this.folders.set(folder, new FolderController({ workspaceController: this, folder }));
+        }
+      }
+    }
+
+    for (const fc of this.folders.values()) {
+      await fc.init();
+    }
+
+    for (const group of window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (isTabInput(tab)) {
+          await this.onOpenTab(tab.input.uri);
+        }
+      }
+    }
+
+    this.statusBar.command = 'cmtd.showOutput';
+    this.statusBar.text = '$(cmtd-logo)';
   }
 
   public folderController(file: Uri): FolderController | undefined {

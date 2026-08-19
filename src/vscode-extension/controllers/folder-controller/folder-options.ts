@@ -18,6 +18,8 @@ import {
   type ViteCss,
 } from '../../../common/index.ts';
 
+import { SETTINGS_PREFIX } from '../../constants.ts';
+
 import { FolderIgnorer, type FolderIgnorerArguments } from './folder-ignorer.ts';
 
 export type FolderOptionsArguments = FolderIgnorerArguments;
@@ -45,7 +47,7 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
   }
 
   private readVscodeSettings(): void {
-    this.#vscodeSettings = workspace.getConfiguration('cmtd', this.folder.uri);
+    this.#vscodeSettings = workspace.getConfiguration(SETTINGS_PREFIX, this.folder.uri);
   }
 
   private readOptions(): Options {

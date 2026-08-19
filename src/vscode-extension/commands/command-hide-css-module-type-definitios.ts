@@ -2,13 +2,7 @@ import { commands, ConfigurationTarget, type Disposable, window, workspace } fro
 
 import { globIsCssTypeDefinition } from '../../common/index.ts';
 
-// import { type WorkspaceController } from '../controllers/index.ts';
-
-// type CommandHideTypesFilesOptions = {
-//   controller: WorkspaceController;
-// };
-
-export function commandHideTypeFiles(/*{ controller }: CommandHideTypesFilesOptions*/): Disposable {
+export function commandHideCssModuleTypeDefinitions(): Disposable {
   return commands.registerCommand('cmtd.hideCssModuleTypeDefinitions', async () => {
     const pattern = `**/${globIsCssTypeDefinition()}`;
     const wsConfig = workspace.getConfiguration();
