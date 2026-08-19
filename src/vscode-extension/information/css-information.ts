@@ -1,8 +1,8 @@
-import { toError } from '@technobuddha/library';
 import { Location, Position, Range, type TextDocument, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, type Logger } from '../../common/index.ts';
+import { type Logger } from '../../common/index.ts';
+import { writeIfDifferent } from '../../common/write-if-dirrerent.ts';
 import { type CMTDLocation, type CssInfo } from '../../css-library/index.ts';
 
 import { getSourceFile, importBindingNames } from '../helpers/index.ts';
@@ -48,30 +48,10 @@ export class CssInformation implements CssInfo {
     this.hasDts = hasDts;
   }
 
-  public async writeTypeDefinitionFiles(logger: Logger): Promise<void> {
+  public async writeTypeDefinition(logger: Logger): Promise<void> {
     const { dtsFilename, dtsContents } = this;
-    const fileUri = Uri.file(dtsFilename);
 
-    await workspace.fs
-      .readFile(fileUri)
-      .then(workspace.decode)
-      .then(
-        async (existingContent) => {
-          if (existingContent !== dtsContents) {
-            await workspace.fs.writeFile(fileUri, await workspace.encode(dtsContents));
-            logger.info(fileOperation(dtsFilename, 'updated'));
-          }
-        },
-        async (e) => {
-          const error = toError(e);
-          if (error.code === 'FileNotFound') {
-            await workspace.fs.writeFile(fileUri, await workspace.encode(dtsContents));
-            logger.info(fileOperation(dtsFilename, 'created'));
-          } else {
-            logger.error(fileOperation(fileUri, 'error', error));
-          }
-        },
-      );
+    return writeIfDifferent({ file: dtsFilename, content: dtsContents, logger });
   }
 
   public cssLocations({

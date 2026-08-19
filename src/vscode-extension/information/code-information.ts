@@ -3,7 +3,6 @@ import { type TextDocument, type Uri, workspace } from 'vscode';
 
 import { isCssModule } from '../../common/index.ts';
 
-import { type State, type Usage, visit } from '../css-information/index.ts';
 import {
   collectImportBindings,
   getSourceFile,
@@ -11,6 +10,10 @@ import {
   scanImports,
   UriMap,
 } from '../helpers/index.ts';
+
+import { type Usage } from './class-usage.ts';
+import { type State } from './state.ts';
+import { visit } from './visit.ts';
 
 export class CodeInformation {
   public static async create(file: Uri): Promise<CodeInformation> {

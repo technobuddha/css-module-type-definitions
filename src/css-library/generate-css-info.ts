@@ -5,11 +5,8 @@ import {
   empty,
   encodeBase64,
   fileExists,
-  isJsVariable,
-  pascalCase,
   quote,
   space,
-  splitLines,
   toError,
 } from '@technobuddha/library';
 import genericNames from 'generic-names';
@@ -21,6 +18,10 @@ import { type Logger, type Options } from '../common/index.ts';
 import { type CssImporter } from './css-importer/index.ts';
 import { type CssInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
+import { dtsBottom } from './dts-bottom.ts';
+import { dtsInfo } from './dts-info.ts';
+import { dtsMiddle } from './dts-middle.ts';
+import { dtsTop } from './dts-top.ts';
 import { type CssLocation, extractLocations } from './extract-locations.ts';
 import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
@@ -122,18 +123,8 @@ export async function generateCssInfo(
             }
           }
 
-          const parsed = path.parse(file);
-          let variable = camelCase(parsed.name.replace(/\.module$/v, empty));
-          let classname = pascalCase(variable);
-          if (!isJsVariable(variable)) {
-            variable = camelCase(parsed.ext.replace(/^\./v, empty));
-            classname = pascalCase(variable);
-          }
-
-          const dts: string[] = [
-            ...splitLines(options.css.dtsHeader),
-            `${space.repeat(0)}type ${classname} = {`,
-          ];
+          const info = dtsInfo(file, options);
+          const dts = dtsTop(info);
 
           const { dir, name, ext } = path.parse(file);
           const dtsFilename = `${name}.d${ext}.ts`;
@@ -185,16 +176,10 @@ export async function generateCssInfo(
           }
 
           dts.push(
-            `${space.repeat(0)}};`,
-            empty,
-            `${space.repeat(0)}declare const ${variable}: ${classname};`,
-            empty,
-            `${space.repeat(0)}export default ${variable};`,
+            ...dtsMiddle(info),
             empty,
             `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${encodeBase64(JSON.stringify(smg.sourceMap()), 'utf-8')}`,
-            empty,
-            ...splitLines(options.css.dtsFooter ?? empty),
-            empty,
+            ...dtsBottom(info),
           );
 
           return {

@@ -16,9 +16,8 @@ import {
 } from '../../../common/index.ts';
 import { cssImporter, generateCssInfo } from '../../../css-library/index.ts';
 
-import { type CodeInformation } from '../../code-information/index.ts';
-import { CssInformation } from '../../css-information/index.ts';
 import { type ReadonlyUriMap, toDiagnosticSeverity, UriMap, UriSet } from '../../helpers/index.ts';
+import { type CodeInformation, CssInformation } from '../../information/index.ts';
 
 import { FolderOptions, type FolderOptionsArguments } from './folder-options.ts';
 
@@ -115,7 +114,8 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       this.logger.trace(operation(`${this.folder.name}::cssOptions`, 'changed'));
 
       for (const uri of Array.from(this.#cssInformation.keys())) {
-        await this.updateCssInformationAndWriteTypeDefinitions(uri).then(async (cssInfo) => {
+        await this.updateCssInformation(uri).then(async (cssInfo) => {
+          // TODO is uci doing thus?
           if (cssInfo) {
             await this.updateDiagnostics(uri);
           }
@@ -126,6 +126,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       .on('ignored', async () => {
         for (const cssFile of Array.from(this.#cssInformation.keys())) {
           if (this.isIgnored(cssFile)) {
+            // TODO are we calling the right thing?
             await this.updateCssInformation(cssFile);
           }
         }
@@ -158,11 +159,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
               }, noop);
             }
           } else {
-            await this.updateCssInformation(uri).then(async (cssInfo) => {
-              if (cssInfo && this.options.css.generateDts) {
-                await cssInfo.writeTypeDefinitionFiles(this.logger);
-              }
-            });
+            await this.updateCssInformation(uri);
           }
         }
         //#endregion CssModue
@@ -240,7 +237,10 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
 
   protected abstract codeInformationForCssModule(uri: Uri): Promise<CodeInformation[]>;
 
-  public async updateCssInformation(uri: Uri): Promise<CssInformation | undefined> {
+  public async updateCssInformation(
+    uri: Uri,
+    override = false,
+  ): Promise<CssInformation | undefined> {
     const { logger, options } = this;
     const oldCssInformation = this.#cssInformation.get(uri);
 
@@ -263,10 +263,16 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       if (!deepEquals(newCssInformation, oldCssInformation)) {
         logger.trace(fileOperation(uri, 'examined'));
         this.#cssInformation.set(uri, newCssInformation);
+
+        if (override || newCssInformation.hasDts || options.css.generateDts) {
+          await newCssInformation.writeTypeDefinition(logger);
+        }
+
         await this.fire('cssInformationChanged', { uri, oldCssInformation, newCssInformation });
       }
     } else {
       this.#cssInformation.delete(uri);
+
       if (oldCssInformation) {
         await this.fire('cssInformationChanged', {
           uri,
@@ -276,18 +282,6 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
       }
     }
     return newCssInformation;
-  }
-
-  public async updateCssInformationAndWriteTypeDefinitions(
-    uri: Uri,
-    override = false,
-  ): Promise<CssInformation | undefined> {
-    return this.updateCssInformation(uri).then(async (cssInfo) => {
-      if (cssInfo && (override || this.options.css.generateDts)) {
-        await cssInfo.writeTypeDefinitionFiles(this.logger);
-      }
-      return cssInfo;
-    });
   }
 
   public async cssInformation(uri: Uri): Promise<CssInformation | undefined> {
@@ -317,7 +311,7 @@ export abstract class FolderCss extends FolderOptions implements Disposable {
 
     await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
-        const result = await this.updateCssInformationAndWriteTypeDefinitions(uri, true);
+        const result = await this.updateCssInformation(uri, true);
         if (result) {
           typedefs.delete(result.dtsFilename);
         }

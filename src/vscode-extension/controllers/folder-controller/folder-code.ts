@@ -12,8 +12,8 @@ import { Utils } from 'vscode-uri';
 
 import { fileOperation, globIsCode, isCode } from '../../../common/index.ts';
 
-import { CodeInformation } from '../../code-information/index.ts';
 import { type ReadonlyUriMap, UriMap } from '../../helpers/index.ts';
+import { CodeInformation } from '../../information/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
 

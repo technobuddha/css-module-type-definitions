@@ -16,9 +16,8 @@ import {
   type Options,
 } from '../../../common/index.ts';
 
-import { type CodeInformation } from '../../code-information/index.ts';
-import { type CssInformation } from '../../css-information/index.ts';
 import { UriSet } from '../../helpers/index.ts';
+import { type CodeInformation, type CssInformation } from '../../information/index.ts';
 
 import { type WorkspaceController } from '../workspace-controller.ts';
 

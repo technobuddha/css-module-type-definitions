@@ -154,9 +154,6 @@ if (import.meta.main) {
       );
 
       packageJson.type = 'commonjs';
-      // packageJson.dependencies = Object.fromEntries(
-      //   Object.entries(packageJson.dependencies ?? {}).filter(([key]) => key === 'stylus'),
-      // );
       delete packageJson.dependencies;
       packageJson.devDependencies = {
         '@types/vscode': packageJson.devDependencies?.['@types/vscode'] ?? 'latest',
