@@ -4,10 +4,10 @@ import { Location, Position, Range, Uri } from 'vscode';
 import { canonicalPath } from './canonical-path.ts';
 
 type SerializableLocation = {
-  uri: string;
-  range: {
-    start: { line: number; character: number };
-    end: { line: number; character: number };
+  readonly uri: string;
+  readonly range: {
+    readonly start: { line: number; character: number };
+    readonly end: { line: number; character: number };
   };
 };
 

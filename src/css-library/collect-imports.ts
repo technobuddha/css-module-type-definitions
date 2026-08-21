@@ -4,9 +4,9 @@ import { type AtRule, type Plugin, type PluginCreator } from 'postcss';
 import { type CMTDLocation } from './position.ts';
 
 export type Import = {
-  type: 'collect-imports';
-  import: string;
-  location: CMTDLocation;
+  readonly type: 'collect-imports';
+  readonly import: string;
+  readonly location: CMTDLocation;
 };
 
 const collectImports: PluginCreator<void> = (): Plugin => ({

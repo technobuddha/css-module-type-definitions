@@ -5,9 +5,9 @@ import { fileOperation, type Logger, type Options } from '../common/index.ts';
 import { generateCssInfo } from '../css-library/index.ts';
 
 type GenerateTypesOptions = {
-  options: Options;
-  root: string;
-  logger: Logger;
+  readonly options: Options;
+  readonly root: string;
+  readonly logger: Logger;
 };
 
 export async function generateTypes(

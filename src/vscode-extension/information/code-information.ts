@@ -1,11 +1,12 @@
-import { deepEquals } from '@technobuddha/library';
-import { type TextDocument, type Uri, workspace } from 'vscode';
+import { type Uri, workspace } from 'vscode';
 
-import { isCssModule } from '../../common/index.ts';
+import { isCss, type Logger } from '../../common/index.ts';
 
 import {
   collectImportBindings,
   getSourceFile,
+  type ReadonlyUriMap,
+  ReadonlyUriSet,
   resolveImportPath,
   scanImports,
   UriMap,
@@ -16,9 +17,12 @@ import { type State } from './state.ts';
 import { visit } from './visit.ts';
 
 export class CodeInformation {
-  public static async create(file: Uri): Promise<CodeInformation> {
+  public static async create(file: Uri, logger: Logger): Promise<CodeInformation> {
     const document = await workspace.openTextDocument(file);
-    const cssModuleImports = scanImports(document).filter((u) => isCssModule(u));
+
+    const cssImports = new ReadonlyUriSet(
+      scanImports(document, logger).filter((uri) => isCss(uri)),
+    );
 
     const sourceFile = getSourceFile(document);
     const bindings: UriMap<Set<string>> = new UriMap();
@@ -44,48 +48,26 @@ export class CodeInformation {
       usages.getOrInsert(importPath, []).push(...state.usages);
     }
 
-    return new CodeInformation(file, document, cssModuleImports, usages);
+    return new CodeInformation(file, cssImports, usages);
   }
 
   public readonly file: Uri;
-  public readonly document: TextDocument;
-  public readonly cssModuleImports: Uri[];
-  public readonly usages: UriMap<Usage[]> = new UriMap();
+  public readonly cssImports: ReadonlyUriSet;
+  public readonly usages: ReadonlyUriMap<Usage[]>;
 
-  protected constructor(
-    file: Uri,
-    document: TextDocument,
-    cssModuleImports: Uri[],
-    usages: UriMap<Usage[]>,
-  ) {
+  protected constructor(file: Uri, cssImports: ReadonlyUriSet, usages: ReadonlyUriMap<Usage[]>) {
     this.file = file;
-    this.document = document;
     this.usages = usages;
-    this.cssModuleImports = cssModuleImports;
+    this.cssImports = cssImports;
   }
 
   public async localUsage({
     localNames,
     importUri,
   }: {
-    localNames: Set<string>;
-    importUri: Uri;
+    readonly localNames: ReadonlySet<string>;
+    readonly importUri: Uri;
   }): Promise<Usage[] | undefined> {
     return this.usages.get(importUri)?.filter((usage) => localNames.has(usage.localName));
-  }
-
-  public equals(that: CodeInformation | undefined): boolean {
-    if (that) {
-      const s1 = new Set(this.cssModuleImports.map((uri) => uri.fsPath));
-      const s2 = new Set(that.cssModuleImports.map((uri) => uri.fsPath));
-
-      return (
-        s1.size === s2.size &&
-        s1.values().every((v) => s2.has(v)) &&
-        this.usages.size === that.usages.size &&
-        this.usages.entries().every(([uri, usages]) => deepEquals(usages, that.usages.get(uri)))
-      );
-    }
-    return false;
   }
 }

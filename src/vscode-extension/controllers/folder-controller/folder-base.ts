@@ -3,18 +3,11 @@ import {
   type DiagnosticCollection,
   type Disposable,
   languages,
-  RelativePattern,
   type Uri,
-  workspace,
   type WorkspaceFolder,
 } from 'vscode';
 
-import {
-  type Action,
-  type Logger,
-  type LoggerController,
-  type Options,
-} from '../../../common/index.ts';
+import { type Logger, type LoggerController, type Options } from '../../../common/index.ts';
 
 import { UriSet } from '../../helpers/index.ts';
 import { type CodeInformation, type CssInformation } from '../../information/index.ts';
@@ -22,32 +15,28 @@ import { type CodeInformation, type CssInformation } from '../../information/ind
 import { type WorkspaceController } from '../workspace-controller.ts';
 
 export type FolderBaseArguments = {
-  workspaceController: WorkspaceController;
-  folder: WorkspaceFolder;
+  readonly workspaceController: WorkspaceController;
+  readonly folder: WorkspaceFolder;
 };
 
 type CustomEvents = {
-  watcher: {
-    action: Action;
-    uri: Uri;
+  readonly options: {
+    readonly oldOptions: Options;
+    readonly newOptions: Options;
   };
-  options: {
-    oldOptions: Options;
-    newOptions: Options;
+  readonly ignored: undefined;
+  readonly openTab: Uri;
+  readonly closeTab: Uri;
+  readonly editTab: Uri;
+  readonly cssInformationChanged: {
+    readonly uri: Uri;
+    readonly oldCssInformation: CssInformation | undefined;
+    readonly newCssInformation: CssInformation | undefined;
   };
-  ignored: undefined;
-  openTab: Uri;
-  closeTab: Uri;
-  editTab: Uri;
-  cssInformationChanged: {
-    uri: Uri;
-    oldCssInformation: CssInformation | undefined;
-    newCssInformation: CssInformation | undefined;
-  };
-  codeInformationChanged: {
-    uri: Uri;
-    oldCodeInformation: CodeInformation | undefined;
-    newCodeInformation: CodeInformation | undefined;
+  readonly codeInformationChanged: {
+    readonly uri: Uri;
+    readonly oldCodeInformation: CodeInformation | undefined;
+    readonly newCodeInformation: CodeInformation | undefined;
   };
 };
 
@@ -70,31 +59,6 @@ export abstract class FolderBase
     this.folder = folder;
 
     this.diagnostics = languages.createDiagnosticCollection(folder.name);
-  }
-
-  public async init(): Promise<void> {
-    const watcher = workspace.createFileSystemWatcher(new RelativePattern(this.folder, '**/*'));
-
-    const respond = (action: Action) => async (uri: Uri) => {
-      if (this.isIgnored(uri)) {
-        return;
-      }
-
-      await this.fire('watcher', { action, uri });
-    };
-
-    this.disposables.push(
-      watcher,
-      watcher.onDidCreate(respond('add')),
-      watcher.onDidChange(respond('change')),
-      watcher.onDidDelete(respond('unlink')),
-    );
-
-    this.on('openTab', async (uri) => {
-      this.openTabs.add(uri);
-    }).on('closeTab', async (uri) => {
-      this.openTabs.delete(uri);
-    });
   }
 
   public abstract close(): Promise<void>;

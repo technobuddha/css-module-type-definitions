@@ -12,10 +12,10 @@ import { generateTypes } from './generate-types.ts';
 import { type Ignorer } from './ignorer.ts';
 
 type UpdateArguments = {
-  logger: Logger;
-  root: string;
-  options: Options;
-  ignorer: Ignorer;
+  readonly logger: Logger;
+  readonly root: string;
+  readonly options: Options;
+  readonly ignorer: Ignorer;
 };
 
 export async function update({ logger, root, options, ignorer }: UpdateArguments): Promise<void> {

@@ -3,7 +3,7 @@ import ignore, { type Ignore } from 'ignore';
 import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, operation } from '../../../common/index.ts';
+import { type Action, fileOperation, operation } from '../../../common/index.ts';
 
 import { UriMap } from '../../helpers/index.ts';
 
@@ -71,17 +71,15 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
     return undefined;
   }
 
-  public override async init(): Promise<void> {
-    await super.init();
-
+  protected async init(): Promise<void> {
     await this.scanned;
+  }
 
-    this.on('watcher', async ({ action, uri }) => {
-      if (Utils.basename(uri) === '.gitignore') {
-        this.logger.debug(fileOperation(uri, action));
-        await this.scanIgnores();
-      }
-    });
+  protected async handleWatcher({ action, uri }: { action: Action; uri: Uri }): Promise<void> {
+    if (Utils.basename(uri) === '.gitignore') {
+      this.logger.debug(fileOperation(uri, action));
+      await this.scanIgnores();
+    }
   }
 
   public isIgnored(file: Uri): boolean {

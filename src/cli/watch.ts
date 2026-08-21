@@ -12,9 +12,9 @@ import { type Optionator } from './optionator.ts';
 import { update } from './update.ts';
 
 type UpdateOptions = {
-  root: string;
-  optionator: Optionator;
-  ignorer: Ignorer;
+  readonly root: string;
+  readonly optionator: Optionator;
+  readonly ignorer: Ignorer;
 };
 
 export async function watch({ root, optionator, ignorer }: UpdateOptions): Promise<void> {

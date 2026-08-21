@@ -11,7 +11,7 @@ import {
 import { CONFIG_EXTENSIONS } from './extensions.ts';
 
 export type ViteCss = Partial<
-  Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { modules?: CSSModulesOptions }
+  Omit<ResolvedCSSOptions, 'modules' | 'lightningcss'> & { readonly modules?: CSSModulesOptions }
 >;
 
 export async function readViteConfig(file: string): Promise<ViteCss | undefined> {

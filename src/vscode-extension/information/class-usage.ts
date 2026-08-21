@@ -1,12 +1,12 @@
 import { type Range, type TextDocument } from 'vscode';
 
 export type Usage = {
-  localName: string;
-  range: Range;
-  accessorType: 'property' | 'element';
+  readonly localName: string;
+  readonly range: Range;
+  readonly accessorType: 'property' | 'element';
 };
 
 export type ClassUsage = {
-  document: TextDocument;
-  usages: Usage[];
+  readonly document: TextDocument;
+  readonly usages: Usage[];
 };

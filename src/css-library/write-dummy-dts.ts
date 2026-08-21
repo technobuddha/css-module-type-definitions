@@ -9,9 +9,9 @@ import { dtsMiddle } from './dts-middle.ts';
 import { dtsTop } from './dts-top.ts';
 
 type CreateDummyDtsArguments = {
-  file: string;
-  options: Options;
-  logger: Logger;
+  readonly file: string;
+  readonly options: Options;
+  readonly logger: Logger;
 };
 
 export async function writeDummyDts({

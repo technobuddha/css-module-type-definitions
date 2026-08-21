@@ -20,9 +20,9 @@ import {
 } from '../common/index.ts';
 
 type OptionatorArguments = {
-  root: string;
-  watch?: boolean;
-  logger?: Logger;
+  readonly root: string;
+  readonly watch?: boolean;
+  readonly logger?: Logger;
 };
 
 export class Optionator implements LoggerController, AsyncDisposable {

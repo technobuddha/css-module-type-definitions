@@ -14,8 +14,8 @@ export type CssImporter = {
 };
 
 type Arguments = {
-  root: Uri;
-  logger: Logger;
+  readonly root: Uri;
+  readonly logger: Logger;
 };
 
 export function cssImporter({ root, logger }: Arguments): CssImporter {

@@ -14,12 +14,10 @@ type Operation =
   | 'updated'
   | 'deleted'
   | 'diagnostics'
-  | 'omit-add'
-  | 'omit-change'
-  | 'omit-unlink'
   | 'examined'
   | 'add'
   | 'change'
+  | 'note'
   | 'unlink'
   | 'opened'
   | 'closed'
@@ -52,9 +50,6 @@ export function fileOperation(file: string | URI, action: Operation, error?: unk
       return `${chalk.red(pad('[deleted]'))} ${display}`;
     }
 
-    case 'omit-add':
-    case 'omit-change':
-    case 'omit-unlink':
     case 'diagnostics':
     case 'examined': {
       return `${chalk.blue(pad(`⟪${action}⟫`))} ${display}`;
@@ -72,11 +67,12 @@ export function fileOperation(file: string | URI, action: Operation, error?: unk
       return `${chalk.magenta(pad(`【${action}】`))} ${display}`;
     }
 
+    case 'note':
     case 'error': {
       if (error) {
-        return `${chalk.red(pad('[error]'))} ${display}: ${toError(error).message}`;
+        return `${chalk.red(pad(`〘〘${action}〙〙`))} ${display}: ${toError(error).message}`;
       }
-      return `${chalk.red(pad('[error]'))} ${display}`;
+      return `${chalk.red(pad(`〘〘${action}〙`))} ${display}`;
     }
 
     // no default

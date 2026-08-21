@@ -33,6 +33,7 @@ const cssSelector: DocumentSelector = [
 
 export async function activate(context: ExtensionContext): Promise<void> {
   const workspaceController = await WorkspaceController.create();
+  await workspaceController.init();
 
   context.subscriptions.push(
     workspaceController,
@@ -63,8 +64,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
     ),
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
   );
-
-  await workspaceController.init();
 }
 
 export function deactivate(): void {

@@ -8,11 +8,11 @@ import {
 } from './extensions.ts';
 
 type DirNameAndExtension = {
-  dir: string;
-  name: string;
-  base: string;
-  ext: string;
-  root: string;
+  readonly dir: string;
+  readonly name: string;
+  readonly base: string;
+  readonly ext: string;
+  readonly root: string;
 };
 
 const tsExtensions = new Set([...CODE_TS_EXTENSIONS, ...REACT_TS_EXTENSIONS]);

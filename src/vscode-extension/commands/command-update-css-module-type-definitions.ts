@@ -3,7 +3,7 @@ import { commands, type Disposable } from 'vscode';
 import { type WorkspaceController } from '../controllers/index.ts';
 
 type CommandUpdateTypesOptions = {
-  controller: WorkspaceController;
+  readonly controller: WorkspaceController;
 };
 
 export function commandUpdateCssModuleTypeDefinitions({
@@ -13,7 +13,7 @@ export function commandUpdateCssModuleTypeDefinitions({
     Promise.all(
       controller
         .folderControllers()
-        .map(async (folderController) => folderController.updateCssTypeDefinitions()),
+        .map(async (folderController) => folderController.updateAllCssModuleTypeDefinitionFiles()),
     ),
   );
 }

@@ -3,10 +3,10 @@ import { Uri } from 'vscode';
 export class ReadonlyUriSet {
   protected readonly set: Set<string> = new Set();
 
-  public constructor(init?: Iterable<Uri>) {
+  public constructor(...inits: Iterable<Uri>[]) {
     this.set = new Set();
 
-    if (init) {
+    for (const init of inits) {
       for (const uri of init) {
         this.set.add(uri.fsPath);
       }
@@ -15,6 +15,10 @@ export class ReadonlyUriSet {
 
   public has(uri: Uri): boolean {
     return this.set.has(uri.fsPath);
+  }
+
+  public get size(): number {
+    return this.set.size;
   }
 
   public *values(): Generator<Uri> {
@@ -31,6 +35,13 @@ export class ReadonlyUriSet {
 export class UriSet extends ReadonlyUriSet {
   public add(uri: Uri): this {
     this.set.add(uri.fsPath);
+    return this;
+  }
+
+  public addAll(uris: Iterable<Uri>): this {
+    for (const uri of uris) {
+      this.set.add(uri.fsPath);
+    }
     return this;
   }
 

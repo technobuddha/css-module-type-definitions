@@ -17,7 +17,7 @@ import { type WorkspaceController } from '../controllers/index.ts';
 import { getImportInfo } from '../helpers/index.ts';
 
 type Arguments = {
-  workspaceController: WorkspaceController;
+  readonly workspaceController: WorkspaceController;
 };
 
 export class CodeCompletionItemProvider implements CompletionItemProvider {

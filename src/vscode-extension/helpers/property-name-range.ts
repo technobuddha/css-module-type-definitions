@@ -3,8 +3,8 @@ import { isStringLiteralLike, type SourceFile } from 'typescript';
 import { type AccessExpressionLike, isPropertyAccessExpressionLike } from './expression.ts';
 
 type PropertyNameRange = {
-  start: number;
-  end: number;
+  readonly start: number;
+  readonly end: number;
 };
 
 export function propertyNameRange(

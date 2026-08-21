@@ -9,17 +9,17 @@ import { transformLess } from './transform-less.ts';
 import { transformSass } from './transform-sass.ts';
 
 export type TransformerReturn = {
-  css: string;
-  includedFiles: Set<string>;
-  sourceMap?: RawSourceMap;
+  readonly css: string;
+  readonly includedFiles: Set<string>;
+  readonly sourceMap?: RawSourceMap;
 };
 
 export type TransformerArguments = {
-  filename: string;
-  directory: string;
-  options: Options;
-  logger: Logger;
-  cssImporter?: CssImporter;
+  readonly filename: string;
+  readonly directory: string;
+  readonly options: Options;
+  readonly logger: Logger;
+  readonly cssImporter?: CssImporter;
 };
 
 export async function transformer(

@@ -11,7 +11,7 @@ import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo } from '../helpers/index.ts';
 
 export type Arguments = {
-  workspaceController: WorkspaceController;
+  readonly workspaceController: WorkspaceController;
 };
 
 export class CodeHoverProvider implements HoverProvider {

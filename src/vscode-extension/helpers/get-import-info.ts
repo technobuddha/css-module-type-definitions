@@ -9,8 +9,8 @@ import { resolveImportPath } from './resolve-import-path.ts';
 import { variableNameBeforeAccessor } from './variable-name-before-accessor.ts';
 
 type ImportInfo = {
-  importUri: Uri;
-  variableName: string;
+  readonly importUri: Uri;
+  readonly variableName: string;
 };
 
 export async function getImportInfo(

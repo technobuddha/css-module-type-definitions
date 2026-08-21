@@ -14,11 +14,11 @@ const RANKS: Record<LogLevel, number> = {
 };
 
 export interface Logger {
-  trace: (...message: string[]) => void;
-  debug: (...message: string[]) => void;
-  info: (...message: string[]) => void;
-  warn: (...message: string[]) => void;
-  error: (...message: string[]) => void;
+  readonly trace: (...message: string[]) => void;
+  readonly debug: (...message: string[]) => void;
+  readonly info: (...message: string[]) => void;
+  readonly warn: (...message: string[]) => void;
+  readonly error: (...message: string[]) => void;
 }
 
 export interface LoggerController {

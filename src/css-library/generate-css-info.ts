@@ -27,11 +27,11 @@ import { type CMTDPosition, type CMTDRange } from './position.ts';
 import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
 
 type Arguments = {
-  options: Options;
-  logger: Logger;
-  relativeTo: string;
-  root: string;
-  cssImporter?: CssImporter;
+  readonly options: Options;
+  readonly logger: Logger;
+  readonly relativeTo: string;
+  readonly root: string;
+  readonly cssImporter?: CssImporter;
 };
 
 export async function generateCssInfo(

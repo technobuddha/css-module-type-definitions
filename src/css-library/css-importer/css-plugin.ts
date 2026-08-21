@@ -1,7 +1,7 @@
 import { empty } from '@technobuddha/library';
 import { workspace } from 'vscode';
 
-import { fileOperation, type Logger } from '../../index.ts';
+import { fileOperation, type Logger } from '../../common/index.ts';
 
 export function cssPlugin(logger: Logger): (filename: string) => Promise<string> {
   return async (filename: string) =>

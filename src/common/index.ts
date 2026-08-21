@@ -31,7 +31,6 @@ export {
   CLASSCONVENTIONS,
   type CMTDOptions,
   defaultOptions,
-  defineConfig,
   type Options,
   type PartialOptions,
   type SeverityLevel,

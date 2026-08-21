@@ -1,12 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "css-module-type-definitions",
-  "version": "2.0.0-38",
+  "version": "2.0.0-43",
   "description": "All-in-one Solution for using CSS Modules and TypeScript",
   "license": "MIT",
   "type": "module",
   "main": "dist/vscode-extension/extension.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./config": "./dist/config/index.js"
+  },
   "bin": {
     "cmtd": "dist/cli/cmtd.js"
   },
@@ -39,7 +43,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-182",
+    "@technobuddha/library": "2.1.0-183",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
     "commander": "15.0.0",
@@ -60,7 +64,7 @@
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.0.1",
-    "@technobuddha/project": "1.0.0-182",
+    "@technobuddha/project": "1.0.0-183",
     "@types/less": "3.0.8",
     "@types/node": "26.2.0",
     "@types/postcss-import": "^14.0.3",

@@ -3,12 +3,12 @@ import { type Importer } from 'sass';
 import { Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, type Logger } from '../../index.ts';
+import { fileOperation, type Logger } from '../../common/index.ts';
 import { vscodeFileExists } from '../../vscode-extension/helpers/index.ts';
 
 type Arguments = {
-  root: Uri;
-  logger: Logger;
+  readonly root: Uri;
+  readonly logger: Logger;
 };
 
 export function sassPlugin({ root, logger }: Arguments): Importer<'async'>[] {

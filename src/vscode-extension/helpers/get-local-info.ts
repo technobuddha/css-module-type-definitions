@@ -11,9 +11,9 @@ import { resolveImportPath } from './resolve-import-path.ts';
 import { unwrapExpression } from './unwrap-expression.ts';
 
 type LocalInfo = {
-  importUri: Uri;
-  localName: string;
-  variableName: string;
+  readonly importUri: Uri;
+  readonly localName: string;
+  readonly variableName: string;
   accessorType: 'property' | 'element';
 };
 

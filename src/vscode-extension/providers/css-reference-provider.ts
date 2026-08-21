@@ -9,11 +9,13 @@ import {
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
+import { isCssModule } from '../../common/file-types.ts';
+
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getClassInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {
-  workspaceController: WorkspaceController;
+  readonly workspaceController: WorkspaceController;
 };
 
 export class CssReferenceProvider implements ReferenceProvider {
@@ -37,7 +39,7 @@ export class CssReferenceProvider implements ReferenceProvider {
       if (classInfo) {
         const { className } = classInfo;
 
-        for (const importUri of await folderController.cssImporters(document.uri)) {
+        for (const importUri of folderController.cssFilesImporting(document.uri)) {
           const cssInfo = await folderController.cssInformation(importUri);
           if (cssInfo) {
             const { classLocal } = cssInfo;
@@ -48,7 +50,7 @@ export class CssReferenceProvider implements ReferenceProvider {
                   return [];
                 }
 
-                if (codeInfo.cssModuleImports.some((i) => i.fsPath === importUri.fsPath)) {
+                if (isCssModule(importUri) && codeInfo.cssImports.has(importUri)) {
                   const classUsages = await cssInfo.classUsage({ className, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {

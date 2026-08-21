@@ -13,7 +13,7 @@ import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {
-  workspaceController: WorkspaceController;
+  readonly workspaceController: WorkspaceController;
 };
 
 export class CodeReferenceProvider implements ReferenceProvider {
@@ -44,12 +44,18 @@ export class CodeReferenceProvider implements ReferenceProvider {
               locations.push(...cssLocations);
             }
 
-            for (const { file } of await folderController.codeInformationForCssModule(importUri)) {
-              const localUsages = await cssInfo.classUsage({ localName, file, importUri });
-              if (localUsages) {
-                for (const usage of localUsages.usages) {
-                  if (accessorType === 'property' || usage.accessorType !== accessorType) {
-                    locations.push(new Location(file, usage.range));
+            await folderController.allCodeInformation();
+            const importers = folderController.codeFilesImporting(importUri);
+            for (const importer of importers) {
+              const codeInfo = await folderController.codeInformation(importer);
+              if (codeInfo) {
+                const { file } = codeInfo;
+                const localUsages = await cssInfo.classUsage({ localName, file, importUri });
+                if (localUsages) {
+                  for (const usage of localUsages.usages) {
+                    if (accessorType === 'property' || usage.accessorType !== accessorType) {
+                      locations.push(new Location(file, usage.range));
+                    }
                   }
                 }
               }

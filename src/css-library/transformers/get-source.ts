@@ -7,14 +7,14 @@ type AdditionalData = NonNullable<
 >['additionalData'];
 
 type GetSourceArguments = {
-  source: string;
-  filename: string;
-  additionalData: AdditionalData;
+  readonly source: string;
+  readonly filename: string;
+  readonly additionalData: AdditionalData;
 };
 
 type GetSourceReturn = {
-  content: string;
-  map?: RawSourceMap;
+  readonly content: string;
+  readonly map?: RawSourceMap;
 };
 
 export async function getSource({

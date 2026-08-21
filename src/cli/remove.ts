@@ -6,8 +6,8 @@ import { type Ignorer } from './ignorer.ts';
 import { type Optionator } from './optionator.ts';
 
 type RemoveOptions = {
-  ignorer: Ignorer;
-  optionator: Optionator;
+  readonly ignorer: Ignorer;
+  readonly optionator: Optionator;
 };
 
 export async function remove({ ignorer, optionator }: RemoveOptions): Promise<void> {

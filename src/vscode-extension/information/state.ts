@@ -3,8 +3,8 @@ import { type SourceFile } from 'typescript';
 import { type Usage } from './class-usage.ts';
 
 export type State = {
-  bindingNames: ReadonlySet<string>;
-  seenUsages: Set<string>;
-  usages: Usage[];
-  sourceFile: SourceFile;
+  readonly bindingNames: ReadonlySet<string>;
+  readonly seenUsages: Set<string>;
+  readonly usages: Usage[];
+  readonly sourceFile: SourceFile;
 };

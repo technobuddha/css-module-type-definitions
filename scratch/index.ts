@@ -7,3 +7,4 @@ void main.z;
 
 void all.camelCase;
 void all.PascalCase;
+// void all.notDefined;

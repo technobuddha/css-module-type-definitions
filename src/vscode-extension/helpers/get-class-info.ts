@@ -1,7 +1,7 @@
 import { type Position, type TextDocument } from 'vscode';
 
 type ClassInfo = {
-  className: string;
+  readonly className: string;
 };
 
 export function getClassInfo(document: TextDocument, position: Position): ClassInfo | null {

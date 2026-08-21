@@ -15,9 +15,9 @@ import {
 } from '../common/index.ts';
 
 type FileIgnorerOptions = {
-  root: string;
-  logger: LoggerController;
-  watch: boolean;
+  readonly root: string;
+  readonly logger: LoggerController;
+  readonly watch: boolean;
 };
 
 export class Ignorer implements AsyncDisposable {

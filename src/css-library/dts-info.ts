@@ -4,7 +4,11 @@ import { camelCase, empty, isJsVariable, pascalCase } from '@technobuddha/librar
 
 import { type Options } from '../common/index.ts';
 
-export type DtsInfo = { variable: string; classname: string; options: Options };
+export type DtsInfo = {
+  readonly variable: string;
+  readonly classname: string;
+  readonly options: Options;
+};
 
 export function dtsInfo(file: string, options: Options): DtsInfo {
   const parsed = path.parse(file);

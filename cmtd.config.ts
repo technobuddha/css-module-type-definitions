@@ -1,4 +1,4 @@
-import { defineConfig } from './src/common/index.ts';
+import { defineConfig } from './src/config/index.ts';
 
 export default defineConfig({
   css: {

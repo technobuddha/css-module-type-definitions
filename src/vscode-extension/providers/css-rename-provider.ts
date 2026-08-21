@@ -11,7 +11,7 @@ import { type WorkspaceController } from '../controllers/workspace-controller.ts
 import { getClassInfo, replacementName } from '../helpers/index.ts';
 
 type Arguments = {
-  workspaceController: WorkspaceController;
+  readonly workspaceController: WorkspaceController;
 };
 
 export class CssRenameProvider implements RenameProvider {
@@ -55,7 +55,7 @@ export class CssRenameProvider implements RenameProvider {
         const { cssReplacement, codeReplacement } = replacementName(newName, options);
         const we = new WorkspaceEdit();
 
-        for (const importUri of await folderController.cssImporters(document.uri)) {
+        for (const importUri of await folderController.cssFilesImporting(document.uri)) {
           await folderController.edit({
             we,
             importUri,

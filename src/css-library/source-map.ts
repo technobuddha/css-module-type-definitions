@@ -16,9 +16,9 @@ import { type CMTDMappedPosition, type CMTDPosition } from './position.ts';
 const reBadSource = /^(?:\.\.\/)+;charset=utf-8,/v;
 
 type SMCArguments = {
-  sourceMap?: RawSourceMap;
-  source: string;
-  logger: Logger;
+  readonly sourceMap?: RawSourceMap;
+  readonly source: string;
+  readonly logger: Logger;
 };
 
 export class SourceMapConsumer {
@@ -59,14 +59,14 @@ export class SourceMapConsumer {
 }
 
 type SMGArguments = {
-  file: string;
-  logger: Logger;
+  readonly file: string;
+  readonly logger: Logger;
 };
 
 type AddMappingArguments = {
-  source: string;
-  generated: CMTDPosition;
-  original: CMTDPosition;
+  readonly source: string;
+  readonly generated: CMTDPosition;
+  readonly original: CMTDPosition;
 };
 
 export class SourceMapGenerator {

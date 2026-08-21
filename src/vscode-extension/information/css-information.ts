@@ -1,9 +1,24 @@
-import { Location, Position, Range, type TextDocument, Uri, workspace } from 'vscode';
+import os from 'node:os';
+
+import { noop } from '@technobuddha/library';
+import {
+  Location,
+  Position,
+  Range,
+  type TextDocument,
+  Uri,
+  workspace,
+  WorkspaceEdit,
+} from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { type Logger } from '../../common/index.ts';
-import { writeIfDifferent } from '../../common/write-if-dirrerent.ts';
-import { type CMTDLocation, type CssInfo } from '../../css-library/index.ts';
+import { fileOperation, type Logger, type Options } from '../../common/index.ts';
+import {
+  type CMTDLocation,
+  cssImporter,
+  type CssInfo,
+  generateCssInfo,
+} from '../../css-library/index.ts';
 
 import { getSourceFile, importBindingNames } from '../helpers/index.ts';
 
@@ -11,9 +26,36 @@ import { type ClassUsage, type Usage } from './class-usage.ts';
 import { type State } from './state.ts';
 import { visit } from './visit.ts';
 
-type Arguments = CssInfo & {};
+type Arguments = {
+  readonly uri: Uri;
+  readonly logger: Logger;
+  readonly options: Options;
+  readonly root: Uri;
+};
 
 export class CssInformation implements CssInfo {
+  public static async create({
+    uri,
+    logger,
+    options,
+    root,
+  }: Arguments): Promise<CssInformation | undefined> {
+    return workspace
+      .openTextDocument(uri)
+      .then(
+        async (document) =>
+          generateCssInfo(document.getText(), uri.fsPath, {
+            options,
+            logger,
+            cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
+            relativeTo: os.homedir(),
+            root: root.fsPath,
+          }).then((cssInfo) => new CssInformation(cssInfo)),
+        noop,
+      )
+      .then((cssInfo) => (cssInfo ? new CssInformation(cssInfo) : undefined));
+  }
+
   public dtsContents: CssInfo['dtsContents'];
   public locationsOfClass: CssInfo['locationsOfClass'];
   public includedFiles: CssInfo['includedFiles'];
@@ -24,7 +66,7 @@ export class CssInformation implements CssInfo {
   public dtsFilename: CssInfo['dtsFilename'];
   public hasDts: boolean;
 
-  public constructor({
+  private constructor({
     dtsFilename,
     dtsContents,
     locationsOfClass,
@@ -35,7 +77,7 @@ export class CssInformation implements CssInfo {
     dtsRange,
     dtsFilename: dtsFile,
     hasDts,
-  }: Arguments) {
+  }: CssInfo) {
     this.dtsFilename = dtsFilename;
     this.dtsContents = dtsContents;
     this.locationsOfClass = locationsOfClass;
@@ -50,8 +92,33 @@ export class CssInformation implements CssInfo {
 
   public async writeTypeDefinition(logger: Logger): Promise<void> {
     const { dtsFilename, dtsContents } = this;
+    const dtsUri = Uri.file(dtsFilename);
 
-    return writeIfDifferent({ file: dtsFilename, content: dtsContents, logger });
+    return workspace.openTextDocument(dtsUri).then(
+      async (document) => {
+        if (document.getText() !== dtsContents) {
+          if (document.isDirty) {
+            const we = new WorkspaceEdit();
+
+            we.replace(
+              dtsUri,
+              new Range(new Position(0, 0), document.lineAt(document.lineCount - 1).range.end),
+              dtsContents,
+            );
+            return workspace.applyEdit(we, { isRefactoring: true }).then(() => {
+              logger.info(fileOperation(dtsUri, 'updated'), ' <=== workspace edit');
+            });
+          }
+          return workspace.fs.writeFile(dtsUri, await workspace.encode(dtsContents)).then(() => {
+            logger.info(fileOperation(dtsUri, 'updated'), ' <=== writefile');
+          });
+        }
+      },
+      async () =>
+        workspace.fs.writeFile(dtsUri, await workspace.encode(dtsContents)).then(() => {
+          logger.info(fileOperation(dtsUri, 'created'));
+        }),
+    );
   }
 
   public cssLocations({

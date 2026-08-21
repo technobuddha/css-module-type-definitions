@@ -42,42 +42,42 @@ type CMTDSassPreprocessorOptions = Omit<
 >;
 
 export interface Options {
-  logLevel: LogLevel;
-  unusedClassesDiagnostics: SeverityLevel;
-  unusedImportedClassesDiagnostics: boolean;
+  readonly logLevel: LogLevel;
+  readonly unusedClassesDiagnostics: SeverityLevel;
+  readonly unusedImportedClassesDiagnostics: boolean;
 
-  css: {
-    preprocessor: {
-      less: CMTDLessPreprocessorOptions;
-      sass: CMTDSassPreprocessorOptions;
-      scss: CMTDSassPreprocessorOptions;
+  readonly css: {
+    readonly preprocessor: {
+      readonly less: CMTDLessPreprocessorOptions;
+      readonly sass: CMTDSassPreprocessorOptions;
+      readonly scss: CMTDSassPreprocessorOptions;
     };
-    modules: {
-      scopeBehaviour: 'global' | 'local';
-      globalModulePaths: RegExp[];
-      exportGlobals: boolean;
-      generateScopedName:
+    readonly modules: {
+      readonly scopeBehaviour: 'global' | 'local';
+      readonly globalModulePaths: RegExp[];
+      readonly exportGlobals: boolean;
+      readonly generateScopedName:
         string | ((name: string, filename: string, css: string) => string) | undefined;
-      hashPrefix: string;
-      localsConvention: LocalsConvention;
+      readonly hashPrefix: string;
+      readonly localsConvention: LocalsConvention;
     };
-    generateDts: boolean;
-    dtsHeader: string;
-    dtsFooter: string;
-    classesConvention: ClassConvention;
+    readonly generateDts: boolean;
+    readonly dtsHeader: string;
+    readonly dtsFooter: string;
+    readonly classesConvention: ClassConvention;
   };
 }
 
 export type CMTDOptions = {
   css?: {
-    preprocessor?: Partial<Options['css']['preprocessor']>;
-    modules?: Partial<Options['css']['modules']>;
+    readonly preprocessor?: Partial<Options['css']['preprocessor']>;
+    readonly modules?: Partial<Options['css']['modules']>;
   } & Partial<Omit<Options['css'], 'modules' | 'preprocessor'>>;
 };
 
 export type PartialOptions = CMTDOptions & {
-  logLevel?: Options['logLevel'];
-  unusedClassesDiagnostics?: Options['unusedClassesDiagnostics'];
+  readonly logLevel?: Options['logLevel'];
+  readonly unusedClassesDiagnostics?: Options['unusedClassesDiagnostics'];
   unusedImportedClassesDiagnostics?: Options['unusedImportedClassesDiagnostics'];
 };
 
@@ -114,7 +114,3 @@ export const defaultOptions = Object.freeze<Options>({
     classesConvention: 'none',
   },
 });
-
-export function defineConfig(options: CMTDOptions): CMTDOptions {
-  return options;
-}
