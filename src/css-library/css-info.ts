@@ -2,6 +2,11 @@ import { type CssLocation } from './extract-locations.ts';
 import { type CMTDRange } from './position.ts';
 
 export type CssInfo = {
+  classLocations: Map<string, CssLocation[]>;
+  includedFiles: Set<string>;
+};
+
+export type CssModuleInfo = {
   readonly dtsFilename: string;
   readonly dtsContents: string;
   readonly locationsOfClass: ReadonlyMap<string, CssLocation[]>;

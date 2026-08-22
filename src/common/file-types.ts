@@ -12,8 +12,16 @@ import {
 import { parseFilename } from './parse-filename.ts';
 import { toPathname } from './to-pathname.ts';
 
+export function globIsCode(): string {
+  return `*{${CODE_EXTENSIONS.join(',')}}`;
+}
+
 export function globIsCss(): string {
   return `*{${CSS_EXTENSIONS.join(',')}}`;
+}
+
+export function globIsCssOrCode(): string {
+  return `*{${CSS_EXTENSIONS.join(',')},${CODE_EXTENSIONS.join(',')}}`;
 }
 
 export function globIsCssModule(): string {
@@ -24,12 +32,10 @@ export function globIsCssTypeDefinition(): string {
   return `${MODULE_PATTERN}{${CSS_EXTENSIONS.map((ext) => `.d${ext},${ext}.d.ts`).join(',')}}{.ts,.ts.map}`;
 }
 
-export function isCss(filename: string | URI): boolean {
-  return path.matchesGlob(path.basename(toPathname(filename)), globIsCss());
-}
+export function isDts(filename: string | URI): boolean {
+  const { ext } = parseFilename(toPathname(filename));
 
-export function isCssModule(filename: string | URI): boolean {
-  return path.matchesGlob(path.basename(toPathname(filename)), globIsCssModule());
+  return ext === '.d.ts' || ext === '.d.*.ts';
 }
 
 export function isCode(uri: string | URI): boolean {
@@ -38,14 +44,14 @@ export function isCode(uri: string | URI): boolean {
   return CODE_EXTENSIONS.includes(ext);
 }
 
-export function globIsCode(): string {
-  return `*{${CODE_EXTENSIONS.join(',')}}`;
-}
-
-export function isDts(filename: string | URI): boolean {
+export function isCss(filename: string | URI): boolean {
   const { ext } = parseFilename(toPathname(filename));
 
-  return ext === '.d.ts' || ext === '.d.*.ts';
+  return CSS_EXTENSIONS.includes(ext);
+}
+
+export function isCssModule(filename: string | URI): boolean {
+  return path.matchesGlob(path.basename(toPathname(filename)), globIsCssModule());
 }
 
 export function correspondingDts(filename: string): string | undefined;

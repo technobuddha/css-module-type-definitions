@@ -33,7 +33,7 @@ export class CodeDefinitionProvider implements DefinitionProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = await folderController.cssInformation(importUri);
+        const cssInfo = await folderController.cssModuleInformation(importUri);
         if (cssInfo?.hasDts === false) {
           const { locationsOfClass } = cssInfo;
           const extracted = locationsOfClass.get(localName);

@@ -16,7 +16,7 @@ import postcssModules from 'postcss-modules';
 import { type Logger, type Options } from '../common/index.ts';
 
 import { type CssImporter } from './css-importer/index.ts';
-import { type CssInfo } from './css-info.ts';
+import { type CssModuleInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
 import { dtsBottom } from './dts-bottom.ts';
 import { dtsInfo } from './dts-info.ts';
@@ -34,11 +34,11 @@ type Arguments = {
   readonly cssImporter?: CssImporter;
 };
 
-export async function generateCssInfo(
+export async function generateCssModuleInfo(
   css: string,
   filepath: string,
   { options, logger, cssImporter, relativeTo, root }: Arguments,
-): Promise<CssInfo> {
+): Promise<CssModuleInfo> {
   const file = path.resolve(filepath);
 
   // postcss-modules uses process.cwd() as the context for generating scoped names.
@@ -55,7 +55,7 @@ export async function generateCssInfo(
   }
 
   return extractLocations(css, { file, options, logger, cssImporter, relativeTo })
-    .then(async ({ css, classLocations: locationsOfClass, includedFiles }) => {
+    .then(async ({ css, info: { classLocations: locationsOfClass, includedFiles } }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(

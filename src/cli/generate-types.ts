@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
-import { generateCssInfo } from '../css-library/index.ts';
+import { generateCssModuleInfo } from '../css-library/index.ts';
 
 type GenerateTypesOptions = {
   readonly options: Options;
@@ -18,7 +18,7 @@ export async function generateTypes(
   return fs
     .readFile(file, 'utf-8')
     .then(async (content) => {
-      await generateCssInfo(content, file, { options, logger, relativeTo: root, root })
+      await generateCssModuleInfo(content, file, { options, logger, relativeTo: root, root })
         .then(async ({ dtsFilename, dtsContents }) => {
           typedefs?.delete(path.relative('.', dtsFilename));
 

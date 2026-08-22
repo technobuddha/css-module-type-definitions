@@ -4,11 +4,11 @@ import { operation } from '../../../common/index.ts';
 
 import { UriSet } from '../../helpers/uri-set.ts';
 
-import { FolderEventHandler, type FolderEventHandlerArguments } from './folder-event-handler.ts';
+import { FolderCode, type FolderCodeArguments } from './folder-code.ts';
 
-type FolderControllerArguments = FolderEventHandlerArguments;
+type FolderControllerArguments = FolderCodeArguments;
 
-export class FolderController extends FolderEventHandler implements Disposable {
+export class FolderController extends FolderCode implements Disposable {
   readonly #updatingDiagnostics: UriSet = new UriSet();
   readonly #updatingInformation: UriSet = new UriSet();
 

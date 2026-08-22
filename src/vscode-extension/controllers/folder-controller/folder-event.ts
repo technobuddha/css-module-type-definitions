@@ -2,11 +2,11 @@ import { type Disposable, RelativePattern, type Uri, workspace } from 'vscode';
 
 import { type Action, fileOperation, isCode, isCss } from '../../../common/index.ts';
 
-import { FolderCode, type FolderCodeArguments } from './folder-code.ts';
+import { FolderFiles, type FolderFilesArguments } from './folder-files.ts';
 
-export type FolderEventHandlerArguments = FolderCodeArguments;
+export type FolderEventArguments = FolderFilesArguments;
 
-export abstract class FolderEventHandler extends FolderCode implements Disposable {
+export abstract class FolderEvent extends FolderFiles implements Disposable {
   public override async init(): Promise<void> {
     await super.init();
 
@@ -47,14 +47,8 @@ export abstract class FolderEventHandler extends FolderCode implements Disposabl
     this.openTabs.add(uri);
     if (isCss(uri) || isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'opened'));
+      await this.refreshAllInformation();
       return this.updateDiagnostics(uri);
-    }
-  }
-
-  protected async handleEditTab(uri: Uri): Promise<void> {
-    if (isCss(uri) || isCode(uri)) {
-      this.logger.debug(fileOperation(uri, 'edited'));
-      await this.updateInformation(uri).then(async () => this.updateDiagnostics(uri));
     }
   }
 

@@ -40,7 +40,7 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const cssInfo = await folderController.cssInformation(importUri);
+          const cssInfo = await folderController.cssModuleInformation(importUri);
           if (cssInfo) {
             const { localClass } = cssInfo;
 

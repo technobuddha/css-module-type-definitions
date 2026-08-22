@@ -10,7 +10,6 @@ import {
 import { type Logger, type LoggerController, type Options } from '../../../common/index.ts';
 
 import { UriSet } from '../../helpers/index.ts';
-import { type CodeInformation, type CssInformation } from '../../information/index.ts';
 
 import { type WorkspaceController } from '../workspace-controller.ts';
 
@@ -28,16 +27,6 @@ type CustomEvents = {
   readonly openTab: Uri;
   readonly closeTab: Uri;
   readonly editTab: Uri;
-  readonly cssInformationChanged: {
-    readonly uri: Uri;
-    readonly oldCssInformation: CssInformation | undefined;
-    readonly newCssInformation: CssInformation | undefined;
-  };
-  readonly codeInformationChanged: {
-    readonly uri: Uri;
-    readonly oldCodeInformation: CodeInformation | undefined;
-    readonly newCodeInformation: CodeInformation | undefined;
-  };
 };
 
 export abstract class FolderBase

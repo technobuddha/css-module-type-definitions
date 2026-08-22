@@ -29,7 +29,6 @@ export type FolderCodeArguments = FolderCssArguments;
 
 export abstract class FolderCode extends FolderCss implements Disposable {
   readonly #codeInformation: UriMap<CodeInformation> = new UriMap();
-  readonly #updatingCodeInformation = new UriSet();
 
   protected override async updateDiagnostics(uri: Uri): Promise<void> {
     if (isCode(uri)) {
@@ -40,7 +39,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
         for (const importUri of codeInfo.cssImports) {
           if (isCssModule(importUri)) {
-            const cssInfo = await this.cssInformation(importUri);
+            const cssInfo = await this.cssModuleInformation(importUri);
             if (cssInfo && !cssInfo.hasDts) {
               const usages = codeInfo.usages.get(importUri);
               if (usages) {
@@ -98,29 +97,27 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     }
   }
 
+  protected override async refreshInformation(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
+      if (!this.#codeInformation.has(uri)) {
+        return this.updateInformation(uri);
+      }
+    }
+    return super.refreshInformation(uri);
+  }
+
   protected override deleteInformation(uri: Uri): void {
     this.#codeInformation.delete(uri);
     super.deleteInformation(uri);
   }
 
-  public override async init(): Promise<void> {
-    await super.init();
-
-    this.on('cssInformationChanged', async ({ uri }) => {
-      for (const tab of this.openTabs) {
-        if (isCode(tab)) {
-          await this.codeInformation(tab).then(async (codeInfo) => {
-            if (codeInfo?.cssImports.has(uri)) {
-              return this.updateDiagnostics(tab);
-            }
-          });
-        }
-      }
-    }).on('codeInformationChanged', async ({ uri }) => {
-      if (this.openTabs.has(uri)) {
-        await this.updateDiagnostics(uri);
-      }
-    });
+  //#region Event Handlers
+  protected override async handleEditTab(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
+      this.logger.debug(fileOperation(uri, 'edited'));
+      return this.updateInformation(uri).then(async () => this.updateDiagnostics(uri));
+    }
+    return super.handleEditTab(uri);
   }
 
   protected override async handleIgnored(): Promise<void> {
@@ -147,53 +144,28 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       this.passTabs.delete(uri);
 
       this.logger.debug(fileOperation(uri, action));
-      await this.updateCodeInformation(uri);
+      await this.updateInformation(uri);
     }
 
     return super.handleWatcher({ action, uri });
   }
+  //#endregion Event Handlers
 
   public async codeInformation(uri: Uri): Promise<CodeInformation | undefined> {
-    return this.#codeInformation.get(uri) ?? (await this.updateCodeInformation(uri));
-  }
-
-  public async updateCodeInformation(uri: Uri): Promise<CodeInformation | undefined> {
-    if (this.#updatingCodeInformation.has(uri)) {
-      return this.#codeInformation.get(uri);
-    }
-    this.#updatingCodeInformation.add(uri);
-
-    const { logger } = this;
-    const oldCodeInformation = this.#codeInformation.get(uri);
-
-    const newCodeInformation =
-      isCode(uri) && !this.isIgnored(uri) ? await CodeInformation.create(uri, logger) : undefined;
-
-    if (newCodeInformation) {
-      if (!deepEquals(newCodeInformation, oldCodeInformation)) {
-        logger.trace(
-          fileOperation(uri, 'examined'),
-          ` => ${deepDifference(oldCodeInformation, newCodeInformation)}`,
-        );
-        this.#codeInformation.set(uri, newCodeInformation);
-        await this.fire('codeInformationChanged', { uri, oldCodeInformation, newCodeInformation });
-      }
-    } else {
-      this.#codeInformation.delete(uri);
-      if (oldCodeInformation) {
-        await this.fire('codeInformationChanged', { uri, oldCodeInformation, newCodeInformation });
-      }
+    const codeInfo = this.#codeInformation.get(uri);
+    if (codeInfo) {
+      return codeInfo;
     }
 
-    this.#updatingCodeInformation.delete(uri);
-    return newCodeInformation;
+    await this.updateInformation(uri);
+    return this.#codeInformation.get(uri);
   }
 
   public async allCodeInformation(): Promise<ReadonlyUriMap<CodeInformation>> {
     await this.findUnignoredFiles(`**/${globIsCode()}`).then(async (uris) => {
       for (const uri of uris) {
         if (isCode(uri)) {
-          await this.updateCodeInformation(uri);
+          await this.updateInformation(uri);
         }
       }
     });
@@ -209,8 +181,8 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     );
   }
 
-  public override filesImporting(uri: Uri): ReadonlyUriSet {
-    return new ReadonlyUriSet(
+  public override filesImporting(uri: Uri): UriSet {
+    return new UriSet(
       this.#codeInformation
         .entries()
         .filter(([, info]) => info.cssImports.has(uri))
@@ -228,7 +200,9 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     localName,
     token,
   }: EditCodeArguments): Promise<void> {
-    const cssInfo = await this.cssInformation(importUri);
+    await this.refreshAllInformation();
+
+    const cssInfo = await this.cssModuleInformation(importUri);
     if (cssInfo) {
       const locations = cssInfo.cssLocations({ className, localName, importUri });
       if (locations) {
@@ -240,7 +214,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
       const locals = cssInfo.localNames({ className, localName });
 
-      for (const codeInfo of (await this.allCodeInformation()).values()) {
+      for (const codeInfo of this.#codeInformation.values()) {
         if (token?.isCancellationRequested) {
           return;
         }

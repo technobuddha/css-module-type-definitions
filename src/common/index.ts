@@ -12,6 +12,7 @@ export {
   globIsCode,
   globIsCss,
   globIsCssModule,
+  globIsCssOrCode,
   globIsCssTypeDefinition,
   isCode,
   isCss,

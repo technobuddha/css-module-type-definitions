@@ -9,6 +9,7 @@ import selectorParser from 'postcss-selector-parser';
 import { type Logger, type Options } from '../common/index.ts';
 
 import { type CssImporter } from './css-importer/index.ts';
+import { type CssInfo } from './css-info.ts';
 import {
   type CMTDLocation,
   type CMTDPosition,
@@ -45,8 +46,7 @@ type Arguments = {
 type Return = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  classLocations: Map<string, CssLocation[]>;
-  includedFiles: Set<string>;
+  info: CssInfo;
 };
 
 const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
@@ -177,7 +177,7 @@ export async function extractLocations(
           classLocations.set(className, extractedCss);
         }
 
-        return { css, sourceMap, classLocations, includedFiles };
+        return { css, sourceMap, info: { classLocations, includedFiles } };
       }),
   );
 }

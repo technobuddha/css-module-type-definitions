@@ -1,7 +1,8 @@
 import { deepEquals } from '@technobuddha/library';
-import { type Disposable, workspace, type WorkspaceConfiguration } from 'vscode';
+import { type Disposable, type Uri, workspace, type WorkspaceConfiguration } from 'vscode';
 
 import {
+  type Action,
   type CMTDOptions,
   defaultOptions,
   fileOperation,
@@ -144,21 +145,30 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
         }
       }),
     );
+  }
 
-    this.on('watcher', async ({ action, uri }) => {
-      if (uri.fsPath === this.#viteConfigFile) {
-        this.logger.debug(fileOperation(uri, action));
-        await this.readViteConfig();
-        await this.changeOptions();
-        return;
-      }
+  protected override async handleWatcher({
+    action,
+    uri,
+  }: {
+    action: Action;
+    uri: Uri;
+  }): Promise<void> {
+    if (uri.fsPath === this.#viteConfigFile) {
+      this.logger.debug(fileOperation(uri, action));
+      await this.readViteConfig();
+      await this.changeOptions();
+      return;
+    }
 
-      if (uri.fsPath === this.#cmtdConfigFile) {
-        this.logger.debug(fileOperation(uri, action));
-        await this.readCMTDConfig();
-        await this.changeOptions();
-      }
-    });
+    if (uri.fsPath === this.#cmtdConfigFile) {
+      this.logger.debug(fileOperation(uri, action));
+      await this.readCMTDConfig();
+      await this.changeOptions();
+      return;
+    }
+
+    return super.handleWatcher({ action, uri });
   }
 
   public get options(): Options {
