@@ -16,6 +16,7 @@ export {
   globIsCssTypeDefinition,
   isCode,
   isCss,
+  isCssGlobal,
   isCssModule,
 } from './file-types.ts';
 export {

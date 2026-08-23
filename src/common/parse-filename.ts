@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   CODE_JS_EXTENSIONS,
   CODE_TS_EXTENSIONS,
+  CSS_EXTENSIONS,
   REACT_JS_EXTENSIONS,
   REACT_TS_EXTENSIONS,
 } from './extensions.ts';
@@ -17,6 +18,7 @@ type DirNameAndExtension = {
 
 const tsExtensions = new Set([...CODE_TS_EXTENSIONS, ...REACT_TS_EXTENSIONS]);
 const jsExtensions = new Set([...CODE_JS_EXTENSIONS, ...REACT_JS_EXTENSIONS]);
+const cssExtensions = new Set([...CSS_EXTENSIONS]);
 
 export function parseFilename(file: string): DirNameAndExtension {
   let { dir, name, base, ext, root } = path.parse(file);
@@ -26,7 +28,7 @@ export function parseFilename(file: string): DirNameAndExtension {
   }
 
   const dots = name.split('.');
-  if (tsExtensions.has(ext) && dots.length > 1 && dots.at(-1) === 'd') {
+  if (ext === '.ts' && dots.length > 1 && dots.at(-1) === 'd') {
     ext = `.d${ext}`;
     name = dots.slice(0, -1).join('.');
   } else if (ext === '.ts' && dots.length > 2 && dots.at(-2) === 'd') {
@@ -73,6 +75,9 @@ export function parseFilename(file: string): DirNameAndExtension {
     dots.at(-1) === 'setup'
   ) {
     ext = `.setup${ext}`;
+    name = dots.slice(0, -1).join('.');
+  } else if (cssExtensions.has(ext) && dots.length > 1 && dots.at(-1) === 'module') {
+    ext = `.module${ext}`;
     name = dots.slice(0, -1).join('.');
   }
   return { dir, name, base, ext, root };

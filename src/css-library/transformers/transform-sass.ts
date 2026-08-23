@@ -28,7 +28,7 @@ export async function transformSass(
     }).then(({ css, sourceMap, loadedUrls }) => ({
       css,
       sourceMap: fixSassSourceMap(sourceMap, directory, filename),
-      includedFiles: new Set(
+      importedFiles: new Set(
         loadedUrls.map((url) => url.pathname).filter((pathname) => pathname !== filename),
       ),
     })),

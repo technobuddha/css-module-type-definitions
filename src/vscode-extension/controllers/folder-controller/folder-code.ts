@@ -17,6 +17,7 @@ import {
   fileOperation,
   globIsCode,
   isCode,
+  isCssGlobal,
   isCssModule,
 } from '../../../common/index.ts';
 
@@ -37,7 +38,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       if (codeInfo) {
         const errors: Diagnostic[] = [];
 
-        for (const importUri of codeInfo.cssImports) {
+        for (const importUri of codeInfo.importedFiles) {
           if (isCssModule(importUri)) {
             const cssInfo = await this.cssModuleInformation(importUri);
             if (cssInfo && !cssInfo.hasDts) {
@@ -102,6 +103,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       if (!this.#codeInformation.has(uri)) {
         return this.updateInformation(uri);
       }
+      return;
     }
     return super.refreshInformation(uri);
   }
@@ -115,7 +117,47 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   protected override async handleEditTab(uri: Uri): Promise<void> {
     if (isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'edited'));
-      return this.updateInformation(uri).then(async () => this.updateDiagnostics(uri));
+      const uris = new UriSet([uri]);
+
+      await this.codeInformation(uri).then(async (codeInfo) => {
+        if (codeInfo) {
+          for (const importUri of codeInfo.importedFiles) {
+            uris.add(importUri);
+
+            if (isCssGlobal(importUri)) {
+              await this.cssGlobalInformation(importUri).then((info) => {
+                if (info) {
+                  for (const file of info?.importedFiles) {
+                    uris.add(file); //
+                  }
+                }
+              });
+            }
+
+            if (isCssModule(importUri)) {
+              await this.cssModuleInformation(importUri).then((info) => {
+                if (info) {
+                  for (const file of info?.importedFiles) {
+                    uris.add(file); //
+                  }
+                }
+              });
+            }
+
+            for (const file of this.filesImporting(importUri)) {
+              uris.add(file);
+            }
+          }
+        }
+      });
+
+      for (const code of uris) {
+        await this.updateInformation(code);
+      }
+      for (const code of uris) {
+        await this.updateDiagnostics(code);
+      }
+      return;
     }
     return super.handleEditTab(uri);
   }
@@ -176,7 +218,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new ReadonlyUriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.cssImports.has(uri))
+        .filter(([, info]) => info.importedFiles.has(uri))
         .map(([importer]) => importer),
     );
   }
@@ -185,7 +227,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new UriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.cssImports.has(uri))
+        .filter(([, info]) => info.importedFiles.has(uri))
         .map(([importer]) => importer),
       super.filesImporting(uri),
     );

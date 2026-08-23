@@ -31,7 +31,7 @@ export async function transformLess(
         return {
           css: removeInlineSourceMap(css),
           sourceMap: fixLessSourceMap(sourceMap, directory),
-          includedFiles: new Set(imports),
+          importedFiles: new Set(imports),
         };
       })
       .catch((error: Less.RenderError) => {

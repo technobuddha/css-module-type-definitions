@@ -55,7 +55,7 @@ export async function generateCssModuleInfo(
   }
 
   return extractLocations(css, { file, options, logger, cssImporter, relativeTo })
-    .then(async ({ css, info: { classLocations: locationsOfClass, includedFiles } }) => {
+    .then(async ({ css, info: { locationsOfClass, importedFiles } }) => {
       let classScope: Record<string, string>;
       return postcss()
         .use(
@@ -187,7 +187,7 @@ export async function generateCssModuleInfo(
             dtsFilename: path.resolve(dir, dtsFilename),
             hasDts,
             locationsOfClass,
-            includedFiles,
+            importedFiles,
             classLocal,
             localClass,
             dtsRange,

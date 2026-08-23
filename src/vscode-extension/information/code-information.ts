@@ -20,7 +20,7 @@ export class CodeInformation {
   public static async create(file: Uri, logger: Logger): Promise<CodeInformation> {
     const document = await workspace.openTextDocument(file);
 
-    const cssImports = new ReadonlyUriSet(
+    const importedFiles = new ReadonlyUriSet(
       scanImports(document, logger).filter((uri) => isCss(uri)),
     );
 
@@ -48,17 +48,17 @@ export class CodeInformation {
       usages.getOrInsert(importPath, []).push(...state.usages);
     }
 
-    return new CodeInformation(file, cssImports, usages);
+    return new CodeInformation(file, importedFiles, usages);
   }
 
   public readonly file: Uri;
-  public readonly cssImports: ReadonlyUriSet;
+  public readonly importedFiles: ReadonlyUriSet;
   public readonly usages: ReadonlyUriMap<Usage[]>;
 
-  protected constructor(file: Uri, cssImports: ReadonlyUriSet, usages: ReadonlyUriMap<Usage[]>) {
+  protected constructor(file: Uri, importedFiles: ReadonlyUriSet, usages: ReadonlyUriMap<Usage[]>) {
     this.file = file;
     this.usages = usages;
-    this.cssImports = cssImports;
+    this.importedFiles = importedFiles;
   }
 
   public async localUsage({

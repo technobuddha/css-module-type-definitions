@@ -50,7 +50,7 @@ export class CssReferenceProvider implements ReferenceProvider {
                   return [];
                 }
 
-                if (isCssModule(importUri) && codeInfo.cssImports.has(importUri)) {
+                if (isCssModule(importUri) && codeInfo.importedFiles.has(importUri)) {
                   const classUsages = await cssInfo.classUsage({ className, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {

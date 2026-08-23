@@ -28,7 +28,6 @@
     "url": "https://github.com/technobuddha/css-module-type-definitions/issues"
   },
   "scripts": {
-    "x": "tsx src/cli/cmtd.ts update",
     "vscode:prepublish": "yarn run compile",
     "compile": "build compile",
     "dev": "build dev",

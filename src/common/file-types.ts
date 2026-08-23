@@ -5,6 +5,7 @@ import { URI } from 'vscode-uri';
 import {
   CODE_EXTENSIONS,
   CSS_EXTENSIONS,
+  CSS_MODULE_EXTENSIONS,
   MODULE_PATTERN,
   TEST_EXTENSIONS,
   TYPECHECK_EXTENSIONS,
@@ -47,11 +48,19 @@ export function isCode(uri: string | URI): boolean {
 export function isCss(filename: string | URI): boolean {
   const { ext } = parseFilename(toPathname(filename));
 
+  return CSS_EXTENSIONS.includes(ext) || CSS_MODULE_EXTENSIONS.includes(ext);
+}
+
+export function isCssGlobal(filename: string | URI): boolean {
+  const { ext } = parseFilename(toPathname(filename));
+
   return CSS_EXTENSIONS.includes(ext);
 }
 
 export function isCssModule(filename: string | URI): boolean {
-  return path.matchesGlob(path.basename(toPathname(filename)), globIsCssModule());
+  const { ext } = parseFilename(toPathname(filename));
+
+  return CSS_MODULE_EXTENSIONS.includes(ext);
 }
 
 export function correspondingDts(filename: string): string | undefined;

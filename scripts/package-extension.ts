@@ -47,12 +47,12 @@ if (import.meta.main) {
           {
             command: 'cmtd.showCssModuleTypeDefinitions',
             title: 'CMTD: Show CSS Module Type Definitions',
-            icon: '$(css-eye-off)',
+            icon: '$(css-eye)',
           },
           {
             command: 'cmtd.hideCssModuleTypeDefinitions',
             title: 'CMTD: Hide CSS Module Type Definitions',
-            icon: '$(css-eye)',
+            icon: '$(css-eye-off)',
           },
         ],
         menus: {

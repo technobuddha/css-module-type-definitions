@@ -13,11 +13,17 @@ import {
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
-import { cssImporter, type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
+import {
+  cssImporter,
+  type CssLocation,
+  type CssModuleInfo,
+  generateCssModuleInfo,
+} from '../../css-library/index.ts';
 
-import { getSourceFile, importBindingNames } from '../helpers/index.ts';
+import { getSourceFile, importBindingNames, ReadonlyUriSet } from '../helpers/index.ts';
 
 import { type ClassUsage, type Usage } from './class-usage.ts';
+import { type CssInformation } from './css-information.ts';
 import { type State } from './state.ts';
 import { toLocation } from './to-location.ts';
 import { visit } from './visit.ts';
@@ -31,7 +37,7 @@ type Arguments = {
   readonly root: Uri;
 };
 
-export class CssModuleInformation implements CssModuleInfo {
+export class CssModuleInformation implements CssInformation {
   public static async create({
     uri,
     logger,
@@ -48,15 +54,17 @@ export class CssModuleInformation implements CssModuleInfo {
             cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
             relativeTo: os.homedir(),
             root: root.fsPath,
-          }).then((cssInfo) => new CssModuleInformation(cssInfo)),
+          }),
         noop,
       )
       .then((cssInfo) => (cssInfo ? new CssModuleInformation(cssInfo) : undefined));
   }
 
+  public classNames: Set<string>;
+
   public dtsContents: CssModuleInfo['dtsContents'];
-  public locationsOfClass: CssModuleInfo['locationsOfClass'];
-  public includedFiles: CssModuleInfo['includedFiles'];
+  public locationsOfClass: ReadonlyMap<string, CssLocation[]>;
+  public importedFiles: ReadonlyUriSet;
   public classLocal: CssModuleInfo['classLocal'];
   public classScope: CssModuleInfo['classScope'];
   public localClass: CssModuleInfo['localClass'];
@@ -68,7 +76,7 @@ export class CssModuleInformation implements CssModuleInfo {
     dtsFilename,
     dtsContents,
     locationsOfClass,
-    includedFiles,
+    importedFiles,
     classLocal,
     classScope,
     localClass,
@@ -79,13 +87,15 @@ export class CssModuleInformation implements CssModuleInfo {
     this.dtsFilename = dtsFilename;
     this.dtsContents = dtsContents;
     this.locationsOfClass = locationsOfClass;
-    this.includedFiles = includedFiles;
+    this.importedFiles = new ReadonlyUriSet(importedFiles.values().map((u) => Uri.file(u)));
     this.classLocal = classLocal;
     this.classScope = classScope;
     this.localClass = localClass;
     this.dtsRange = dtsRange;
     this.dtsFilename = dtsFile;
     this.hasDts = hasDts;
+
+    this.classNames = new Set(locationsOfClass.keys());
   }
 
   public async writeTypeDefinition(logger: Logger): Promise<void> {

@@ -17,6 +17,30 @@ export class ReadonlyUriSet {
     return this.set.has(uri.fsPath);
   }
 
+  public some(predicate: (uri: Uri) => boolean): boolean {
+    for (const value of this.set) {
+      if (predicate(Uri.file(value))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public every(predicate: (uri: Uri) => boolean): boolean {
+    for (const value of this.set) {
+      if (!predicate(Uri.file(value))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public *map<T>(mapper: (uri: Uri) => T): Generator<T> {
+    for (const value of this.set) {
+      yield mapper(Uri.file(value));
+    }
+  }
+
   public get size(): number {
     return this.set.size;
   }

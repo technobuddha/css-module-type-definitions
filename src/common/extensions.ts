@@ -42,5 +42,6 @@ export const CODE_EXTENSIONS = [
 export const TEST_EXTENSIONS = [...TEST_JS_EXTENSIONS, ...TEST_TS_EXTENSIONS];
 
 export const CSS_EXTENSIONS = ['.css', '.less', '.sass', '.scss'];
+export const CSS_MODULE_EXTENSIONS = CSS_EXTENSIONS.map((ext) => `.module${ext}`);
 
 export const MODULE_PATTERN = '*.module' as const;

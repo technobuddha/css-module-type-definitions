@@ -12,6 +12,7 @@ import {
   globIsCssTypeDefinition,
   isCode,
   isCss,
+  isCssGlobal,
   isCssModule,
   operation,
   type Options,
@@ -24,163 +25,239 @@ import {
   UriMap,
   UriSet,
 } from '../../helpers/index.ts';
-import { type CodeInformation, CssModuleInformation } from '../../information/index.ts';
+import {
+  type CodeInformation,
+  CssGlobalInformation,
+  CssModuleInformation,
+} from '../../information/index.ts';
 
 import { FolderEvent, type FolderEventArguments } from './folder-event.ts';
 
 export type FolderCssArguments = FolderEventArguments;
 
 export abstract class FolderCss extends FolderEvent implements Disposable {
+  readonly #cssGlobalInformation: UriMap<CssGlobalInformation> = new UriMap();
   readonly #cssModuleInformation: UriMap<CssModuleInformation> = new UriMap();
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
+    if (this.options.unusedClassesDiagnostics === 'none') {
+      this.diagnostics.delete(uri);
+      return;
+    }
+
     if (isCss(uri)) {
-      if (this.options.unusedClassesDiagnostics === 'none') {
-        this.diagnostics.delete(uri);
-        return;
-      }
+      this.logger.trace(fileOperation(uri, 'diagnostics'));
+      const diagnostics: Diagnostic[] = [];
 
-      if (this.openTabs.has(uri)) {
-        this.logger.trace('>', fileOperation(uri, 'diagnostics'));
-        const diagnostics: Diagnostic[] = [];
+      await this.refreshAllInformation();
+      const importers = this.filesImporting(uri);
 
-        const cssInfo = await this.cssModuleInformation(uri);
+      diagnose: {
+        if (importers.size === 0) {
+          // A file that is not imported by any other file.
+
+          const diagnostic = new Diagnostic(
+            new Range(0, 0, 0, 0),
+            `❝${Utils.basename(uri)}❞ is not imported by any file.`,
+            toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+          );
+          diagnostic.source = 'cmtd';
+          diagnostics.push(diagnostic);
+          break diagnose;
+        }
+
+        // A global CSS file that is imported directly into a code file.
+        if (isCssGlobal(uri) && importers.some((importer) => isCode(importer))) {
+          break diagnose;
+        }
+
+        // A CSS file that is imported by a Global CSS file which is imported by a code file.
+        if (
+          importers.some(
+            (importer) =>
+              isCssGlobal(importer) &&
+              this.filesImporting(importer).some((importerUri) => isCode(importerUri)),
+          )
+        ) {
+          break diagnose;
+        }
+
+        const cssInfo = await (isCssModule(uri) ?
+          this.cssModuleInformation(uri)
+        : this.cssGlobalInformation(uri));
         if (cssInfo) {
-          const classes = new Set(cssInfo.classLocal.keys());
+          const classes = new Set(cssInfo.classNames);
 
-          await this.refreshAllInformation();
-          const cssImporters = this.cssFilesImporting(uri);
-          const codeImporters = this.codeFilesImporting(uri);
-
-          if (cssImporters.size === 0 && codeImporters.size === 0) {
-            const diagnostic = new Diagnostic(
-              new Range(0, 0, 0, 0),
-              `❝${Utils.basename(uri)}❞ is not imported by any file.`,
-              toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
-            );
-            diagnostic.source = 'cmtd';
-            diagnostics.push(diagnostic);
-          } else {
-            const infos: { uri: Uri; codeInfo: CodeInformation }[] = [];
-
-            for (const codeUri of codeImporters) {
-              await this.codeInformation(codeUri).then((codeInfo) => {
-                if (codeInfo) {
-                  infos.push({ uri, codeInfo });
+          unused: {
+            // A module CSS file that is imported by a code file.
+            if (isCssModule(uri) && importers.some((importer) => isCode(importer))) {
+              for (const importer of importers) {
+                if (isCode(importer)) {
+                  await this.codeInformation(importer).then((codeInfo) => {
+                    if (codeInfo) {
+                      const usages = codeInfo.usages.get(uri);
+                      if (usages) {
+                        for (const usage of usages) {
+                          const classNames = (cssInfo as CssModuleInformation).localClass.get(
+                            usage.localName,
+                          );
+                          if (classNames) {
+                            for (const className of classNames) {
+                              classes.delete(className);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  });
                 }
-              });
+              }
             }
 
-            for (const cssUri of cssImporters) {
-              for (const codeUri of this.codeFilesImporting(cssUri)) {
-                await this.codeInformation(codeUri).then((codeInfo) => {
-                  if (codeInfo) {
-                    infos.push({ uri: cssUri, codeInfo });
+            // A CSS file that is imported by a Module CSS file which is imported by a code file.
+            const moduleImports = Array.from(importers).filter(
+              (importer) =>
+                isCssModule(importer) && this.filesImporting(importer).some((file) => isCode(file)),
+            );
+
+            if (moduleImports.length > 0) {
+              for (const moduleImport of moduleImports) {
+                await this.cssModuleInformation(moduleImport).then(async (moduleInfo) => {
+                  if (moduleInfo) {
+                    for (const importer of this.filesImporting(moduleImport)) {
+                      if (isCode(importer)) {
+                        await this.codeInformation(importer).then((codeInfo) => {
+                          if (codeInfo) {
+                            const usages = codeInfo.usages.get(moduleImport);
+                            if (usages) {
+                              for (const usage of usages) {
+                                const classNames = moduleInfo.localClass.get(usage.localName);
+                                if (classNames) {
+                                  for (const className of classNames) {
+                                    classes.delete(className);
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        });
+                      }
+                    }
                   }
                 });
               }
+
+              break unused;
             }
+          }
 
-            if (!isCssModule(uri) && infos.every(({ uri }) => !isCssModule(uri))) {
-              // Css file imported only code without treating it as a CSS module
-            } else {
-              for (const info of infos) {
-                const usages = info.codeInfo.usages.get(info.uri);
-                if (usages) {
-                  for (const usage of usages) {
-                    const classNames = cssInfo.localClass.get(usage.localName);
-                    if (classNames) {
-                      for (const className of classNames) {
-                        classes.delete(className);
-                      }
-                    }
+          for (const className of classes) {
+            const locations = cssInfo.locationsOfClass.get(className);
+            if (locations) {
+              for (const { location } of locations) {
+                let range: Range;
+                let message: string;
+
+                if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
+                  range = new Range(
+                    location.range.start.line,
+                    location.range.start.column,
+                    location.range.end.line,
+                    location.range.end.column,
+                  );
+                  message = `Class "${className}" is not used.`;
+                } else {
+                  if (!this.options.unusedImportedClassesDiagnostics) {
+                    continue;
                   }
+
+                  range = new Range(0, 0, 0, 0);
+                  message = `Class "${className}" imported from "${location.source}" is not used.`;
                 }
-              }
 
-              for (const className of classes) {
-                const locations = cssInfo.locationsOfClass.get(className);
-                if (locations) {
-                  for (const { location } of locations) {
-                    let range: Range;
-                    let message: string;
-
-                    if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
-                      range = new Range(
-                        location.range.start.line,
-                        location.range.start.column,
-                        location.range.end.line,
-                        location.range.end.column,
-                      );
-                      message = `Class "${className}" is not used.`;
-                    } else {
-                      if (!this.options.unusedImportedClassesDiagnostics) {
-                        continue;
-                      }
-
-                      range = new Range(0, 0, 0, 0);
-                      message = `Class "${className}" imported from "${location.source}" is not used.`;
-                    }
-
-                    const diagnostic = new Diagnostic(
-                      range,
-                      message,
-                      toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
-                    );
-                    diagnostic.source = 'cmtd';
-                    diagnostics.push(diagnostic);
-                  }
-                }
+                const diagnostic = new Diagnostic(
+                  range,
+                  message,
+                  toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+                );
+                diagnostic.source = 'cmtd';
+                diagnostics.push(diagnostic);
               }
             }
           }
         }
-
-        if (diagnostics.length > 0) {
-          this.diagnostics.set(uri, diagnostics);
-        } else {
-          this.diagnostics.delete(uri);
-        }
-        this.logger.trace('<', fileOperation(uri, 'diagnostics'));
       }
+
+      if (diagnostics.length > 0) {
+        this.diagnostics.set(uri, diagnostics);
+      } else {
+        this.diagnostics.delete(uri);
+      }
+      this.logger.trace('<', fileOperation(uri, 'diagnostics'));
     }
   }
 
   protected async updateInformation(uri: Uri, override = false): Promise<void> {
-    if (isCss(uri)) {
-      const oldCssInformation = this.#cssModuleInformation.get(uri);
-      const newCssInformation = await CssModuleInformation.create({
+    if (isCssModule(uri)) {
+      const oldCssModuleInformation = this.#cssModuleInformation.get(uri);
+      const newCssModuleInformation = await CssModuleInformation.create({
         uri,
         logger: this.logger,
         options: this.options,
         root: this.folder.uri,
       });
 
-      if (newCssInformation) {
-        if (!deepEquals(newCssInformation, oldCssInformation)) {
+      if (newCssModuleInformation) {
+        if (!deepEquals(newCssModuleInformation, oldCssModuleInformation)) {
           this.logger.trace(
             fileOperation(uri, 'examined'),
-            ` => ${deepDifference(oldCssInformation, newCssInformation)}`,
+            ` => ${deepDifference(oldCssModuleInformation, newCssModuleInformation)}`,
           );
 
-          this.#cssModuleInformation.set(uri, newCssInformation);
+          this.#cssModuleInformation.set(uri, newCssModuleInformation);
 
-          if (
-            isCssModule(uri) &&
-            (override || newCssInformation.hasDts || this.options.css.generateDts)
-          ) {
-            await newCssInformation.writeTypeDefinition(this.logger);
+          if (override || newCssModuleInformation.hasDts || this.options.css.generateDts) {
+            await newCssModuleInformation.writeTypeDefinition(this.logger);
           }
         }
       } else {
         this.#cssModuleInformation.delete(uri);
       }
     }
+
+    if (isCssGlobal(uri)) {
+      const oldCssGlobalInformation = this.#cssGlobalInformation.get(uri);
+      const newCssGlobalInformation = await CssGlobalInformation.create({
+        uri,
+        logger: this.logger,
+        options: this.options,
+      });
+
+      if (newCssGlobalInformation) {
+        if (!deepEquals(newCssGlobalInformation, oldCssGlobalInformation)) {
+          this.logger.trace(
+            fileOperation(uri, 'examined'),
+            ` => ${deepDifference(oldCssGlobalInformation, newCssGlobalInformation)}`,
+          );
+
+          this.#cssGlobalInformation.set(uri, newCssGlobalInformation);
+        }
+      } else {
+        this.#cssGlobalInformation.delete(uri);
+      }
+    }
   }
 
   protected async refreshInformation(uri: Uri): Promise<void> {
-    if (isCss(uri)) {
+    if (isCssModule(uri)) {
       if (!this.#cssModuleInformation.has(uri)) {
+        return this.updateInformation(uri);
+      }
+      return;
+    }
+
+    if (isCssGlobal(uri)) {
+      if (!this.#cssGlobalInformation.has(uri)) {
         return this.updateInformation(uri);
       }
     }
@@ -188,6 +265,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
   protected deleteInformation(uri: Uri): void {
     this.#cssModuleInformation.delete(uri);
+    this.#cssGlobalInformation.delete(uri);
   }
 
   //#region Event Handlers
@@ -220,9 +298,15 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
   }
 
   protected async handleIgnored(): Promise<void> {
-    for (const cssFile of Array.from(this.#cssModuleInformation.keys())) {
-      if (this.isIgnored(cssFile)) {
-        this.#cssModuleInformation.delete(cssFile);
+    for (const cssModule of Array.from(this.#cssModuleInformation.keys())) {
+      if (this.isIgnored(cssModule)) {
+        this.#cssModuleInformation.delete(cssModule);
+      }
+    }
+
+    for (const css of Array.from(this.#cssGlobalInformation.keys())) {
+      if (this.isIgnored(css)) {
+        this.#cssGlobalInformation.delete(css);
       }
     }
   }
@@ -238,12 +322,13 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     if (deepEquals(oldOptions.css, newOptions.css)) {
       return;
     }
-    this.logger.trace(operation(`${this.folder.name}::cssOptions`, 'changed'));
 
-    for (const uri of Array.from(this.#cssModuleInformation.keys())) {
-      await this.updateInformation(uri);
+    for (const cssModule of Array.from(this.#cssModuleInformation.keys())) {
+      await this.updateInformation(cssModule);
     }
-    this.logger.trace(operation(`${this.folder.name}::update`, 'changed'));
+    for (const css of Array.from(this.#cssGlobalInformation.keys())) {
+      await this.updateInformation(css);
+    }
   }
 
   protected override async handleWatcher({
@@ -292,8 +377,8 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       this.passTabs.delete(uri);
 
       this.logger.debug(fileOperation(uri, action));
-      for (const [file, { includedFiles }] of this.#cssModuleInformation) {
-        if (includedFiles.has(uri.fsPath)) {
+      for (const [file, { importedFiles }] of this.#cssModuleInformation) {
+        if (importedFiles.has(uri)) {
           await this.updateDiagnostics(file);
         }
       }
@@ -303,21 +388,21 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     const cssFile = correspondingSource(uri);
     if (cssFile) {
       this.logger.debug(fileOperation(uri, action));
-      const oldCssInformation = this.#cssModuleInformation.get(cssFile);
-      if (oldCssInformation) {
+      const oldCssModuleInformation = this.#cssModuleInformation.get(cssFile);
+      if (oldCssModuleInformation) {
         if (action === 'add' || action === 'unlink') {
           const hasDts = action === 'add';
 
-          if (oldCssInformation.hasDts !== hasDts) {
-            const newCssInformation = await CssModuleInformation.create({
+          if (oldCssModuleInformation.hasDts !== hasDts) {
+            const newCssModuleInformation = await CssModuleInformation.create({
               uri,
               logger: this.logger,
               options: this.options,
               root: this.folder.uri,
             });
-            if (newCssInformation) {
-              newCssInformation.hasDts = hasDts;
-              this.#cssModuleInformation.set(cssFile, newCssInformation);
+            if (newCssModuleInformation) {
+              newCssModuleInformation.hasDts = hasDts;
+              this.#cssModuleInformation.set(cssFile, newCssModuleInformation);
             }
           }
         }
@@ -328,6 +413,16 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     return super.handleWatcher({ action, uri });
   }
   //#endregion Event Handlers
+
+  public async cssGlobalInformation(uri: Uri): Promise<CssGlobalInformation | undefined> {
+    const cssGlobalInfo = this.#cssGlobalInformation.get(uri);
+    if (cssGlobalInfo) {
+      return cssGlobalInfo;
+    }
+
+    await this.updateInformation(uri);
+    return this.#cssGlobalInformation.get(uri);
+  }
 
   public async cssModuleInformation(uri: Uri): Promise<CssModuleInformation | undefined> {
     const cssModuleInfo = this.#cssModuleInformation.get(uri);
@@ -346,7 +441,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     return new ReadonlyUriSet(
       this.#cssModuleInformation
         .entries()
-        .filter(([, info]) => info.includedFiles.has(uri.fsPath))
+        .filter(([, info]) => info.importedFiles.has(uri))
         .map(([importer]) => importer),
     );
   }
@@ -355,7 +450,11 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     return new UriSet(
       this.#cssModuleInformation
         .entries()
-        .filter(([, info]) => info.includedFiles.has(uri.fsPath))
+        .filter(([, info]) => info.importedFiles.has(uri))
+        .map(([importer]) => importer),
+      this.#cssGlobalInformation
+        .entries()
+        .filter(([, info]) => info.importedFiles.has(uri))
         .map(([importer]) => importer),
     );
   }

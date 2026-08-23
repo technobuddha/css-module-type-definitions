@@ -10,7 +10,7 @@ import { transformSass } from './transform-sass.ts';
 
 export type TransformerReturn = {
   readonly css: string;
-  readonly includedFiles: Set<string>;
+  readonly importedFiles: Set<string>;
   readonly sourceMap?: RawSourceMap;
 };
 
@@ -43,7 +43,7 @@ export async function transformer(
     }
 
     default: {
-      return { css, includedFiles: new Set() };
+      return { css, importedFiles: new Set() };
     }
   }
 }

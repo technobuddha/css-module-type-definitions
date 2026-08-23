@@ -9,7 +9,7 @@ import selectorParser from 'postcss-selector-parser';
 import { type Logger, type Options } from '../common/index.ts';
 
 import { type CssImporter } from './css-importer/index.ts';
-import { type CssInfo } from './css-info.ts';
+import { type CssGlobalInfo } from './css-info.ts';
 import {
   type CMTDLocation,
   type CMTDPosition,
@@ -46,7 +46,7 @@ type Arguments = {
 type Return = {
   css: string;
   sourceMap: RawSourceMap | undefined;
-  info: CssInfo;
+  info: CssGlobalInfo;
 };
 
 const reEndOfSelector = /[\s,>+~.#:\{\[\)\]]/v;
@@ -64,18 +64,18 @@ export async function extractLocations(
     options,
     logger,
     cssImporter,
-  }).then(async ({ css, sourceMap, includedFiles }) =>
+  }).then(async ({ css, sourceMap, importedFiles }) =>
     postcss()
       .use(postcssImport({ root: directory, ...(cssImporter?.css && { load: cssImporter.css }) }))
       .process(css, { from: filename, map: { inline: false, prev: sourceMap } })
       .then(async ({ css, map, messages }) => {
         for (const message of messages) {
           if (message.type === 'dependency' && typeof message.file === 'string') {
-            includedFiles.add(message.file);
+            importedFiles.add(message.file);
           }
         }
 
-        const allFiles = new Set([filename, ...includedFiles].map((f) => path.resolve(f)));
+        const allFiles = new Set([filename, ...importedFiles].map((f) => path.resolve(f)));
         const sources = new Map(
           zipperMerge(
             allFiles,
@@ -90,7 +90,7 @@ export async function extractLocations(
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
-        const classLocations: Map<string, CssLocation[]> = new Map();
+        const locationsOfClass: Map<string, CssLocation[]> = new Map();
 
         postcss()
           .process(css, { from: path.basename(filename) })
@@ -108,14 +108,14 @@ export async function extractLocations(
                 column: (node.source?.end?.column ?? 1) - 1,
               };
 
-              classLocations.getOrInsert(name, []).push({
+              locationsOfClass.getOrInsert(name, []).push({
                 snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
                 location: { source, range: { start, end } },
               });
             }
           });
 
-        for (const [className, extracted] of Array.from(classLocations)) {
+        for (const [className, extracted] of Array.from(locationsOfClass)) {
           const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
           let prevStart: CMTDPosition | undefined;
@@ -174,10 +174,10 @@ export async function extractLocations(
             }
             extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }
-          classLocations.set(className, extractedCss);
+          locationsOfClass.set(className, extractedCss);
         }
 
-        return { css, sourceMap, info: { classLocations, includedFiles } };
+        return { css, sourceMap, info: { locationsOfClass, importedFiles } };
       }),
   );
 }
