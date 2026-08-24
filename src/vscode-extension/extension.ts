@@ -1,4 +1,4 @@
-import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
+import { commands, type DocumentSelector, type ExtensionContext, languages, window } from 'vscode';
 
 import {
   commandDeleteCssModuleTypeDefinitions,
@@ -13,6 +13,7 @@ import {
   CodeHoverProvider,
   CodeReferenceProvider,
   CodeRenameProvider,
+  CssCodeLensProvider,
   CssReferenceProvider,
   CssRenameProvider,
 } from './providers/index.ts';
@@ -63,6 +64,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
       new CssReferenceProvider({ workspaceController }),
     ),
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
+    languages.registerCodeLensProvider(cssSelector, new CssCodeLensProvider(workspaceController)),
+    commands.registerCommand('codelens-sample.codelensAction', (...args: unknown[]) => {
+      window.showInformationMessage(`Codelens action triggered with args: ${JSON.stringify(args)}`);
+    }),
   );
 }
 

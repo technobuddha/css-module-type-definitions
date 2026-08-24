@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-import { deepDifference, deepEquals, noop } from '@technobuddha/library';
-import { Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
+import { deepDifference, deepEquals, nbsp, noop } from '@technobuddha/library';
+import { type Command, Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import {
@@ -38,6 +38,7 @@ export type FolderCssArguments = FolderEventArguments;
 export abstract class FolderCss extends FolderEvent implements Disposable {
   readonly #cssGlobalInformation: UriMap<CssGlobalInformation> = new UriMap();
   readonly #cssModuleInformation: UriMap<CssModuleInformation> = new UriMap();
+  readonly #commands: UriMap<Command> = new UriMap();
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
     if (this.options.unusedClassesDiagnostics === 'none') {
@@ -53,8 +54,14 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       const importers = this.filesImporting(uri);
 
       diagnose: {
+        // A file that is not imported by any other file.
         if (importers.size === 0) {
-          // A file that is not imported by any other file.
+          this.#commands.set(uri, {
+            title: `$(cmtd-logo)${nbsp}${nbsp} This file is not imported by any other file.`,
+            tooltip: 'Tooltip provided by *sample* extension',
+            command: 'codelens-sample.codelensAction',
+            arguments: ['Argument 1', false],
+          });
 
           const diagnostic = new Diagnostic(
             new Range(0, 0, 0, 0),
@@ -66,8 +73,29 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           break diagnose;
         }
 
+        if (
+          importers.every(
+            (importer) =>
+              !isCode(importer) && this.filesImporting(importer).every((i) => !isCode(i)),
+          )
+        ) {
+          this.#commands.set(uri, {
+            title: `$(cmtd-logo)${nbsp}${nbsp} This CSS is not imported by any code file.`,
+            tooltip: 'Tooltip provided by *sample* extension',
+            command: 'codelens-sample.codelensAction',
+            arguments: ['Argument 1', false],
+          });
+          break diagnose;
+        }
+
         // A global CSS file that is imported directly into a code file.
         if (isCssGlobal(uri) && importers.some((importer) => isCode(importer))) {
+          this.#commands.set(uri, {
+            title: `$(cmtd-logo)${nbsp}${nbsp} This global CSS is imported directly into code.`,
+            tooltip: 'Tooltip provided by *sample* extension',
+            command: 'codelens-sample.codelensAction',
+            arguments: ['Argument 1', false],
+          });
           break diagnose;
         }
 
@@ -79,9 +107,16 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
               this.filesImporting(importer).some((importerUri) => isCode(importerUri)),
           )
         ) {
+          this.#commands.set(uri, {
+            title: `$(cmtd-logo)${nbsp}${nbsp} This global CSS is indirectly imported into code.`,
+            tooltip: 'Tooltip provided by *sample* extension',
+            command: 'codelens-sample.codelensAction',
+            arguments: ['Argument 1', false],
+          });
           break diagnose;
         }
 
+        // A module CSS file that is imported by a code file.
         const cssInfo = await (isCssModule(uri) ?
           this.cssModuleInformation(uri)
         : this.cssGlobalInformation(uri));
@@ -89,8 +124,14 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           const classes = new Set(cssInfo.classNames);
 
           unused: {
-            // A module CSS file that is imported by a code file.
             if (isCssModule(uri) && importers.some((importer) => isCode(importer))) {
+              this.#commands.set(uri, {
+                title: `$(cmtd-logo)${nbsp}${nbsp} This module CSS is imported directly into code.`,
+                tooltip: 'Tooltip provided by *sample* extension',
+                command: 'codelens-sample.codelensAction',
+                arguments: ['Argument 1', false],
+              });
+
               for (const importer of importers) {
                 if (isCode(importer)) {
                   await this.codeInformation(importer).then((codeInfo) => {
@@ -112,6 +153,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
                   });
                 }
               }
+              break unused;
             }
 
             // A CSS file that is imported by a Module CSS file which is imported by a code file.
@@ -119,8 +161,14 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
               (importer) =>
                 isCssModule(importer) && this.filesImporting(importer).some((file) => isCode(file)),
             );
-
             if (moduleImports.length > 0) {
+              this.#commands.set(uri, {
+                title: `$(cmtd-logo)${nbsp}${nbsp} This CSS is indirectly imported into code as Module Css.`,
+                tooltip: 'Tooltip provided by *sample* extension',
+                command: 'codelens-sample.codelensAction',
+                arguments: ['Argument 1', false],
+              });
+
               for (const moduleImport of moduleImports) {
                 await this.cssModuleInformation(moduleImport).then(async (moduleInfo) => {
                   if (moduleInfo) {
@@ -326,8 +374,8 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     for (const cssModule of Array.from(this.#cssModuleInformation.keys())) {
       await this.updateInformation(cssModule);
     }
-    for (const css of Array.from(this.#cssGlobalInformation.keys())) {
-      await this.updateInformation(css);
+    for (const cssGlobal of Array.from(this.#cssGlobalInformation.keys())) {
+      await this.updateInformation(cssGlobal);
     }
   }
 
@@ -413,6 +461,10 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     return super.handleWatcher({ action, uri });
   }
   //#endregion Event Handlers
+
+  public command(uri: Uri): Command | undefined {
+    return this.#commands.get(uri);
+  }
 
   public async cssGlobalInformation(uri: Uri): Promise<CssGlobalInformation | undefined> {
     const cssGlobalInfo = this.#cssGlobalInformation.get(uri);

@@ -13,7 +13,7 @@ import {
 } from '../helpers/index.ts';
 
 import { type Usage } from './class-usage.ts';
-import { type State } from './state.ts';
+import { State } from './state.ts';
 import { visit } from './visit.ts';
 
 export class CodeInformation {
@@ -36,12 +36,7 @@ export class CodeInformation {
     }
 
     for (const [importPath, bindingNames] of bindings) {
-      const state: State = {
-        bindingNames,
-        seenUsages: new Set<string>(),
-        usages: [],
-        sourceFile,
-      };
+      const state = new State(bindingNames, sourceFile);
 
       visit(sourceFile, state);
 

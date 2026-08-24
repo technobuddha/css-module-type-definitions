@@ -24,7 +24,7 @@ import { getSourceFile, importBindingNames, ReadonlyUriSet } from '../helpers/in
 
 import { type ClassUsage, type Usage } from './class-usage.ts';
 import { type CssInformation } from './css-information.ts';
-import { type State } from './state.ts';
+import { State } from './state.ts';
 import { toLocation } from './to-location.ts';
 import { visit } from './visit.ts';
 
@@ -258,12 +258,7 @@ export class CssModuleInformation implements CssInformation {
     const sourceFile = getSourceFile(document);
     const bindingNames = await importBindingNames(document, sourceFile, importUri);
     if (bindingNames.size > 0) {
-      const state: State = {
-        bindingNames,
-        seenUsages: new Set<string>(),
-        usages: [],
-        sourceFile,
-      };
+      const state = new State(bindingNames, sourceFile);
 
       visit(sourceFile, state);
 
