@@ -159,6 +159,10 @@ export class CssModuleInformation implements CssInformation {
     return null;
   }
 
+  public localClassName(localName: string): ReadonlySet<string> | undefined {
+    return this.localClass.get(localName);
+  }
+
   public aliases({ className, localName }: LocalOrClass): ReadonlySet<string> {
     if (localName) {
       const classNames = this.localClass.get(localName);

@@ -7,4 +7,5 @@ export interface CssInformation {
 
   readonly locationsOfClass: ReadonlyMap<string, CssLocation[]>;
   readonly importedFiles: ReadonlyUriSet;
+  readonly localClassName: (localName: string) => ReadonlySet<string> | undefined;
 }

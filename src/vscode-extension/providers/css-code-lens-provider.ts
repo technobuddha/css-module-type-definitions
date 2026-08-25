@@ -1,17 +1,28 @@
+import os from 'node:os';
+import path from 'node:path';
+
+import { conjoin, empty, nbsp } from '@technobuddha/library';
 import {
   type CancellationToken,
   CodeLens,
   type CodeLensProvider,
+  commands,
+  type Disposable,
   Range,
   type TextDocument,
-  type Uri,
+  Uri,
+  window,
+  workspace,
 } from 'vscode';
+import { Utils } from 'vscode-uri';
 
 import { type Logger } from '../../common/index.ts';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
-class CL extends CodeLens {
+const COMMAND_NAME = 'cmtd.cssCodeLens';
+
+class CssCodeLens extends CodeLens {
   public uri: Uri;
   public constructor(range: Range, uri: Uri) {
     super(range);
@@ -22,44 +33,75 @@ class CL extends CodeLens {
 /**
  * CodelensProvider
  */
-export class CssCodeLensProvider implements CodeLensProvider<CL> {
-  private readonly workspaceController: WorkspaceController;
+export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Disposable {
+  protected readonly disposables: Disposable[] = [];
+  protected readonly workspaceController: WorkspaceController;
 
   public constructor(workspaceController: WorkspaceController) {
     this.workspaceController = workspaceController;
+
+    this.disposables.push(
+      commands.registerCommand(COMMAND_NAME, (...args: Uri[]) => {
+        if (args.length === 0) {
+          return;
+        }
+        if (args.length === 1) {
+          void workspace.openTextDocument(args[0]).then((doc) => window.showTextDocument(doc));
+        }
+
+        const fc = this.workspaceController.folderController(args[0]);
+        const root = fc?.folder.uri ?? Uri.file(os.homedir());
+
+        void window
+          .showQuickPick(args.map((uri) => path.relative(root.fsPath, uri.fsPath)))
+          .then(async (pick) => {
+            if (pick) {
+              workspace
+                .openTextDocument(Uri.joinPath(root, pick))
+                .then((doc) => window.showTextDocument(doc));
+            }
+          });
+        window.showInformationMessage(
+          `Codelens triggered with args: ${conjoin(args.map(Utils.basename))}`,
+        );
+      }),
+    );
   }
 
   public get logger(): Logger {
     return this.workspaceController.logger;
   }
 
-  public provideCodeLenses(document: TextDocument, _token: CancellationToken): CL[] {
-    this.logger.debug('>>>>>>', document.uri.fsPath);
-    // const codeLenses: CodeLens[] = [];
-    // // eslint-disable-next-line require-unicode-regexp
-    // const regex = /content/g;
-    // const text = document.getText();
-    // const matches = text.matchAll(regex);
-    // for (const match of matches) {
-    //   const { line, character } = document.positionAt(match.index);
-    //   const range = new Range(line, character, line, character);
-    //   if (range) {
-    //     codeLenses.push(new CodeLens(range));
-    //   }
-    // }
-    return [new CL(new Range(0, 0, 0, 0), document.uri)];
+  public provideCodeLenses(document: TextDocument, _token: CancellationToken): CssCodeLens[] {
+    return [new CssCodeLens(new Range(0, 0, 0, 0), document.uri)];
   }
 
-  public resolveCodeLens(codeLens: CL, _token: CancellationToken): CL | null {
+  public resolveCodeLens(codeLens: CssCodeLens, _token: CancellationToken): CssCodeLens | null {
     const fc = this.workspaceController.folderController(codeLens.uri);
     if (fc) {
       const command = fc.command(codeLens.uri);
-      codeLens.command = command ?? {
-        title: '',
-        command: 'none',
+      codeLens.command = {
+        command: COMMAND_NAME,
+        title:
+          command?.title ?
+            `${command?.icon ?? '$(cmtd-logo)'}${nbsp}${nbsp} ${command.title}`
+          : empty,
+        tooltip: command?.tooltip ?? 'Tooltip provided by css code lens extension',
+        arguments: command?.arguments ?? [],
       };
     }
 
     return codeLens;
+  }
+
+  public dispose(): void {
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
+    this.disposables.length = 0;
+  }
+
+  public [Symbol.dispose](): void {
+    this.dispose();
   }
 }

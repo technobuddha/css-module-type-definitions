@@ -41,6 +41,15 @@ export class ReadonlyUriSet {
     }
   }
 
+  public *filter(predicate: (uri: Uri) => boolean): Generator<Uri> {
+    for (const value of this.set) {
+      const uri = Uri.file(value);
+      if (predicate(uri)) {
+        yield uri;
+      }
+    }
+  }
+
   public get size(): number {
     return this.set.size;
   }

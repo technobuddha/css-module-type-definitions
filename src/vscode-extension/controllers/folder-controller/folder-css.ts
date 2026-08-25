@@ -1,6 +1,7 @@
 import path from 'node:path';
 
-import { deepDifference, deepEquals, nbsp, noop } from '@technobuddha/library';
+import { conjoin, deepDifference, deepEquals, noop, toArray } from '@technobuddha/library';
+import { type SetOptional } from 'type-fest';
 import { type Command, Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
@@ -28,6 +29,7 @@ import {
 import {
   type CodeInformation,
   CssGlobalInformation,
+  type CssInformation,
   CssModuleInformation,
 } from '../../information/index.ts';
 
@@ -35,10 +37,12 @@ import { FolderEvent, type FolderEventArguments } from './folder-event.ts';
 
 export type FolderCssArguments = FolderEventArguments;
 
+type CssCommand = SetOptional<Omit<Command, 'command'>, 'tooltip'> & { icon?: string };
+
 export abstract class FolderCss extends FolderEvent implements Disposable {
   readonly #cssGlobalInformation: UriMap<CssGlobalInformation> = new UriMap();
   readonly #cssModuleInformation: UriMap<CssModuleInformation> = new UriMap();
-  readonly #commands: UriMap<Command> = new UriMap();
+  readonly #commands: UriMap<CssCommand> = new UriMap();
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
     if (this.options.unusedClassesDiagnostics === 'none') {
@@ -53,184 +57,188 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       await this.refreshAllInformation();
       const importers = this.filesImporting(uri);
 
-      diagnose: {
-        // A file that is not imported by any other file.
-        if (importers.size === 0) {
-          this.#commands.set(uri, {
-            title: `$(cmtd-logo)${nbsp}${nbsp} This file is not imported by any other file.`,
-            tooltip: 'Tooltip provided by *sample* extension',
-            command: 'codelens-sample.codelensAction',
-            arguments: ['Argument 1', false],
-          });
+      const cssInfo = await this.cssInformation(uri);
+      if (cssInfo) {
+        const classes = new Set(cssInfo.classNames);
 
-          const diagnostic = new Diagnostic(
-            new Range(0, 0, 0, 0),
-            `❝${Utils.basename(uri)}❞ is not imported by any file.`,
-            toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
-          );
-          diagnostic.source = 'cmtd';
-          diagnostics.push(diagnostic);
-          break diagnose;
-        }
-
-        if (
-          importers.every(
-            (importer) =>
-              !isCode(importer) && this.filesImporting(importer).every((i) => !isCode(i)),
-          )
-        ) {
-          this.#commands.set(uri, {
-            title: `$(cmtd-logo)${nbsp}${nbsp} This CSS is not imported by any code file.`,
-            tooltip: 'Tooltip provided by *sample* extension',
-            command: 'codelens-sample.codelensAction',
-            arguments: ['Argument 1', false],
-          });
-          break diagnose;
-        }
-
-        // A global CSS file that is imported directly into a code file.
-        if (isCssGlobal(uri) && importers.some((importer) => isCode(importer))) {
-          this.#commands.set(uri, {
-            title: `$(cmtd-logo)${nbsp}${nbsp} This global CSS is imported directly into code.`,
-            tooltip: 'Tooltip provided by *sample* extension',
-            command: 'codelens-sample.codelensAction',
-            arguments: ['Argument 1', false],
-          });
-          break diagnose;
-        }
-
-        // A CSS file that is imported by a Global CSS file which is imported by a code file.
-        if (
-          importers.some(
-            (importer) =>
-              isCssGlobal(importer) &&
-              this.filesImporting(importer).some((importerUri) => isCode(importerUri)),
-          )
-        ) {
-          this.#commands.set(uri, {
-            title: `$(cmtd-logo)${nbsp}${nbsp} This global CSS is indirectly imported into code.`,
-            tooltip: 'Tooltip provided by *sample* extension',
-            command: 'codelens-sample.codelensAction',
-            arguments: ['Argument 1', false],
-          });
-          break diagnose;
-        }
-
-        // A module CSS file that is imported by a code file.
-        const cssInfo = await (isCssModule(uri) ?
-          this.cssModuleInformation(uri)
-        : this.cssGlobalInformation(uri));
-        if (cssInfo) {
-          const classes = new Set(cssInfo.classNames);
-
-          unused: {
-            if (isCssModule(uri) && importers.some((importer) => isCode(importer))) {
-              this.#commands.set(uri, {
-                title: `$(cmtd-logo)${nbsp}${nbsp} This module CSS is imported directly into code.`,
-                tooltip: 'Tooltip provided by *sample* extension',
-                command: 'codelens-sample.codelensAction',
-                arguments: ['Argument 1', false],
-              });
-
-              for (const importer of importers) {
-                if (isCode(importer)) {
-                  await this.codeInformation(importer).then((codeInfo) => {
-                    if (codeInfo) {
-                      const usages = codeInfo.usages.get(uri);
-                      if (usages) {
-                        for (const usage of usages) {
-                          const classNames = (cssInfo as CssModuleInformation).localClass.get(
-                            usage.localName,
-                          );
-                          if (classNames) {
-                            for (const className of classNames) {
-                              classes.delete(className);
-                            }
+        const removeUsedClasses = async (
+          importers: ReadonlyUriSet,
+          uris: Uri | Iterable<Uri> = uri,
+        ): Promise<void> => {
+          for (const importer of importers) {
+            if (isCode(importer)) {
+              const codeInfo = await this.codeInformation(importer);
+              if (codeInfo) {
+                for (const u of toArray(uris)) {
+                  const cssInfo = await this.cssInformation(u);
+                  if (cssInfo) {
+                    const usages = codeInfo.usages.get(u);
+                    if (usages) {
+                      for (const usage of usages) {
+                        const classNames = cssInfo.localClassName(usage.localName);
+                        if (classNames) {
+                          for (const className of classNames) {
+                            classes.delete(className);
                           }
                         }
                       }
                     }
-                  });
+                  }
                 }
               }
-              break unused;
-            }
-
-            // A CSS file that is imported by a Module CSS file which is imported by a code file.
-            const moduleImports = Array.from(importers).filter(
-              (importer) =>
-                isCssModule(importer) && this.filesImporting(importer).some((file) => isCode(file)),
-            );
-            if (moduleImports.length > 0) {
-              this.#commands.set(uri, {
-                title: `$(cmtd-logo)${nbsp}${nbsp} This CSS is indirectly imported into code as Module Css.`,
-                tooltip: 'Tooltip provided by *sample* extension',
-                command: 'codelens-sample.codelensAction',
-                arguments: ['Argument 1', false],
-              });
-
-              for (const moduleImport of moduleImports) {
-                await this.cssModuleInformation(moduleImport).then(async (moduleInfo) => {
-                  if (moduleInfo) {
-                    for (const importer of this.filesImporting(moduleImport)) {
-                      if (isCode(importer)) {
-                        await this.codeInformation(importer).then((codeInfo) => {
-                          if (codeInfo) {
-                            const usages = codeInfo.usages.get(moduleImport);
-                            if (usages) {
-                              for (const usage of usages) {
-                                const classNames = moduleInfo.localClass.get(usage.localName);
-                                if (classNames) {
-                                  for (const className of classNames) {
-                                    classes.delete(className);
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        });
-                      }
-                    }
-                  }
-                });
-              }
-
-              break unused;
             }
           }
+        };
 
-          for (const className of classes) {
-            const locations = cssInfo.locationsOfClass.get(className);
-            if (locations) {
-              for (const { location } of locations) {
-                let range: Range;
-                let message: string;
+        const codeImporters = new UriSet(importers.values().filter((importer) => isCode(importer)));
+        const cssImporters = new UriSet(importers.values().filter((importer) => isCss(importer)));
 
-                if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
-                  range = new Range(
-                    location.range.start.line,
-                    location.range.start.column,
-                    location.range.end.line,
-                    location.range.end.column,
-                  );
-                  message = `Class "${className}" is not used.`;
-                } else {
-                  if (!this.options.unusedImportedClassesDiagnostics) {
-                    continue;
-                  }
+        if (codeImporters.size === 0 && cssImporters.size === 0) {
+          // A file that is not imported by any other file.
+          this.#commands.set(uri, {
+            icon: '⏸️',
+            title: `Not imported.`,
+            arguments: [],
+          });
 
-                  range = new Range(0, 0, 0, 0);
-                  message = `Class "${className}" imported from "${location.source}" is not used.`;
-                }
+          const diagnostic = new Diagnostic(
+            new Range(0, 0, 0, 0),
+            `${uriName(uri)} is not imported.`,
+            toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+          );
+          diagnostic.source = 'cmtd';
+          diagnostics.push(diagnostic);
 
-                const diagnostic = new Diagnostic(
-                  range,
-                  message,
-                  toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+          classes.clear();
+        } else if (codeImporters.size > 0 && cssImporters.size === 0) {
+          if (isCssGlobal(uri)) {
+            // A global CSS file that is imported directly into a code file.
+            this.#commands.set(uri, {
+              icon: '🌎',
+              title: `Imported by ${uriName(codeImporters)}`,
+              arguments: Array.from(codeImporters),
+            });
+
+            classes.clear();
+          }
+
+          if (isCssModule(uri)) {
+            // A module CSS file that is imported directly into a code file.
+            this.#commands.set(uri, {
+              icon: '🧩',
+              title: `Imported by ${uriName(codeImporters)}`,
+              arguments: Array.from(codeImporters),
+            });
+
+            await removeUsedClasses(codeImporters);
+          }
+        } else if (cssImporters.size > 0) {
+          const globalImporters = new UriSet(
+            cssImporters
+              .filter((importer) => isCssGlobal(importer))
+              .flatMap((importer) => this.filesImporting(importer))
+              .filter((importer) => isCode(importer)),
+            isCssGlobal(uri) ? codeImporters : [],
+          );
+          const moduleImporters = new UriSet(
+            cssImporters
+              .filter((importer) => isCssModule(importer))
+              .flatMap((importer) => this.filesImporting(importer))
+              .filter((importer) => isCode(importer)),
+            isCssModule(uri) ? codeImporters : [],
+          );
+
+          if (globalImporters.size === 0 && moduleImporters.size === 0) {
+            // A CSS file that is not imported by any code file.
+            this.#commands.set(uri, {
+              icon: '⏸️',
+              title: `Imported by ${uriName(cssImporters)}`,
+              arguments: Array.from(cssImporters),
+            });
+
+            const diagnostic = new Diagnostic(
+              new Range(0, 0, 0, 0),
+              `${uriName(uri)} is not imported by any code.`,
+              toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+            );
+            diagnostic.source = 'cmtd';
+            diagnostics.push(diagnostic);
+
+            classes.clear();
+          } else if (globalImporters.size === 0 && moduleImporters.size > 0) {
+            // A CSS file that is imported by Module CSS files which are imported by code files.
+            this.#commands.set(uri, {
+              icon: '🧩',
+              title: `Imported by ${uriName(cssImporters, moduleImporters)}`,
+              arguments: [...Array.from(cssImporters), ...Array.from(moduleImporters)],
+            });
+
+            await removeUsedClasses(moduleImporters, cssImporters);
+          } else if (globalImporters.size > 0 && moduleImporters.size === 0) {
+            // A CSS file that is imported by Global CSS files which are imported by code files.
+            this.#commands.set(uri, {
+              icon: '🌎',
+              title: `Imported by ${uriName(cssImporters, globalImporters)}`,
+              arguments: [...Array.from(cssImporters), ...Array.from(globalImporters)],
+            });
+
+            await removeUsedClasses(globalImporters, cssImporters);
+          } else if (globalImporters.size > 0 && moduleImporters.size > 0) {
+            // A CSS file that is imported by both Global and Module CSS files which are imported by code files.
+            this.#commands.set(uri, {
+              icon: '🔀',
+              title: `Imported by ${uriName(cssImporters, moduleImporters, globalImporters)}`,
+              arguments: [
+                ...Array.from(cssImporters),
+                ...Array.from(moduleImporters),
+                ...Array.from(globalImporters),
+              ],
+            });
+
+            const diagnostic = new Diagnostic(
+              new Range(0, 0, 0, 0),
+              `${uriName(uri)} is imported both as Module and Global CSS.`,
+              toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+            );
+            diagnostic.source = 'cmtd';
+            diagnostics.push(diagnostic);
+
+            classes.clear();
+          }
+        }
+
+        for (const className of classes) {
+          const locations = cssInfo.locationsOfClass.get(className);
+          if (locations) {
+            for (const { location } of locations) {
+              let range: Range;
+              let message: string;
+
+              if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
+                range = new Range(
+                  location.range.start.line,
+                  location.range.start.column,
+                  location.range.end.line,
+                  location.range.end.column,
                 );
-                diagnostic.source = 'cmtd';
-                diagnostics.push(diagnostic);
+                message = `Class "${className}" is not used.`;
+              } else {
+                continue;
+                // if (!this.options.unusedImportedClassesDiagnostics) {
+                //   continue;
+                // }
+
+                // range = new Range(0, 0, 0, 0);
+                // message = `Class "${className}" imported from "${location.source}" is not used.`;
               }
+
+              const diagnostic = new Diagnostic(
+                range,
+                message,
+                toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+              );
+              diagnostic.source = 'cmtd';
+              diagnostics.push(diagnostic);
             }
           }
         }
@@ -241,7 +249,6 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       } else {
         this.diagnostics.delete(uri);
       }
-      this.logger.trace('<', fileOperation(uri, 'diagnostics'));
     }
   }
 
@@ -386,7 +393,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     action: Action;
     uri: Uri;
   }): Promise<void> {
-    //#region Css
+    //#region CSS
     if (isCss(uri)) {
       if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
         return;
@@ -416,8 +423,8 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         await this.updateInformation(uri);
       }
     }
-    //#endregion CssModue
-    //#region Css
+    //#endregion CSS Module
+    //#region CSS
     if (isCss(uri)) {
       if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
         return;
@@ -431,7 +438,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         }
       }
     }
-    //#endregion Css
+    //#endregion CSS
     //#region DTS
     const cssFile = correspondingSource(uri);
     if (cssFile) {
@@ -462,8 +469,12 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
   }
   //#endregion Event Handlers
 
-  public command(uri: Uri): Command | undefined {
+  public command(uri: Uri): CssCommand | undefined {
     return this.#commands.get(uri);
+  }
+
+  public async cssInformation(uri: Uri): Promise<CssInformation | undefined> {
+    return isCssGlobal(uri) ? this.cssGlobalInformation(uri) : this.cssModuleInformation(uri);
   }
 
   public async cssGlobalInformation(uri: Uri): Promise<CssGlobalInformation | undefined> {
@@ -550,4 +561,10 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       }
     });
   }
+}
+
+function uriName(...uri: (Uri | Iterable<Uri>)[]): string {
+  const set = new UriSet(uri.flatMap((u) => toArray(u)));
+
+  return conjoin(set.map((u) => `❝${Utils.basename(u)}❞`));
 }

@@ -33,7 +33,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
   protected override async updateDiagnostics(uri: Uri): Promise<void> {
     if (isCode(uri)) {
-      this.logger.debug('>', fileOperation(uri, 'diagnostics'));
+      this.logger.debug(fileOperation(uri, 'diagnostics'));
       const codeInfo = await this.codeInformation(uri);
       if (codeInfo) {
         const errors: Diagnostic[] = [];
@@ -66,7 +66,6 @@ export abstract class FolderCode extends FolderCss implements Disposable {
         } else {
           this.diagnostics.delete(uri);
         }
-        this.logger.debug('<', fileOperation(uri, 'diagnostics'));
       }
     } else {
       return super.updateDiagnostics(uri);

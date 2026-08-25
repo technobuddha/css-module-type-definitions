@@ -71,4 +71,8 @@ export class CssGlobalInformation implements CssInformation {
 
     return null;
   }
+
+  public localClassName(localName: string): ReadonlySet<string> | undefined {
+    return this.locationsOfClass.has(localName) ? new Set([localName]) : undefined;
+  }
 }

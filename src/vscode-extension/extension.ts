@@ -1,9 +1,11 @@
-import { commands, type DocumentSelector, type ExtensionContext, languages, window } from 'vscode';
+import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
 
 import {
   commandDeleteCssModuleTypeDefinitions,
   commandHideCssModuleTypeDefinitions,
+  commandHideGitIgnore,
   commandShowCssModuleTypeDefinitions,
+  commandShowGitIgnore,
   commandUpdateCssModuleTypeDefinitions,
 } from './commands/index.ts';
 import { WorkspaceController } from './controllers/index.ts';
@@ -34,6 +36,8 @@ const cssSelector: DocumentSelector = [
 
 export async function activate(context: ExtensionContext): Promise<void> {
   const workspaceController = await WorkspaceController.create();
+
+  const cssCodeLensProvider = new CssCodeLensProvider(workspaceController);
   await workspaceController.init();
 
   context.subscriptions.push(
@@ -42,6 +46,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
     commandUpdateCssModuleTypeDefinitions({ controller: workspaceController }),
     commandShowCssModuleTypeDefinitions(),
     commandHideCssModuleTypeDefinitions(),
+    commandShowGitIgnore(),
+    commandHideGitIgnore(),
 
     languages.registerDefinitionProvider(
       codeSelector,
@@ -64,10 +70,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
       new CssReferenceProvider({ workspaceController }),
     ),
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
-    languages.registerCodeLensProvider(cssSelector, new CssCodeLensProvider(workspaceController)),
-    commands.registerCommand('codelens-sample.codelensAction', (...args: unknown[]) => {
-      window.showInformationMessage(`Codelens action triggered with args: ${JSON.stringify(args)}`);
-    }),
+    languages.registerCodeLensProvider(cssSelector, cssCodeLensProvider),
+    cssCodeLensProvider,
   );
 }
 
