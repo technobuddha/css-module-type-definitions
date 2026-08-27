@@ -1,3 +1,4 @@
+import { isArray } from '@technobuddha/library';
 import { Uri } from 'vscode';
 
 export class ReadonlyUriSet {
@@ -38,6 +39,21 @@ export class ReadonlyUriSet {
   public *map<T>(mapper: (uri: Uri) => T): Generator<T> {
     for (const value of this.set) {
       yield mapper(Uri.file(value));
+    }
+  }
+
+  public *flatMap<T>(mapper: (uri: Uri) => Iterable<T | T[]>): Generator<T> {
+    for (const value of this.set) {
+      const result = mapper(Uri.file(value));
+      for (const item of result) {
+        if (isArray(item)) {
+          for (const subItem of item) {
+            yield subItem;
+          }
+        } else {
+          yield item;
+        }
+      }
     }
   }
 

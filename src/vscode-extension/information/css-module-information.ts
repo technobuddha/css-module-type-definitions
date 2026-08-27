@@ -1,14 +1,6 @@
 import os from 'node:os';
 
-import { noop } from '@technobuddha/library';
-import {
-  type Location,
-  Position,
-  Range,
-  Uri,
-  workspace,
-  WorkspaceEdit,
-} from 'vscode';
+import { type Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
@@ -42,26 +34,27 @@ export class CssModuleInformation implements CssInformation {
     options,
     root,
   }: Arguments): Promise<CssModuleInformation | undefined> {
-    return workspace
-      .openTextDocument(uri)
-      .then(
-        async (document) =>
-          generateCssModuleInfo(document.getText(), uri.fsPath, {
-            options,
-            logger,
-            cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
-            relativeTo: os.homedir(),
-            root: root.fsPath,
-          }),
-        noop,
-      )
-      .then((cssInfo) => (cssInfo ? new CssModuleInformation(cssInfo) : undefined));
+    try {
+      const document = await workspace.openTextDocument(uri);
+      const cssInfo = await generateCssModuleInfo(document.getText(), uri.fsPath, {
+        options,
+        logger,
+        cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
+        relativeTo: os.homedir(),
+        root: root.fsPath,
+      });
+
+      return new CssModuleInformation(cssInfo);
+    } catch (error) {
+      logger.error(fileOperation(uri, 'error', error));
+    }
+    return undefined;
   }
 
   public classNames: Set<string>;
 
   public dtsContents: CssModuleInfo['dtsContents'];
-  public locationsOfClass: ReadonlyMap<string, CssLocation[]>;
+  public locationsOfClass: ReadonlyMap<string, readonly CssLocation[]>;
   public importedFiles: ReadonlyUriSet;
   public classLocal: CssModuleInfo['classLocal'];
   public classScope: CssModuleInfo['classScope'];
@@ -131,7 +124,7 @@ export class CssModuleInformation implements CssInformation {
     className,
     localName,
     importUri,
-  }: LocalOrClass & { importUri: Uri }): Location[] | null {
+  }: LocalOrClass & { importUri: Uri }): readonly Location[] | null {
     if (className) {
       const locations = this.locationsOfClass.get(className);
       if (locations) {
@@ -157,7 +150,7 @@ export class CssModuleInformation implements CssInformation {
     return null;
   }
 
-  public localClassName(localName: string): ReadonlySet<string> | undefined {
+  public localClassNames(localName: string): ReadonlySet<string> | undefined {
     return this.localClass.get(localName);
   }
 

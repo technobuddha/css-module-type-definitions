@@ -55,7 +55,7 @@ export class CssRenameProvider implements RenameProvider {
         const { cssReplacement, codeReplacement } = replacementName(newName, options);
         const we = new WorkspaceEdit();
 
-        for (const importUri of await folderController.cssFilesImporting(document.uri)) {
+        for (const importUri of folderController.filesImporting(document.uri)) {
           await folderController.edit({
             we,
             importUri,

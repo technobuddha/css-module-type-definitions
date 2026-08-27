@@ -1,34 +1,28 @@
-import { type DocumentSelector, type ExtensionContext, languages } from 'vscode';
-
-import { CODE_EXTENSIONS, CSS_EXTENSIONS } from '../common/index.ts';
+import { type ExtensionContext, languages } from 'vscode';
 
 import {
   commandDeleteCssModuleTypeDefinitions,
   commandHideCssModuleTypeDefinitions,
-  // commandHideGitIgnore,
+  commandHideGitIgnore,
   commandShowCssModuleTypeDefinitions,
-  // commandShowGitIgnore,
+  commandShowGitIgnore,
   commandUpdateCssModuleTypeDefinitions,
 } from './commands/index.ts';
 import { WorkspaceController } from './controllers/index.ts';
+import { codeSelector, cssSelector } from './document-selectors.ts';
 import {
   CodeCompletionItemProvider,
   CodeDefinitionProvider,
   CodeHoverProvider,
   CodeReferenceProvider,
   CodeRenameProvider,
-  CssCodeLensProvider,
   CssReferenceProvider,
   CssRenameProvider,
 } from './providers/index.ts';
 
-const codeSelector: DocumentSelector = { pattern: `**/*{${CODE_EXTENSIONS.join(',')}}` };
-const cssSelector: DocumentSelector = { pattern: `**/*{${CSS_EXTENSIONS.join(',')}}` };
-
 export async function activate(context: ExtensionContext): Promise<void> {
   const workspaceController = await WorkspaceController.create();
 
-  const cssCodeLensProvider = new CssCodeLensProvider(workspaceController);
   await workspaceController.init();
 
   context.subscriptions.push(
@@ -37,8 +31,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
     commandUpdateCssModuleTypeDefinitions({ controller: workspaceController }),
     commandShowCssModuleTypeDefinitions(),
     commandHideCssModuleTypeDefinitions(),
-    // commandShowGitIgnore(),
-    // commandHideGitIgnore(),
+    commandShowGitIgnore(),
+    commandHideGitIgnore(),
 
     languages.registerDefinitionProvider(
       codeSelector,
@@ -61,8 +55,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
       new CssReferenceProvider({ workspaceController }),
     ),
     languages.registerRenameProvider(cssSelector, new CssRenameProvider({ workspaceController })),
-    languages.registerCodeLensProvider(cssSelector, cssCodeLensProvider),
-    cssCodeLensProvider,
   );
 }
 

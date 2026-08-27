@@ -1,4 +1,4 @@
-import { deepDifference, deepEquals, empty, noop } from '@technobuddha/library';
+import { deepEquals, noop } from '@technobuddha/library';
 import {
   type CancellationToken,
   Diagnostic,
@@ -17,12 +17,11 @@ import {
   fileOperation,
   globIsCode,
   isCode,
-  isCssGlobal,
   isCssModule,
 } from '../../../common/index.ts';
 
 import { type ReadonlyUriMap, ReadonlyUriSet, UriMap, UriSet } from '../../helpers/index.ts';
-import { CodeInformation } from '../../information/index.ts';
+import { CodeInformation, type CssModuleInformation } from '../../information/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
 
@@ -34,13 +33,13 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   protected override async updateDiagnostics(uri: Uri): Promise<void> {
     if (isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'diagnostics'));
-      const codeInfo = await this.codeInformation(uri);
+      const codeInfo = this.codeInformation(uri);
       if (codeInfo) {
         const errors: Diagnostic[] = [];
 
         for (const importUri of codeInfo.importedFiles) {
           if (isCssModule(importUri)) {
-            const cssInfo = await this.cssModuleInformation(importUri);
+            const cssInfo = this.cssInformation(importUri) as CssModuleInformation;
             if (cssInfo && !cssInfo.hasDts) {
               const usages = codeInfo.usages.get(importUri);
               if (usages) {
@@ -79,16 +78,12 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
       if (newCodeInformation) {
         if (!deepEquals(newCodeInformation, oldCodeInformation)) {
-          this.logger.trace(
-            fileOperation(uri, 'examined'),
-            ' != ',
-            deepDifference(oldCodeInformation, newCodeInformation) ?? empty,
-          );
+          this.logger.trace(fileOperation(uri, 'examined'));
 
           this.#codeInformation.set(uri, newCodeInformation);
         }
       } else if (oldCodeInformation) {
-        this.logger.trace(fileOperation(uri, 'examined'), ' == ');
+        this.logger.trace(fileOperation(uri, 'examined'));
 
         this.#codeInformation.delete(uri);
       }
@@ -111,48 +106,38 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     this.#codeInformation.delete(uri);
     super.deleteInformation(uri);
   }
-
   //#region Event Handlers
+
   protected override async handleEditTab(uri: Uri): Promise<void> {
     if (isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'edited'));
-      const uris = new UriSet([uri]);
+      const uris = new UriSet();
 
-      await this.codeInformation(uri).then(async (codeInfo) => {
+      const affected = (): void => {
+        const codeInfo = this.codeInformation(uri);
         if (codeInfo) {
           for (const importUri of codeInfo.importedFiles) {
             uris.add(importUri);
 
-            if (isCssGlobal(importUri)) {
-              await this.cssGlobalInformation(importUri).then((info) => {
-                if (info) {
-                  for (const file of info?.importedFiles) {
-                    uris.add(file); //
-                  }
-                }
-              });
-            }
-
-            if (isCssModule(importUri)) {
-              await this.cssModuleInformation(importUri).then((info) => {
-                if (info) {
-                  for (const file of info?.importedFiles) {
-                    uris.add(file); //
-                  }
-                }
-              });
-            }
-
-            for (const file of this.filesImporting(importUri)) {
-              uris.add(file);
+            const info = this.cssInformation(importUri);
+            if (info) {
+              for (const file of info?.importedFiles) {
+                uris.add(file);
+              }
             }
           }
         }
-      });
+      };
+
+      affected(); // get all files before the change
+      await this.updateInformation(uri);
+      affected(); // get all files after the change
 
       for (const code of uris) {
         await this.updateInformation(code);
       }
+
+      await this.updateDiagnostics(uri);
       for (const code of uris) {
         await this.updateDiagnostics(code);
       }
@@ -192,13 +177,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }
   //#endregion Event Handlers
 
-  public async codeInformation(uri: Uri): Promise<CodeInformation | undefined> {
-    const codeInfo = this.#codeInformation.get(uri);
-    if (codeInfo) {
-      return codeInfo;
-    }
-
-    await this.updateInformation(uri);
+  public codeInformation(uri: Uri): CodeInformation | undefined {
     return this.#codeInformation.get(uri);
   }
 
@@ -243,7 +222,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }: EditCodeArguments): Promise<void> {
     await this.refreshAllInformation();
 
-    const cssInfo = await this.cssModuleInformation(importUri);
+    const cssInfo = this.cssInformation(importUri) as CssModuleInformation;
     if (cssInfo) {
       const locations = cssInfo.cssLocations({ className, localName, importUri });
       if (locations) {

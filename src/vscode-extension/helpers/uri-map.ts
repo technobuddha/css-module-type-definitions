@@ -3,7 +3,7 @@ import { Uri } from 'vscode';
 export class ReadonlyUriMap<T> {
   protected readonly map: Map<string, T> = new Map();
 
-  public constructor(init?: Iterable<[Uri, T]>) {
+  public constructor(init?: Iterable<readonly [Uri, T]>) {
     this.map = new Map();
 
     if (init) {
@@ -29,7 +29,7 @@ export class ReadonlyUriMap<T> {
     }
   }
 
-  public *entries(): Generator<[Uri, T]> {
+  public *entries(): Generator<readonly [Uri, T]> {
     for (const [key, value] of this.map) {
       yield [Uri.file(key), value];
     }
@@ -43,7 +43,7 @@ export class ReadonlyUriMap<T> {
     return this.map.size;
   }
 
-  public [Symbol.iterator](): Generator<[Uri, T]> {
+  public [Symbol.iterator](): Generator<readonly [Uri, T]> {
     return this.entries();
   }
 }

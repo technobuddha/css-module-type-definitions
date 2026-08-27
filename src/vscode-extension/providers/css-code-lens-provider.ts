@@ -8,6 +8,8 @@ import {
   type CodeLensProvider,
   commands,
   type Disposable,
+  type Event,
+  EventEmitter,
   Range,
   type TextDocument,
   Uri,
@@ -30,15 +32,20 @@ class CssCodeLens extends CodeLens {
   }
 }
 
-/**
- * CodelensProvider
- */
 export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Disposable {
+  readonly #onDidChangeCodeLenses: EventEmitter<void> = new EventEmitter<void>();
+
   protected readonly disposables: Disposable[] = [];
   protected readonly workspaceController: WorkspaceController;
 
+  public readonly onDidChangeCodeLenses: Event<void> = this.#onDidChangeCodeLenses.event;
+
   public constructor(workspaceController: WorkspaceController) {
     this.workspaceController = workspaceController;
+
+    workspace.onDidChangeConfiguration((_) => {
+      this.#onDidChangeCodeLenses.fire();
+    });
 
     this.disposables.push(
       commands.registerCommand(COMMAND_NAME, (...args: Uri[]) => {
@@ -73,7 +80,6 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
   }
 
   public provideCodeLenses(document: TextDocument, _token: CancellationToken): CssCodeLens[] {
-    this.logger.error('Providing code lenses for document:', document.uri.fsPath);
     return [new CssCodeLens(new Range(0, 0, 0, 0), document.uri)];
   }
 
@@ -93,6 +99,10 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
     }
 
     return codeLens;
+  }
+
+  public refreshCodeLenses(): void {
+    this.#onDidChangeCodeLenses.fire();
   }
 
   public dispose(): void {

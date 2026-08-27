@@ -10,6 +10,7 @@ import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo } from '../helpers/index.ts';
+import { type CssModuleInformation } from '../information/index.ts';
 
 type Arguments = {
   readonly workspaceController: WorkspaceController;
@@ -33,8 +34,8 @@ export class CodeDefinitionProvider implements DefinitionProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = await folderController.cssModuleInformation(importUri);
-        if (cssInfo?.hasDts === false) {
+        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
+        if (!cssInfo?.hasDts) {
           const { locationsOfClass } = cssInfo;
           const extracted = locationsOfClass.get(localName);
           if (extracted) {

@@ -86,9 +86,7 @@ class UsageParser {
       }
     }
 
-    const parser = new UsageParser(sourceFile, moduleBindings, unboundModules);
-
-    return parser;
+    return new UsageParser(sourceFile, moduleBindings, unboundModules);
   }
 
   private static *extractImportBindings(node: Node): Generator<ImportBinding> {

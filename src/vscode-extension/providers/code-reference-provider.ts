@@ -11,6 +11,7 @@ import { Utils } from 'vscode-uri';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
+import { type CssModuleInformation } from '../information/index.ts';
 
 type Arguments = {
   readonly workspaceController: WorkspaceController;
@@ -36,7 +37,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
         const { localName, importUri, accessorType } = localInfo;
         const locations: Location[] = [];
 
-        const cssInfo = await folderController.cssModuleInformation(importUri);
+        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
         if (cssInfo) {
           const cssLocations = cssInfo.cssLocations({ localName, importUri });
           if (cssLocations) {
@@ -47,7 +48,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
             await folderController.allCodeInformation();
             const importers = folderController.codeFilesImporting(importUri);
             for (const importer of importers) {
-              const codeInfo = await folderController.codeInformation(importer);
+              const codeInfo = folderController.codeInformation(importer);
               if (codeInfo) {
                 const { file } = codeInfo;
                 const localUsages = await cssInfo.classUsage({ localName, file, importUri });

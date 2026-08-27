@@ -15,6 +15,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getImportInfo } from '../helpers/index.ts';
+import { type CssModuleInformation } from '../information/index.ts';
 
 type Arguments = {
   readonly workspaceController: WorkspaceController;
@@ -40,7 +41,7 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const cssInfo = await folderController.cssModuleInformation(importUri);
+          const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
           if (cssInfo) {
             const { localClass } = cssInfo;
 

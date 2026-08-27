@@ -13,6 +13,7 @@ import { isCssModule } from '../../common/file-types.ts';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getClassInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
+import { type CssModuleInformation } from '../information/index.ts';
 
 type Arguments = {
   readonly workspaceController: WorkspaceController;
@@ -39,8 +40,8 @@ export class CssReferenceProvider implements ReferenceProvider {
       if (classInfo) {
         const { className } = classInfo;
 
-        for (const importUri of folderController.cssFilesImporting(document.uri)) {
-          const cssInfo = await folderController.cssModuleInformation(importUri);
+        for (const importUri of folderController.filesImporting(document.uri)) {
+          const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
           if (cssInfo) {
             const { classLocal } = cssInfo;
 

@@ -9,6 +9,7 @@ import {
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo } from '../helpers/index.ts';
+import { type CssModuleInformation } from '../information/index.ts';
 
 export type Arguments = {
   readonly workspaceController: WorkspaceController;
@@ -21,24 +22,6 @@ export class CodeHoverProvider implements HoverProvider {
     this.#workspaceController = workspaceController;
   }
 
-  // ---- @types  dts syntax  case   type                          content
-  // TODO with    yes .xxxxx  as-is  (property) scoped             none
-  // TODO with    yes .xxxxx  camel  (property) scoped             none
-  // TODO with    yes ['xx']  as-is  (property) scoped             none
-  // TODO with    yes ['xx']  camel  (property) scoped             none
-  // TODO with    no  .xxxxx  as-is  (index) CSSModuleClasses      none
-  // TODO with    no  .xxxxx  camel  (index) CSSModuleClasses      none
-  // TODO with    no  ['xx']  as-is  none                          none
-  // TODO with    no  ['xx']  camel  none                          none
-  // TODO without yes .xxxxx  as-is  (property) scoped             ok
-  // TODO without yes .xxxxx  camel  (property) scoped             none
-  // TODO without yes ['xx']  as-is  (property) scoped             ok
-  // TODO without yes ['xx']  camel  (property) scoped             none
-  // TODO without no  .xxxxx  as-is  any                           none
-  // TODO without no  .xxxxx  camel  any                           none
-  // TODO without no  ['xx']  as-is  none                          none
-  // TODO without no  ['xx']  camel  none                          none
-
   public async provideHover(
     document: TextDocument,
     position: Position,
@@ -50,7 +33,7 @@ export class CodeHoverProvider implements HoverProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = await folderController.cssModuleInformation(importUri);
+        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
         if (cssInfo) {
           const { locationsOfClass, localClass, hasDts } = cssInfo;
           const md: string[] = [];

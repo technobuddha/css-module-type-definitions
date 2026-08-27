@@ -40,6 +40,23 @@ export class FolderController extends FolderCode implements Disposable {
     }
   }
 
+  protected override async handleOpenTab(uri: Uri): Promise<void> {
+    await this.refreshAllInformation();
+    await super.handleOpenTab(uri);
+    this.workspaceController.refreshCodeLenses();
+  }
+
+  protected override async handleEditTab(uri: Uri): Promise<void> {
+    await this.refreshAllInformation();
+    await super.handleEditTab(uri);
+    this.workspaceController.refreshCodeLenses();
+  }
+
+  protected override async handleCloseTab(uri: Uri): Promise<void> {
+    await this.refreshAllInformation();
+    return super.handleCloseTab(uri);
+  }
+
   public override async init(): Promise<void> {
     await super.init();
     this.logger.debug(operation(this.folder.name, 'start'));

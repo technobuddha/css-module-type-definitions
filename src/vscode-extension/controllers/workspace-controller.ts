@@ -2,6 +2,7 @@ import { debounce } from '@technobuddha/library';
 import {
   commands,
   type Disposable,
+  languages,
   StatusBarAlignment,
   type StatusBarItem,
   type Tab,
@@ -15,7 +16,9 @@ import {
 
 import { type LoggerController, operation } from '../../common/index.ts';
 
+import { cssSelector } from '../document-selectors.ts';
 import { createLogger, UriMap } from '../helpers/index.ts';
+import { CssCodeLensProvider } from '../providers/css-code-lens-provider.ts';
 
 import { FolderController } from './folder-controller/index.ts';
 
@@ -34,6 +37,7 @@ export class WorkspaceController implements Disposable, LoggerController {
     StatusBarAlignment.Right,
     99,
   );
+  private readonly cssCodeLensProvider: CssCodeLensProvider;
 
   protected readonly disposables: Disposable[] = [];
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
@@ -45,7 +49,11 @@ export class WorkspaceController implements Disposable, LoggerController {
     this.statusBar.text = '$(loading~spin)';
     this.statusBar.show();
 
+    this.cssCodeLensProvider = new CssCodeLensProvider(this);
+
     this.disposables.push(
+      this.cssCodeLensProvider,
+      languages.registerCodeLensProvider(cssSelector, this.cssCodeLensProvider),
       this.statusBar,
       commands.registerCommand('cmtd.showOutput', () => {
         this.logger.outputChannel.show(true);
@@ -195,6 +203,10 @@ export class WorkspaceController implements Disposable, LoggerController {
     for (const fc of this.folders.values()) {
       yield fc;
     }
+  }
+
+  public refreshCodeLenses(): void {
+    this.cssCodeLensProvider.refreshCodeLenses();
   }
 
   public async dispose(): Promise<void> {

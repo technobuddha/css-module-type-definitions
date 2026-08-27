@@ -1,11 +1,13 @@
+import { type Logger } from '../../common/index.ts';
 import { type CssLocation } from '../../css-library/index.ts';
 
 import { type ReadonlyUriSet } from '../helpers/index.ts';
 
 export interface CssInformation {
   readonly classNames: ReadonlySet<string>;
-
-  readonly locationsOfClass: ReadonlyMap<string, CssLocation[]>;
+  readonly locationsOfClass: ReadonlyMap<string, readonly CssLocation[]>;
   readonly importedFiles: ReadonlyUriSet;
-  readonly localClassName: (localName: string) => ReadonlySet<string> | undefined;
+  readonly localClassNames: (localName: string) => ReadonlySet<string> | undefined;
+  readonly hasDts: boolean;
+  readonly writeTypeDefinition: (logger: Logger) => Promise<void>;
 }

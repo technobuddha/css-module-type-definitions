@@ -10,17 +10,24 @@ export class CodeInformation {
     const { usages, unbound } = await extractUsage(document);
     const importedFiles = new ReadonlyUriSet(usages.keys(), unbound);
 
-    return new CodeInformation(file, importedFiles, usages);
+    return new CodeInformation(file, importedFiles, usages, unbound);
   }
 
   public readonly file: Uri;
   public readonly importedFiles: ReadonlyUriSet;
-  public readonly usages: ReadonlyUriMap<Usage[]>;
+  public readonly usages: ReadonlyUriMap<readonly Usage[]>;
+  public readonly unboundImports: ReadonlyUriSet;
 
-  protected constructor(file: Uri, importedFiles: ReadonlyUriSet, usages: ReadonlyUriMap<Usage[]>) {
+  protected constructor(
+    file: Uri,
+    importedFiles: ReadonlyUriSet,
+    usages: ReadonlyUriMap<readonly Usage[]>,
+    unbound: ReadonlyUriSet,
+  ) {
     this.file = file;
     this.usages = usages;
     this.importedFiles = importedFiles;
+    this.unboundImports = unbound;
   }
 
   public async localUsage({

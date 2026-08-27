@@ -85,7 +85,18 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
   public isIgnored(file: Uri): boolean {
     const ignorer = this.ignorer(file);
     if (ignorer) {
-      return ignorer.ignores(workspace.asRelativePath(file, false));
+      const relativePath = workspace.asRelativePath(file, false);
+
+      if (relativePath.startsWith('/')) {
+        return true;
+      }
+
+      try {
+        return ignorer.ignores(relativePath);
+      } catch (error) {
+        this.logger.error(fileOperation(file, 'error', toError(error)));
+        return true;
+      }
     }
     return false;
   }
