@@ -15,7 +15,7 @@ import postcssModules from 'postcss-modules';
 
 import { type Logger, type Options } from '../common/index.ts';
 
-import { type CssImporter } from './css-importer/index.ts';
+import { type CssImporter } from './css-importer.ts';
 import { type CssModuleInfo } from './css-info.ts';
 import { dashes } from './dashes.ts';
 import { dtsBottom } from './dts-bottom.ts';

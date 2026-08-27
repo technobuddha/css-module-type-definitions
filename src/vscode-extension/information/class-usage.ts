@@ -1,10 +1,6 @@
-import { type Range, type TextDocument } from 'vscode';
+import { type TextDocument } from 'vscode';
 
-export type Usage = {
-  readonly localName: string;
-  readonly range: Range;
-  readonly accessorType: 'property' | 'element';
-};
+import { type Usage } from './extract-usage.ts';
 
 export type ClassUsage = {
   readonly document: TextDocument;

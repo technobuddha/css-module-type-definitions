@@ -1,6 +1,5 @@
 export { canonicalPath } from './canonical-path.ts';
 export { codePointLength } from './code-point-length.ts';
-export { collectImportBindings } from './collect-import-bindings.ts';
 export { createLogger } from './create-logger.ts';
 export { createRange } from './create-range.ts';
 export {
@@ -18,7 +17,6 @@ export { getImportInfo } from './get-import-info.ts';
 export { getLocalInfo } from './get-local-info.ts';
 export { getSourceFile } from './get-source-file.ts';
 export { getTypeChecker } from './get-type-checker.ts';
-export { importBindingNames } from './import-binding-names.ts';
 export { importDeclarationModule } from './import-declaration-module.ts';
 export { importEqualsModule } from './import-equals-module.ts';
 export { importModuleFromDeclaration } from './import-module-from-declaration.ts';

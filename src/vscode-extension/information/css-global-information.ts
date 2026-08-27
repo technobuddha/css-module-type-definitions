@@ -5,13 +5,9 @@ import { type Location, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { type Logger, type Options } from '../../common/index.ts';
-import {
-  type CssGlobalInfo,
-  cssImporter,
-  type CssLocation,
-  extractLocations,
-} from '../../css-library/index.ts';
+import { type CssGlobalInfo, type CssLocation, extractLocations } from '../../css-library/index.ts';
 
+import { cssImporter } from '../css-importer/index.ts';
 import { ReadonlyUriSet } from '../helpers/index.ts';
 
 import { type CssInformation } from './css-information.ts';

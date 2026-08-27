@@ -8,7 +8,7 @@ import selectorParser from 'postcss-selector-parser';
 
 import { type Logger, type Options } from '../common/index.ts';
 
-import { type CssImporter } from './css-importer/index.ts';
+import { type CssImporter } from './css-importer.ts';
 import { type CssGlobalInfo } from './css-info.ts';
 import {
   type CMTDLocation,

@@ -73,6 +73,7 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
   }
 
   public provideCodeLenses(document: TextDocument, _token: CancellationToken): CssCodeLens[] {
+    this.logger.error('Providing code lenses for document:', document.uri.fsPath);
     return [new CssCodeLens(new Range(0, 0, 0, 0), document.uri)];
   }
 

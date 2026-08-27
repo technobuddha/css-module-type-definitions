@@ -5,7 +5,6 @@ import {
   type Location,
   Position,
   Range,
-  type TextDocument,
   Uri,
   workspace,
   WorkspaceEdit,
@@ -14,19 +13,18 @@ import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
 import {
-  cssImporter,
   type CssLocation,
   type CssModuleInfo,
   generateCssModuleInfo,
 } from '../../css-library/index.ts';
 
-import { getSourceFile, importBindingNames, ReadonlyUriSet } from '../helpers/index.ts';
+import { cssImporter } from '../css-importer/index.ts';
+import { ReadonlyUriSet } from '../helpers/index.ts';
 
-import { type ClassUsage, type Usage } from './class-usage.ts';
+import { type ClassUsage } from './class-usage.ts';
 import { type CssInformation } from './css-information.ts';
-import { State } from './state.ts';
+import { extractUsage } from './extract-usage.ts';
 import { toLocation } from './to-location.ts';
-import { visit } from './visit.ts';
 
 type LocalOrClass = { localName?: string; className?: string };
 
@@ -243,32 +241,12 @@ export class CssModuleInformation implements CssInformation {
 
     if (localNames) {
       const document = await workspace.openTextDocument(file);
-      const usages = (await this.usages({ document, importUri })).filter((usage) =>
+      const usages = (await extractUsage(document, importUri)).filter((usage) =>
         localNames.has(usage.localName),
       );
 
       return { document, usages };
     }
     return null;
-  }
-
-  public async usages({
-    document,
-    importUri,
-  }: {
-    document: TextDocument;
-    importUri: Uri;
-  }): Promise<Usage[]> {
-    const sourceFile = getSourceFile(document);
-    const bindingNames = await importBindingNames(document, sourceFile, importUri);
-    if (bindingNames.size > 0) {
-      const state = new State(bindingNames, sourceFile);
-
-      visit(sourceFile, state);
-
-      return state.usages;
-    }
-
-    return [];
   }
 }

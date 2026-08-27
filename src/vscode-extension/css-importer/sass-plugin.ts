@@ -4,7 +4,8 @@ import { Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger } from '../../common/index.ts';
-import { vscodeFileExists } from '../../vscode-extension/helpers/index.ts';
+
+import { vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {
   readonly root: Uri;

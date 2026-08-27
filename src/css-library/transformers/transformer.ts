@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { type Logger, type Options } from '../../common/index.ts';
 
-import { type CssImporter } from '../css-importer/index.ts';
+import { type CssImporter } from '../css-importer.ts';
 import { type RawSourceMap } from '../source-map.ts';
 
 import { transformLess } from './transform-less.ts';

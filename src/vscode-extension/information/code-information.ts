@@ -2,19 +2,9 @@ import { type Uri, workspace } from 'vscode';
 
 import { isCss, type Logger } from '../../common/index.ts';
 
-import {
-  collectImportBindings,
-  getSourceFile,
-  type ReadonlyUriMap,
-  ReadonlyUriSet,
-  resolveImportPath,
-  scanImports,
-  UriMap,
-} from '../helpers/index.ts';
+import { type ReadonlyUriMap, ReadonlyUriSet, scanImports } from '../helpers/index.ts';
 
-import { type Usage } from './class-usage.ts';
-import { State } from './state.ts';
-import { visit } from './visit.ts';
+import { extractUsage, type Usage } from './extract-usage.ts';
 
 export class CodeInformation {
   public static async create(file: Uri, logger: Logger): Promise<CodeInformation> {
@@ -24,25 +14,7 @@ export class CodeInformation {
       scanImports(document, logger).filter((uri) => isCss(uri)),
     );
 
-    const sourceFile = getSourceFile(document);
-    const bindings: UriMap<Set<string>> = new UriMap();
-    const usages: UriMap<Usage[]> = new UriMap();
-
-    for (const binding of collectImportBindings(sourceFile)) {
-      const resolved = await resolveImportPath(document.uri.fsPath, binding.importModule);
-      if (resolved) {
-        bindings.getOrInsertComputed(resolved, () => new Set()).add(binding.variableName);
-      }
-    }
-
-    for (const [importPath, bindingNames] of bindings) {
-      const state = new State(bindingNames, sourceFile);
-
-      visit(sourceFile, state);
-
-      usages.getOrInsert(importPath, []).push(...state.usages);
-    }
-
+    const usages = await extractUsage(document);
     return new CodeInformation(file, importedFiles, usages);
   }
 
