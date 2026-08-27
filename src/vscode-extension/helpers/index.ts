@@ -27,7 +27,6 @@ export { propertyNameRange } from './property-name-range.ts';
 export { replacementName } from './replacement-name.ts';
 export { requireCallModule } from './require-call-module.ts';
 export { resolveImportPath } from './resolve-import-path.ts';
-export { scanImports } from './scan-imports.ts';
 export { scriptKind } from './script-kind.ts';
 export { toDiagnosticSeverity } from './to-diagnostic-severity.ts';
 export { unwrapExpression } from './unwrap-expression.ts';

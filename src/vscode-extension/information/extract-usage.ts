@@ -20,15 +20,19 @@ import {
 } from 'typescript';
 import { type Range, type TextDocument, type Uri } from 'vscode';
 
+import { isCss } from '../../common/index.ts';
+
 import {
   createRange,
   getSourceFile,
   isElementAccessExpressionLike,
   isPropertyAccessExpressionLike,
   type ReadonlyUriMap,
+  type ReadonlyUriSet,
   resolveImportPath,
   unwrapExpression,
   UriMap,
+  UriSet,
 } from '../helpers/index.ts';
 
 export type Usage = {
@@ -38,43 +42,51 @@ export type Usage = {
 };
 
 type ImportBinding = {
-  importModule: string;
-  variableName?: string;
+  readonly importModule: string;
+  readonly variableName?: string;
+};
+
+type Return = {
+  readonly usages: ReadonlyUriMap<Usage[]>;
+  readonly unbound: ReadonlyUriSet;
 };
 
 export async function extractUsage(document: TextDocument, importUri: Uri): Promise<Usage[]>;
-export async function extractUsage(document: TextDocument): Promise<ReadonlyUriMap<Usage[]>>;
+export async function extractUsage(document: TextDocument): Promise<Return>;
 export async function extractUsage(
   document: TextDocument,
   importUri?: Uri,
-): Promise<Usage[] | ReadonlyUriMap<Usage[]>> {
+): Promise<Usage[] | Return> {
   const parser = await UsageParser.create(document);
 
   if (importUri) {
     return parser.usages.get(importUri) ?? [];
   }
 
-  return parser.usages;
+  return {
+    usages: parser.usages,
+    unbound: parser.unbound,
+  };
 }
 
 class UsageParser {
   public static async create(document: TextDocument): Promise<UsageParser> {
     const sourceFile = getSourceFile(document);
-    const parser = new UsageParser(sourceFile);
-    const importBindings: UriMap<Set<string>> = new UriMap();
+    const moduleBindings: UriMap<Set<string>> = new UriMap();
+    const unboundModules: UriSet = new UriSet();
 
     for (const binding of this.extractImportBindings(sourceFile)) {
-      if (binding.variableName) {
-        const resolved = await resolveImportPath(document.uri.fsPath, binding.importModule);
-        if (resolved) {
-          importBindings.getOrInsertComputed(resolved, () => new Set()).add(binding.variableName);
+      const moduleUri = await resolveImportPath(document.uri.fsPath, binding.importModule);
+      if (moduleUri) {
+        if (binding.variableName) {
+          moduleBindings.getOrInsertComputed(moduleUri, () => new Set()).add(binding.variableName);
+        } else {
+          unboundModules.add(moduleUri);
         }
       }
     }
 
-    for (const [importUri, bindings] of importBindings) {
-      parser.extractUsages(sourceFile, bindings, importUri);
-    }
+    const parser = new UsageParser(sourceFile, moduleBindings, unboundModules);
 
     return parser;
   }
@@ -90,18 +102,22 @@ class UsageParser {
       ) {
         const [argument] = expression.arguments;
         if (argument && isStringLiteral(argument)) {
-          yield {
-            importModule: argument.text,
-          };
+          if (isCss(argument.text)) {
+            yield {
+              importModule: argument.text,
+            };
+          }
         }
       }
 
       if (isCallExpression(expression) && expression.expression.kind === SyntaxKind.ImportKeyword) {
         const [argument] = expression.arguments;
         if (argument && isStringLiteral(argument)) {
-          yield {
-            importModule: argument.text,
-          };
+          if (isCss(argument.text)) {
+            yield {
+              importModule: argument.text,
+            };
+          }
         }
       }
 
@@ -112,9 +128,11 @@ class UsageParser {
       ) {
         const [argument] = expression.expression.arguments;
         if (argument && isStringLiteral(argument)) {
-          yield {
-            importModule: argument.text,
-          };
+          if (isCss(argument.text)) {
+            yield {
+              importModule: argument.text,
+            };
+          }
         }
       }
     }
@@ -125,33 +143,41 @@ class UsageParser {
       node.moduleSpecifier.text
     ) {
       if (!node.importClause) {
-        yield {
-          importModule: node.moduleSpecifier.text,
-        };
+        if (isCss(node.moduleSpecifier.text)) {
+          yield {
+            importModule: node.moduleSpecifier.text,
+          };
+        }
         return;
       }
 
       if (node.importClause.name) {
-        yield {
-          importModule: node.moduleSpecifier.text,
-          variableName: node.importClause.name.text,
-        };
+        if (isCss(node.moduleSpecifier.text)) {
+          yield {
+            importModule: node.moduleSpecifier.text,
+            variableName: node.importClause.name.text,
+          };
+        }
       }
 
       if (node.importClause.namedBindings && isNamespaceImport(node.importClause.namedBindings)) {
-        yield {
-          importModule: node.moduleSpecifier.text,
-          variableName: node.importClause.namedBindings.name.text,
-        };
+        if (isCss(node.moduleSpecifier.text)) {
+          yield {
+            importModule: node.moduleSpecifier.text,
+            variableName: node.importClause.namedBindings.name.text,
+          };
+        }
       }
 
       if (node.importClause.namedBindings && isNamedImports(node.importClause.namedBindings)) {
         for (const element of node.importClause.namedBindings.elements) {
           if (element.propertyName?.text === 'default' || element.name.text === 'default') {
-            yield {
-              importModule: node.moduleSpecifier.text,
-              variableName: element.name.text,
-            };
+            if (isCss(node.moduleSpecifier.text)) {
+              yield {
+                importModule: node.moduleSpecifier.text,
+                variableName: element.name.text,
+              };
+            }
           }
         }
       }
@@ -160,10 +186,12 @@ class UsageParser {
     if (isImportEqualsDeclaration(node) && isExternalModuleReference(node.moduleReference)) {
       const moduleExpression = node.moduleReference.expression;
       if (moduleExpression && isStringLiteral(moduleExpression)) {
-        yield {
-          importModule: moduleExpression.text,
-          variableName: node.name.text,
-        };
+        if (isCss(moduleExpression.text)) {
+          yield {
+            importModule: moduleExpression.text,
+            variableName: node.name.text,
+          };
+        }
       }
     }
 
@@ -177,10 +205,12 @@ class UsageParser {
     ) {
       const [argument] = node.initializer.arguments;
       if (argument && isStringLiteral(argument)) {
-        yield {
-          importModule: argument.text,
-          variableName: node.name.text,
-        };
+        if (isCss(argument.text)) {
+          yield {
+            importModule: argument.text,
+            variableName: node.name.text,
+          };
+        }
       }
     }
 
@@ -191,17 +221,27 @@ class UsageParser {
 
   private readonly seenUsages: Set<string> = new Set();
   private readonly sourceFile: SourceFile;
+  public readonly unbound: ReadonlyUriSet;
   public readonly usages: UriMap<Usage[]> = new UriMap();
 
-  private constructor(sourceFile: SourceFile) {
+  private constructor(
+    sourceFile: SourceFile,
+    moduleBindings: ReadonlyUriMap<Set<string>>,
+    unbound: ReadonlyUriSet,
+  ) {
     this.sourceFile = sourceFile;
+    this.unbound = unbound;
+
+    for (const [moduleUri, bindings] of moduleBindings) {
+      this.findUsages(sourceFile, bindings, moduleUri);
+    }
   }
 
-  protected extractUsages(node: Node, bindings: Set<string>, importUri: Uri): void {
+  protected findUsages(node: Node, bindings: Set<string>, moduleUri: Uri): void {
     if (isPropertyAccessExpressionLike(node)) {
       const expression = unwrapExpression(node.expression);
       if (isIdentifier(expression) && bindings.has(expression.text)) {
-        this.addRange(node, node.name, 'property', importUri);
+        this.addRange(node, node.name, 'property', moduleUri);
       }
     }
 
@@ -215,18 +255,18 @@ class UsageParser {
         argument &&
         isStringLiteralLike(argument)
       ) {
-        this.addRange(node, argument, 'element', importUri);
+        this.addRange(node, argument, 'element', moduleUri);
       }
     }
 
-    forEachChild(node, (child) => this.extractUsages(child, bindings, importUri));
+    forEachChild(node, (child) => this.findUsages(child, bindings, moduleUri));
   }
 
   protected addRange(
     node: Node,
     target: MemberName | StringLiteralLike,
     accessorType: Usage['accessorType'],
-    importUri: Uri,
+    moduleUri: Uri,
   ): void {
     const { seenUsages, usages, sourceFile } = this;
 
@@ -243,7 +283,7 @@ class UsageParser {
 
     const range = createRange(sourceFile, start, end);
     usages
-      .getOrInsertComputed(importUri, (): Usage[] => [])
+      .getOrInsertComputed(moduleUri, (): Usage[] => [])
       .push({ localName, range, accessorType });
   }
 }

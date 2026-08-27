@@ -1,20 +1,15 @@
 import { type Uri, workspace } from 'vscode';
 
-import { isCss, type Logger } from '../../common/index.ts';
-
-import { type ReadonlyUriMap, ReadonlyUriSet, scanImports } from '../helpers/index.ts';
+import { type ReadonlyUriMap, ReadonlyUriSet } from '../helpers/index.ts';
 
 import { extractUsage, type Usage } from './extract-usage.ts';
 
 export class CodeInformation {
-  public static async create(file: Uri, logger: Logger): Promise<CodeInformation> {
+  public static async create(file: Uri): Promise<CodeInformation> {
     const document = await workspace.openTextDocument(file);
+    const { usages, unbound } = await extractUsage(document);
+    const importedFiles = new ReadonlyUriSet(usages.keys(), unbound);
 
-    const importedFiles = new ReadonlyUriSet(
-      scanImports(document, logger).filter((uri) => isCss(uri)),
-    );
-
-    const usages = await extractUsage(document);
     return new CodeInformation(file, importedFiles, usages);
   }
 

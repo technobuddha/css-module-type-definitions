@@ -75,7 +75,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   protected override async updateInformation(uri: Uri, override = false): Promise<void> {
     if (isCode(uri)) {
       const oldCodeInformation = this.#codeInformation.get(uri);
-      const newCodeInformation = await CodeInformation.create(uri, this.logger).catch(noop);
+      const newCodeInformation = await CodeInformation.create(uri).catch(noop);
 
       if (newCodeInformation) {
         if (!deepEquals(newCodeInformation, oldCodeInformation)) {
