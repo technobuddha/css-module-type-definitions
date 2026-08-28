@@ -1,12 +1,8 @@
-//@ts-check
+import { defineBuilds } from '@technobuddha/project/build';
 
-/** @type import('\@technobuddha/project/build').Builds */
-const config = {
+export default defineBuilds({
   default: {
-    steps: [
-      { build: 'compile' },
-      { build: 'bundle' },
-    ]
+    steps: [{ build: 'compile' }, { build: 'bundle' }],
   },
   compile: {
     steps: [
@@ -30,7 +26,7 @@ const config = {
           'cp extension/* out',
           'mkdir out/assets dist/vscode-extension/assets',
           'cp assets/cmtd.png assets/cmtd.ttf out/assets',
-          'cp assets/cmtd.png assets/cmtd.ttf dist/vscode-extension/assets'
+          'cp assets/cmtd.png assets/cmtd.ttf dist/vscode-extension/assets',
         ],
       },
     ],
@@ -44,8 +40,8 @@ const config = {
       {
         display: 'vsix',
         command: 'cd out && vsce package',
-      }
-    ]
+      },
+    ],
   },
   publish: {
     steps: [
@@ -58,9 +54,7 @@ const config = {
         display: 'Publish',
         command: 'yarn npm publish --access=public',
       },
-      { build: 'bundle' }
-    ]
-  }
-};
-
-export default config;
+      { build: 'bundle' },
+    ],
+  },
+});
