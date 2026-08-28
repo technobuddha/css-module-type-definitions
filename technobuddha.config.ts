@@ -1,14 +1,12 @@
-//@ts-check
-/** @type import("\@technobuddha/project").TechnobuddhaConfig */
-const config = {
+import { defineConfig } from '@technobuddha/project/config';
+
+export default defineConfig({
   package: {
     dependencies: ['sugarss'],
     devDependencies: ['webpack-cli', 'ts-loader', 'vite-plugin-inspect'],
   },
   git: {
-    ignore: [
-      'out'
-    ]
+    ignore: ['out'],
   },
   directories: {
     src: {
@@ -16,7 +14,7 @@ const config = {
     },
     scratch: {
       platform: 'vite-client',
-    }
+    },
   },
   typedoc: {
     readme: 'doc/intro.md',
@@ -25,8 +23,6 @@ const config = {
     rules: {
       'unicorn/prefer-event-target': { rule: 'off' },
       'promise/prefer-catch': { rule: 'off' },
-    }
-  }
-};
-
-export default config;
+    },
+  },
+});
