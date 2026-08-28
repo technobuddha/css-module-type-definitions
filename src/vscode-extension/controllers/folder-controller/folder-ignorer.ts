@@ -12,13 +12,10 @@ import { FolderBase, type FolderBaseArguments } from './folder-base.ts';
 export type FolderIgnorerArguments = FolderBaseArguments;
 
 export abstract class FolderIgnorer extends FolderBase implements Disposable {
-  private readonly scanned: Promise<void>;
   private readonly ignorers: UriMap<Ignore> = new UriMap();
 
   public constructor({ workspaceController, folder }: FolderIgnorerArguments) {
     super({ workspaceController, folder });
-
-    this.scanned = this.scanIgnores();
   }
 
   private async scanIgnores(): Promise<void> {
@@ -71,8 +68,8 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
     return undefined;
   }
 
-  protected async init(): Promise<void> {
-    await this.scanned;
+  protected init(): Promise<void>[] {
+    return [this.scanIgnores()];
   }
 
   protected async handleWatcher({ action, uri }: { action: Action; uri: Uri }): Promise<void> {

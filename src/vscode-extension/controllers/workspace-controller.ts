@@ -33,6 +33,8 @@ export class WorkspaceController implements Disposable, LoggerController {
     return new WorkspaceController();
   }
 
+  #spin = 0;
+
   private readonly statusBar: StatusBarItem = window.createStatusBarItem(
     StatusBarAlignment.Right,
     99,
@@ -46,8 +48,10 @@ export class WorkspaceController implements Disposable, LoggerController {
   public readonly openTabs: UriMap<TabState> = new UriMap();
 
   private constructor() {
-    this.statusBar.text = '$(loading~spin)';
+    this.statusBar.command = 'cmtd.showOutput';
     this.statusBar.show();
+
+    this.spin(true);
 
     this.cssCodeLensProvider = new CssCodeLensProvider(this);
 
@@ -76,7 +80,6 @@ export class WorkspaceController implements Disposable, LoggerController {
         for (const folder of added) {
           const fc = new FolderController({ workspaceController: this, folder });
           this.folders.set(folder, fc);
-          await fc.init();
           for (const [uri, state] of this.openTabs) {
             if (state.workspaceFolder == null) {
               const workspaceFolder = workspace.getWorkspaceFolder(uri);
@@ -100,7 +103,7 @@ export class WorkspaceController implements Disposable, LoggerController {
               await fc.fire('editTab', change.document.uri);
             }
           }
-        }, 1000),
+        }, 3000),
       ),
     );
   }
@@ -174,20 +177,14 @@ export class WorkspaceController implements Disposable, LoggerController {
       }
     }
 
-    for (const fc of this.folders.values()) {
-      await fc.init();
-    }
+    this.spin(false);
 
-    for (const group of window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (isTabInput(tab)) {
-          await this.onOpenTab(tab.input.uri);
-        }
-      }
-    }
-
-    this.statusBar.command = 'cmtd.showOutput';
-    this.statusBar.text = '$(cmtd-logo)';
+    await Promise.all(
+      window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .filter((tab) => isTabInput(tab))
+        .map(async (tab) => this.onOpenTab(tab.input.uri)),
+    );
   }
 
   public folderController(file: Uri): FolderController | undefined {
@@ -207,6 +204,11 @@ export class WorkspaceController implements Disposable, LoggerController {
 
   public refreshCodeLenses(): void {
     this.cssCodeLensProvider.refreshCodeLenses();
+  }
+
+  public spin(status: boolean): void {
+    this.#spin = Math.max(this.#spin + (status ? 1 : -1), 0);
+    this.statusBar.text = this.#spin > 0 ? '$(loading~spin)' : '$(cmtd-logo)';
   }
 
   public async dispose(): Promise<void> {

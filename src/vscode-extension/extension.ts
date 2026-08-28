@@ -22,7 +22,6 @@ import {
 
 export async function activate(context: ExtensionContext): Promise<void> {
   const workspaceController = await WorkspaceController.create();
-
   await workspaceController.init();
 
   context.subscriptions.push(

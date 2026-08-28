@@ -50,6 +50,8 @@ export abstract class FolderBase
     this.diagnostics = languages.createDiagnosticCollection(folder.name);
   }
 
+  protected abstract init(): Promise<void>[];
+
   public abstract close(): Promise<void>;
   public abstract get logger(): Logger;
 

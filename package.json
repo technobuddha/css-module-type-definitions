@@ -41,7 +41,7 @@
     "test:full": "npx vitest --typecheck --mode=full run"
   },
   "dependencies": {
-    "@technobuddha/library": "2.1.0-187",
+    "@technobuddha/library": "2.1.0-188",
     "chalk": "6.0.0",
     "chokidar": "5.0.0",
     "commander": "15.0.0",
@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@cspell/cspell-types": "10.1.1",
-    "@technobuddha/project": "1.0.0-193",
+    "@technobuddha/project": "1.0.0-195",
     "@types/less": "3.0.8",
     "@types/node": "26.3.0",
     "@types/postcss-import": "^14.0.3",

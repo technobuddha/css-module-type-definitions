@@ -107,7 +107,6 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     super.deleteInformation(uri);
   }
   //#region Event Handlers
-
   protected override async handleEditTab(uri: Uri): Promise<void> {
     if (isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'edited'));

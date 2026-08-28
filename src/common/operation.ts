@@ -3,16 +3,21 @@ import chalk from 'chalk';
 
 import { pad } from './pad.ts';
 
-type Action = 'error' | 'start' | 'stop' | 'changed';
+type Action = 'error' | 'start' | 'prepare' | 'ready' | 'stop' | 'changed';
 
 export function operation(display: string, action: Action, error?: unknown): string {
   switch (action) {
-    case 'start': {
-      return `${chalk.green(pad('[start]'))} ${display}`;
+    case 'start':
+    case 'prepare': {
+      return `${chalk.grey(pad(`[${action}]`))} ${display}`;
+    }
+
+    case 'ready': {
+      return `${chalk.green(pad(`[${action}]`))} ${display}`;
     }
 
     case 'stop': {
-      return `${chalk.yellow(pad('[stop]'))} ${display}`;
+      return `${chalk.yellow(pad(`[${action}]`))} ${display}`;
     }
 
     case 'changed': {

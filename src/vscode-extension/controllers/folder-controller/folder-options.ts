@@ -124,27 +124,31 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     await this.fire('options', { oldOptions, newOptions });
   }
 
-  public override async init(): Promise<void> {
-    await super.init();
+  protected override init(): Promise<void>[] {
+    return [
+      ...super.init(),
+      (async () => {
+        this.#viteConfigFile = await locateViteConfigurationFile(this.folder.uri.fsPath);
+        this.#cmtdConfigFile = await locateCMTDConfigurationFile(this.folder.uri.fsPath);
 
-    this.#viteConfigFile = await locateViteConfigurationFile(this.folder.uri.fsPath);
-    this.#cmtdConfigFile = await locateCMTDConfigurationFile(this.folder.uri.fsPath);
+        await this.readCMTDConfig();
+        await this.readViteConfig();
+        this.readVscodeSettings();
 
-    await this.readCMTDConfig();
-    await this.readViteConfig();
-    this.readVscodeSettings();
-
-    this.#options = this.readOptions();
-
-    this.disposables.push(
-      workspace.onDidChangeConfiguration(async (event) => {
-        if (event.affectsConfiguration('cmtd', this.folder)) {
-          this.logger.trace(operation(`${this.folder.name}::configuration`, 'changed'));
-          this.readVscodeSettings();
-          await this.changeOptions();
-        }
-      }),
-    );
+        this.#options = this.readOptions();
+      })(),
+      (async () => {
+        this.disposables.push(
+          workspace.onDidChangeConfiguration(async (event) => {
+            if (event.affectsConfiguration('cmtd', this.folder)) {
+              this.logger.trace(operation(`${this.folder.name}::configuration`, 'changed'));
+              this.readVscodeSettings();
+              await this.changeOptions();
+            }
+          }),
+        );
+      })(),
+    ];
   }
 
   protected override async handleWatcher({

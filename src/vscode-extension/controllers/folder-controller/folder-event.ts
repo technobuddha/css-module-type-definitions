@@ -7,9 +7,15 @@ import { FolderFiles, type FolderFilesArguments } from './folder-files.ts';
 export type FolderEventArguments = FolderFilesArguments;
 
 export abstract class FolderEvent extends FolderFiles implements Disposable {
-  public override async init(): Promise<void> {
-    await super.init();
+  public constructor(args: FolderEventArguments) {
+    super(args);
 
+    this.on('openTab', async (uri) => {
+      await this.handleOpenTab(uri);
+    });
+  }
+
+  protected override init(): Promise<void>[] {
     const watcher = workspace.createFileSystemWatcher(new RelativePattern(this.folder, '**/*'));
     const respond = (action: Action) => async (uri: Uri) => {
       if (this.isIgnored(uri)) {
@@ -32,21 +38,24 @@ export abstract class FolderEvent extends FolderFiles implements Disposable {
     this.on('ignored', async () => {
       await this.handleIgnored();
     });
-    this.on('openTab', async (uri) => {
-      await this.handleOpenTab(uri);
-    });
+    // this.on('openTab', async (uri) => {
+    //   await this.handleOpenTab(uri);
+    // });
     this.on('editTab', async (uri) => {
       await this.handleEditTab(uri);
     });
     this.on('closeTab', async (uri) => {
       await this.handleCloseTab(uri);
     });
+
+    return super.init();
   }
 
   protected async handleOpenTab(uri: Uri): Promise<void> {
     this.openTabs.add(uri);
     if (isCss(uri) || isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'opened'));
+      await this.refreshAllInformation();
       return this.updateDiagnostics(uri);
     }
   }

@@ -9,11 +9,28 @@ import { FolderCode, type FolderCodeArguments } from './folder-code.ts';
 type FolderControllerArguments = FolderCodeArguments;
 
 export class FolderController extends FolderCode implements Disposable {
+  #prepare: Promise<void> | undefined;
   readonly #updatingDiagnostics: UriSet = new UriSet();
   readonly #updatingInformation: UriSet = new UriSet();
 
   public constructor({ workspaceController, folder }: FolderControllerArguments) {
     super({ workspaceController, folder });
+  }
+
+  private async prepare(): Promise<void> {
+    if (this.#prepare) {
+      return this.#prepare;
+    }
+
+    this.workspaceController.spin(true);
+
+    this.logger.info(operation(this.folder.name, 'start'));
+    this.#prepare = Promise.all(this.init())
+      .then(() => this.logger.info(operation(this.folder.name, 'prepare')))
+      .then(async () => this.refreshAllInformation())
+      .then(() => this.logger.info(operation(this.folder.name, 'ready')))
+      .finally(() => this.workspaceController.spin(false));
+    return this.#prepare;
   }
 
   protected override async updateDiagnostics(uri: Uri): Promise<void> {
@@ -41,25 +58,23 @@ export class FolderController extends FolderCode implements Disposable {
   }
 
   protected override async handleOpenTab(uri: Uri): Promise<void> {
-    await this.refreshAllInformation();
+    await this.prepare();
     await super.handleOpenTab(uri);
     this.workspaceController.refreshCodeLenses();
   }
 
   protected override async handleEditTab(uri: Uri): Promise<void> {
-    await this.refreshAllInformation();
+    await this.prepare();
     await super.handleEditTab(uri);
     this.workspaceController.refreshCodeLenses();
   }
 
   protected override async handleCloseTab(uri: Uri): Promise<void> {
-    await this.refreshAllInformation();
     return super.handleCloseTab(uri);
   }
 
-  public override async init(): Promise<void> {
-    await super.init();
-    this.logger.debug(operation(this.folder.name, 'start'));
+  protected override init(): Promise<void>[] {
+    return super.init();
   }
 
   public override async close(): Promise<void> {
