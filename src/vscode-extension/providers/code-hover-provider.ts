@@ -1,11 +1,14 @@
-import { empty, splitLines, unindent } from '@technobuddha/library';
+import { unindent } from '@technobuddha/library';
 import {
   type CancellationToken,
-  type Hover,
+  Hover,
   type HoverProvider,
+  MarkdownString,
   type Position,
   type TextDocument,
 } from 'vscode';
+
+import { isCssModule } from '../../common/index.ts';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo } from '../helpers/index.ts';
@@ -33,37 +36,31 @@ export class CodeHoverProvider implements HoverProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
-        if (cssInfo) {
-          const { locationsOfClass, localClass, hasDts } = cssInfo;
-          const md: string[] = [];
+        if (isCssModule(importUri)) {
+          const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
+          if (cssInfo) {
+            const { hasDts } = cssInfo;
+            const locations = cssInfo.cssLocations({ importUri, localName });
 
-          const classNames = localClass.get(localName);
-          if (classNames) {
-            for (const className of classNames) {
-              const extracted = locationsOfClass.get(className);
-              if (extracted) {
-                for (const snippet of new Set(extracted.map((e) => e.snippet))) {
-                  if (md.length > 0) {
-                    md.push('---', empty);
-                  }
-                  md.push('```css', ...splitLines(unindent(snippet)), '```', empty);
+            if (locations) {
+              const md = new MarkdownString();
+              const scopes: Set<string> = new Set();
+
+              for (const { snippet, className } of locations) {
+                md.appendCodeblock(unindent(snippet), 'css');
+
+                const scope = cssInfo.scopeNameOfClassName.get(className);
+                if (scope) {
+                  scopes.add(scope);
                 }
               }
               if (!hasDts) {
-                if (md.length > 0) {
-                  md.push('---', empty);
-                }
-                md.push(
-                  '```typescript',
-                  `(property) "${localName}": "${cssInfo.classScope[className]}"`,
-                  '```',
-                  empty,
-                );
+                const [scope] = scopes;
+                md.appendCodeblock(`(property) "${localName}": "${scope}"`, 'typescript');
               }
-            }
 
-            return { contents: [md.join('\n')] };
+              return new Hover(md.value);
+            }
           }
         }
       }

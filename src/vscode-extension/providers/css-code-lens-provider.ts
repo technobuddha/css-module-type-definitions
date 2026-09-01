@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 
-import { conjoin, empty, nbsp } from '@technobuddha/library';
+import { empty } from '@technobuddha/library';
 import {
   type CancellationToken,
   CodeLens,
@@ -16,7 +16,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { Utils } from 'vscode-uri';
 
 import { type Logger } from '../../common/index.ts';
 
@@ -48,29 +47,36 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
     });
 
     this.disposables.push(
-      commands.registerCommand(COMMAND_NAME, (...args: Uri[]) => {
-        if (args.length === 0) {
+      commands.registerCommand(COMMAND_NAME, (cssUri: Uri, importUris: Uri[]) => {
+        if (importUris.length === 0) {
           return;
         }
-        if (args.length === 1) {
-          void workspace.openTextDocument(args[0]).then((doc) => window.showTextDocument(doc));
+        if (importUris.length === 1) {
+          void workspace
+            .openTextDocument(importUris[0])
+            .then((doc) => window.showTextDocument(doc));
         }
 
-        const fc = this.workspaceController.folderController(args[0]);
+        const fc = this.workspaceController.folderController(cssUri);
         const root = fc?.folder.uri ?? Uri.file(os.homedir());
 
         void window
-          .showQuickPick(args.map((uri) => path.relative(root.fsPath, uri.fsPath)))
+          .showQuickPick(
+            importUris.map((uri) => ({
+              uri,
+              label: path.relative(cssUri.fsPath, uri.fsPath),
+              detail: path.relative(root.fsPath, uri.fsPath),
+            })),
+            {
+              placeHolder: 'Select a file to open',
+              prompt: fc?.folder.name,
+            },
+          )
           .then(async (pick) => {
             if (pick) {
-              workspace
-                .openTextDocument(Uri.joinPath(root, pick))
-                .then((doc) => window.showTextDocument(doc));
+              workspace.openTextDocument(pick.uri).then((doc) => window.showTextDocument(doc));
             }
           });
-        window.showInformationMessage(
-          `Codelens triggered with args: ${conjoin(args.map(Utils.basename))}`,
-        );
       }),
     );
   }
@@ -89,11 +95,8 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
       const command = fc.command(codeLens.uri);
       codeLens.command = {
         command: COMMAND_NAME,
-        title:
-          command?.title ?
-            `${command?.icon ?? '$(cmtd-logo)'}${nbsp}${nbsp} ${command.title}`
-          : empty,
-        tooltip: command?.tooltip ?? 'Tooltip provided by css code lens extension',
+        title: command?.title ? `${command?.icon ?? '$(cmtd-logo)'} ${command.title}` : empty,
+        tooltip: command?.tooltip ?? empty,
         arguments: command?.arguments ?? [],
       };
     }

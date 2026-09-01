@@ -48,12 +48,10 @@ export async function generateTypes(
             );
         })
         .catch((error) => {
-          logger.error(
-            `Error processing file ${file}: ${Error.isError(error) ? error : String(error)}`,
-          );
+          logger.error(fileOperation(file, 'error', error));
         });
     })
     .catch((error) => {
-      logger.error(`Error Reading file ${file}: ${Error.isError(error) ? error : String(error)}`);
+      logger.error(fileOperation(file, 'error', error));
     });
 }

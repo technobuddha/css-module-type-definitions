@@ -1,19 +1,11 @@
 import path from 'node:path';
 
-import {
-  camelCase,
-  empty,
-  encodeBase64,
-  fileExists,
-  quote,
-  space,
-  toError,
-} from '@technobuddha/library';
+import { camelCase, empty, encodeBase64, fileExists, quote, space } from '@technobuddha/library';
 import genericNames from 'generic-names';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 
-import { type Logger, type Options } from '../common/index.ts';
+import { fileOperation, type Logger, type Options } from '../common/index.ts';
 
 import { type CssImporter } from './css-importer.ts';
 import { type CssModuleInfo } from './css-info.ts';
@@ -23,7 +15,7 @@ import { dtsInfo } from './dts-info.ts';
 import { dtsMiddle } from './dts-middle.ts';
 import { dtsTop } from './dts-top.ts';
 import { type CssLocation, extractLocations } from './extract-locations.ts';
-import { type CMTDPosition, type CMTDRange } from './position.ts';
+import { Pos, PosRange } from './position.ts';
 import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
 
 type Arguments = {
@@ -55,15 +47,17 @@ export async function generateCssModuleInfo(
   }
 
   return extractLocations(css, { file, options, logger, cssImporter, relativeTo })
-    .then(async ({ css, info: { locationsOfClass, importedFiles } }) => {
-      let classScope: Record<string, string>;
+    .then(async ({ css, info: { locationsOfClassName, importedFiles } }) => {
+      const scopeNameOfClassName: Map<string, string> = new Map();
       return postcss()
         .use(
           postcssModules({
             ...options.css.modules,
             generateScopedName,
             getJSON: (_cssFilename, json, _outputFilename) => {
-              classScope = json;
+              for (const [className, scopeName] of Object.entries(json)) {
+                scopeNameOfClassName.set(className, scopeName);
+              }
             },
           }),
         )
@@ -72,28 +66,28 @@ export async function generateCssModuleInfo(
           map: { inline: false },
         })
         .then(async () => {
-          const classLocal: Map<string, Set<string>> = new Map();
-          for (const className of locationsOfClass.keys()) {
-            if (!classLocal.has(className)) {
+          const localNamesOfClassName: Map<string, Set<string>> = new Map();
+          for (const className of locationsOfClassName.keys()) {
+            if (!localNamesOfClassName.has(className)) {
               switch (options.css.modules.localsConvention) {
                 case 'camelCase': {
-                  classLocal.set(className, new Set([className, camelCase(className)]));
+                  localNamesOfClassName.set(className, new Set([className, camelCase(className)]));
                   break;
                 }
                 case 'camelCaseOnly': {
-                  classLocal.set(className, new Set([camelCase(className)]));
+                  localNamesOfClassName.set(className, new Set([camelCase(className)]));
                   break;
                 }
                 case 'dashes': {
-                  classLocal.set(className, new Set([className, dashes(className)]));
+                  localNamesOfClassName.set(className, new Set([className, dashes(className)]));
                   break;
                 }
                 case 'dashesOnly': {
-                  classLocal.set(className, new Set([dashes(className)]));
+                  localNamesOfClassName.set(className, new Set([dashes(className)]));
                   break;
                 }
                 case 'all': {
-                  classLocal.set(
+                  localNamesOfClassName.set(
                     className,
                     new Set([className, camelCase(className), dashes(className)]),
                   );
@@ -102,24 +96,24 @@ export async function generateCssModuleInfo(
                 case 'none':
                 case undefined:
                 default: {
-                  classLocal.set(className, new Set([className]));
+                  localNamesOfClassName.set(className, new Set([className]));
                   break;
                 }
               }
             }
           }
 
-          const localClass: Map<string, Set<string>> = new Map();
-          for (const [className, set] of classLocal) {
+          const classNamesOfLocalName: Map<string, Set<string>> = new Map();
+          for (const [className, set] of localNamesOfClassName) {
             for (const alias of set) {
-              localClass.set(alias, (localClass.get(alias) ?? new Set()).add(className));
+              classNamesOfLocalName.getOrInsertComputed(alias, () => new Set()).add(className);
             }
           }
 
           const extractedCss: Map<string, CssLocation[]> = new Map();
-          for (const [className, set] of classLocal) {
+          for (const [className, set] of localNamesOfClassName) {
             for (const alias of set) {
-              extractedCss.set(alias, locationsOfClass.get(className) ?? []);
+              extractedCss.set(alias, locationsOfClassName.get(className) ?? []);
             }
           }
 
@@ -131,7 +125,7 @@ export async function generateCssModuleInfo(
 
           const hasDts = await fileExists(path.join(dir, dtsFilename));
 
-          const dtsRange: Map<string, CMTDRange> = new Map();
+          const dtsRange: Map<string, PosRange> = new Map();
 
           const smg = new SourceMapGenerator({ file: dtsFilename, logger });
 
@@ -143,7 +137,6 @@ export async function generateCssModuleInfo(
               a.location.range.start.line - b.location.range.start.line ||
               a.location.range.start.column - b.location.range.start.column,
           );
-
           for (const [className, extracted] of classEntries) {
             const {
               location: {
@@ -154,25 +147,26 @@ export async function generateCssModuleInfo(
               },
             } = extracted;
 
-            const generated: CMTDPosition = {
-              line: dts.length,
-              column: 11, // length of {space.repeat(2)}readonly{space}{quote},
-            };
+            // 11 = length of {space.repeat(2)}readonly{space}{quote},
+            const generated = new Pos(dts.length, 11);
 
             smg.addMapping({
               source,
               generated,
-              original: { line, column },
+              original: new Pos(line, column - 1),
             });
 
             dts.push(
-              `${space.repeat(2)}readonly${space}${quote(className)}:${space}${quote(classScope[className])};`,
+              `${space.repeat(2)}readonly${space}${quote(className)}:${space}${quote(scopeNameOfClassName.get(className)!)};`,
             );
 
-            dtsRange.set(className, {
-              start: { line: generated.line, column: generated.column + 1 },
-              end: { line: generated.line, column: generated.column + className.length + 1 },
-            });
+            dtsRange.set(
+              className,
+              new PosRange(
+                new Pos(generated.line, generated.column + 1),
+                new Pos(generated.line, generated.column + className.length + 1),
+              ),
+            );
           }
 
           dts.push(
@@ -186,23 +180,21 @@ export async function generateCssModuleInfo(
             dtsContents: dts.join('\n'),
             dtsFilename: path.resolve(dir, dtsFilename),
             hasDts,
-            locationsOfClass,
+            locationsOfClassName,
             importedFiles,
-            classLocal,
-            localClass,
+            localNamesOfClassName,
+            classNamesOfLocalName,
             dtsRange,
-            classScope,
+            scopeNameOfClassName,
           };
         })
         .catch((error) => {
-          logger.error(
-            `${toError(error).message}: Failed to generate type definitions for ${file}`,
-          );
-          throw toError(error);
+          logger.error(fileOperation(file, 'error', error));
+          throw error;
         });
     })
     .catch((error) => {
-      logger.error(`ELFC: ${Error.isError(error) ? error : String(error)}`);
+      logger.error(fileOperation(filepath, 'error', error));
       throw error;
     });
 }

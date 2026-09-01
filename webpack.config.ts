@@ -10,9 +10,10 @@ function isNodeBuiltin(request: string): boolean {
 }
 
 const config: Configuration = {
-  target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-
-  entry: './src/vscode-extension/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
+  target: 'node',
+  // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  entry: './src/vscode-extension/extension.ts',
   output: {
     // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(import.meta.dirname, 'out'),
@@ -35,8 +36,6 @@ const config: Configuration = {
       }
 
       if (
-        // request === 'vite'
-        // || request?.startsWith('vite/') ||
         request === 'esbuild' ||
         request?.startsWith('esbuild/') ||
         request === 'rolldown' ||
@@ -44,7 +43,6 @@ const config: Configuration = {
         request?.startsWith('@rolldown/') ||
         request === 'stylus' ||
         request?.startsWith('stylus/')
-        // || request?.startsWith('@vitejs/')
       ) {
         return callback(null, `commonjs ${request}`);
       }

@@ -8,6 +8,8 @@ import {
 } from 'vscode';
 import { Utils } from 'vscode-uri';
 
+import { isCssModule } from '../../common/file-types.ts';
+
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getLocalInfo } from '../helpers/index.ts';
 import { type CssModuleInformation } from '../information/index.ts';
@@ -34,19 +36,23 @@ export class CodeDefinitionProvider implements DefinitionProvider {
       if (localInfo) {
         const { importUri, localName } = localInfo;
 
-        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
-        if (!cssInfo?.hasDts) {
-          const { locationsOfClass } = cssInfo;
-          const extracted = locationsOfClass.get(localName);
-          if (extracted) {
-            const [{ location }] = extracted;
+        if (isCssModule(importUri)) {
+          const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
+          if (cssInfo && !cssInfo.hasDts) {
+            const classNames = cssInfo.aliases({ localName });
+            for (const className of classNames) {
+              const extracted = cssInfo.locationsOfClassName.get(className);
+              if (extracted) {
+                const [{ location }] = extracted;
 
-            const target = Uri.joinPath(Utils.dirname(importUri), location.source);
+                const target = Uri.joinPath(Utils.dirname(importUri), location.source);
 
-            return new Location(
-              target,
-              new Position(location.range.start.line, location.range.start.column),
-            );
+                return new Location(
+                  target,
+                  new Position(location.range.start.line, location.range.start.column),
+                );
+              }
+            }
           }
         }
       }

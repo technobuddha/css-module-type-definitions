@@ -6,17 +6,12 @@ import postcss, { AtRule, type Node, Rule } from 'postcss';
 import postcssImport from 'postcss-import';
 import selectorParser from 'postcss-selector-parser';
 
-import { type Logger, type Options } from '../common/index.ts';
+import { fileOperation, type Logger, type Options } from '../common/index.ts';
 
 import { type CssImporter } from './css-importer.ts';
 import { type CssGlobalInfo } from './css-info.ts';
-import {
-  type CMTDLocation,
-  type CMTDPosition,
-  offsetOfPosition,
-  positionAdd,
-  positionOfOffset,
-} from './position.ts';
+import { Document } from './document.ts';
+import { type Loc, Pos } from './position.ts';
 import {
   fixSourceMap,
   type RawSourceMap,
@@ -27,12 +22,12 @@ import { transformer } from './transformers/index.ts';
 
 type ClassPosition = {
   name: string;
-  offset: CMTDPosition;
+  offset: Pos;
 };
 
 export type CssLocation = {
   snippet: string;
-  location: CMTDLocation;
+  location: Loc;
 };
 
 type Arguments = {
@@ -90,7 +85,7 @@ export async function extractLocations(
         const smc = new SourceMapConsumer({ sourceMap, source, logger });
 
         const lines = splitLines(css);
-        const locationsOfClass: Map<string, CssLocation[]> = new Map();
+        const locationsOfClassName: Map<string, CssLocation[]> = new Map();
 
         postcss()
           .process(css, { from: path.basename(filename) })
@@ -98,27 +93,27 @@ export async function extractLocations(
             for (const { name } of walkNode(node, logger)) {
               // postcss's Position is 1-based, but we use 0-based
 
-              const start: CMTDPosition = {
-                line: (node.source?.start?.line ?? 1) - 1,
-                column: (node.source?.start?.column ?? 1) - 1,
-              };
+              const start = new Pos(
+                (node.source?.start?.line ?? 1) - 1,
+                (node.source?.start?.column ?? 1) - 1,
+              );
 
-              const end: CMTDPosition = {
-                line: (node.source?.end?.line ?? 1) - 1,
-                column: (node.source?.end?.column ?? 1) - 1,
-              };
+              const end = new Pos(
+                (node.source?.end?.line ?? 1) - 1,
+                (node.source?.end?.column ?? 1) - 1,
+              );
 
-              locationsOfClass.getOrInsert(name, []).push({
+              locationsOfClassName.getOrInsert(name, []).push({
                 snippet: unindent(lines.slice(start.line, end.line + 1).join('\n')),
                 location: { source, range: { start, end } },
               });
             }
           });
 
-        for (const [className, extracted] of Array.from(locationsOfClass)) {
+        for (const [className, extracted] of Array.from(locationsOfClassName)) {
           const extractedCss: CssLocation[] = [];
           let prevSource: string | undefined;
-          let prevStart: CMTDPosition | undefined;
+          let prevStart: Pos | undefined;
           let skip = 0;
 
           for (const { snippet, location } of extracted.sort(
@@ -144,16 +139,17 @@ export async function extractLocations(
             const op = smc.originalPosition(start);
             // eslint-disable-next-line @typescript-eslint/prefer-destructuring
             source = op.source;
-            start = { line: op.line, column: op.column };
+            start = new Pos(op.line, op.column);
 
             const sourcePath = path.resolve(directory, source);
-            const content = sources.get(sourcePath)!;
+            const content = sources.get(sourcePath);
             if (content) {
-              let offset = offsetOfPosition(content, start);
+              const document = new Document(content);
+              let offset = document.offsetAt(start);
 
               let nameOffset = 0;
               for (let i = 0; i <= skip; ++i) {
-                const pos = content
+                const pos = document
                   .slice(offset + nameOffset)
                   .search(re`\.${className}${reEndOfSelector}`);
                 if (pos >= 0) {
@@ -164,20 +160,18 @@ export async function extractLocations(
                 }
               }
 
-              const poo = positionOfOffset(content, offset);
-              start = { line: poo.line, column: poo.column + 1 };
-              end = { line: start.line, column: start.column + className.length };
+              const poo = document.positionAt(offset);
+              start = new Pos(poo.line, poo.column + 1);
+              end = new Pos(start.line, start.column + className.length);
             } else {
-              logger.warn(
-                `Source file ${file}::${filename} (${source}) [${directory}] [[${sourcePath}]]`,
-              );
+              logger.warn(fileOperation(file, 'warn', `${sourcePath}: not found`));
             }
             extractedCss.push({ snippet, location: { source, range: { start, end } } });
           }
-          locationsOfClass.set(className, extractedCss);
+          locationsOfClassName.set(className, extractedCss);
         }
 
-        return { css, sourceMap, info: { locationsOfClass, importedFiles } };
+        return { css, sourceMap, info: { locationsOfClassName, importedFiles } };
       }),
   );
 }
@@ -198,10 +192,7 @@ function walkRule(rule: Rule, _logger?: Logger): ClassPosition[] {
       (sel) =>
         void results.push({
           name: sel.value,
-          offset: {
-            line: sel.source?.start?.line ?? 1,
-            column: (sel.source?.start?.column ?? 1) - 1,
-          },
+          offset: new Pos(sel.source?.start?.line ?? 1, (sel.source?.start?.column ?? 1) - 1),
         }),
     );
     return results;
@@ -209,10 +200,7 @@ function walkRule(rule: Rule, _logger?: Logger): ClassPosition[] {
 }
 
 function* walkAtRule(atRule: AtRule, logger?: Logger): Generator<ClassPosition> {
-  const basePosition: CMTDPosition = {
-    line: 0,
-    column: `@${atRule.name}`.length + (atRule.raws.afterName?.length ?? 0),
-  };
+  const basePosition = new Pos(0, `@${atRule.name}`.length + (atRule.raws.afterName?.length ?? 0));
 
   if (atRule.name === 'value' && atRule.params) {
     const importReg = /(.+)\s+from\s+.+/isv;
@@ -231,16 +219,15 @@ function* walkAtRule(atRule: AtRule, logger?: Logger): Generator<ClassPosition> 
         const nameMatch = nameReg.exec(pattern);
         if (nameMatch) {
           const [, rename, finalName] = nameMatch;
+          const document = new Document(atRule.params);
 
           yield {
             name: finalName,
-            offset: positionAdd(
-              positionOfOffset(
-                atRule.params,
+            offset: document
+              .positionAt(
                 (importNamesOffsets[i - 1] ?? 0) + nameMatch.index + (rename?.length ?? 0),
-              ),
-              basePosition,
-            ),
+              )
+              .add(basePosition),
           };
         }
       }

@@ -54,16 +54,16 @@ if (import.meta.main) {
             title: 'CMTD: Hide CSS Module Type Definitions',
             icon: '$(css-eye-off)',
           },
-          // {
-          //   command: 'cmtd.hideGitIgnore',
-          //   title: 'CMTD: Hide git ignored files',
-          //   icon: '$(github)',
-          // },
-          // {
-          //   command: 'cmtd.showGitIgnore',
-          //   title: 'CMTD: Show git ignored files',
-          //   icon: '$(github-inverted)',
-          // },
+          {
+            command: 'cmtd.hideGitIgnore',
+            title: 'CMTD: Hide git ignored files',
+            icon: '$(github)',
+          },
+          {
+            command: 'cmtd.showGitIgnore',
+            title: 'CMTD: Show git ignored files',
+            icon: '$(github-inverted)',
+          },
         ],
         menus: {
           'view/title': [
@@ -77,16 +77,16 @@ if (import.meta.main) {
               group: 'navigation@10',
               when: "view == 'workbench.explorer.fileView' && config.cmtd.showCssModuleTypeDefinitions",
             },
-            // {
-            //   command: 'cmtd.showGitIgnore',
-            //   group: 'navigation@10',
-            //   when: "view == 'workbench.explorer.fileView' && config.explorer.excludeGitIgnore",
-            // },
-            // {
-            //   command: 'cmtd.hideGitIgnore',
-            //   group: 'navigation@10',
-            //   when: "view == 'workbench.explorer.fileView' && !config.explorer.excludeGitIgnore",
-            // },
+            {
+              command: 'cmtd.showGitIgnore',
+              group: 'navigation@10',
+              when: "view == 'workbench.explorer.fileView' && config.explorer.excludeGitIgnore",
+            },
+            {
+              command: 'cmtd.hideGitIgnore',
+              group: 'navigation@10',
+              when: "view == 'workbench.explorer.fileView' && !config.explorer.excludeGitIgnore",
+            },
           ],
         },
         configuration: {

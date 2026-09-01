@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { conjoin, deepEquals, noop, toArray, toIterable } from '@technobuddha/library';
+import { conjoin, deepEquals, empty, noop, toArray } from '@technobuddha/library';
 import { type SetOptional } from 'type-fest';
 import { type Command, Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
@@ -50,7 +50,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         return;
       }
 
-      this.logger.trace(fileOperation(uri, 'diagnostics'));
+      this.logger.debug(fileOperation(uri, 'diagnostics'));
       const diagnostics: Diagnostic[] = [];
 
       const importers = this.filesImporting(uri);
@@ -61,13 +61,13 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
         const removeUsedClasses = async (
           importers: ReadonlyUriSet,
-          uris: Uri | Iterable<Uri> = uri,
+          uris: ReadonlyUriSet,
         ): Promise<void> => {
           for (const importer of importers) {
             if (isCode(importer)) {
               const codeInfo = this.codeInformation(importer);
               if (codeInfo) {
-                for (const u of toIterable(uris)) {
+                for (const u of uris) {
                   const cssInfo = this.cssInformation(u);
                   if (cssInfo) {
                     const usages = codeInfo.usages.get(u);
@@ -101,13 +101,15 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         const codeImporters = new UriSet(importers.values().filter((importer) => isCode(importer)));
         const cssImporters = new UriSet(importers.values().filter((importer) => isCss(importer)));
 
+        let icon = empty;
+        let title = empty;
+        let tooltip = empty;
+        let args: Uri[] = [];
+
         if (codeImporters.size === 0 && cssImporters.size === 0) {
-          // A file that is not imported by any other file.
-          this.#commands.set(uri, {
-            icon: '⏸️',
-            title: `Not imported.`,
-            arguments: [],
-          });
+          icon = '⏸️';
+          title = `Not imported.`;
+          tooltip = `This ${isCssModule(uri) ? 'Module' : 'Global'} CSS file is not imported.`;
 
           diagnose(`${uriName(uri)} is not imported.`);
           classes.clear();
@@ -138,56 +140,70 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           const importedAsGlobal = globalImporters.size > 0;
           const importedAsModule = moduleImporters.size > 0;
 
-          if (importedAsGlobal) {
+          if (importedAsMixins) {
+            icon = '⭐';
+          } else if (importedAsGlobal) {
+            icon = importedAsModule ? '🔀' : '🔵';
             classes.clear();
           } else if (importedAsModule) {
-            await removeUsedClasses(moduleImporters, cssImporters);
+            icon = '🟪';
+            await removeUsedClasses(moduleImporters, new UriSet([uri], cssImporters));
+          } else {
+            icon = '⏸️';
+            classes.clear();
           }
 
-          const icon =
-            importedAsMixins ? '🧩'
-            : importedAsGlobal && importedAsModule ? '🔀'
-            : importedAsGlobal ? '🌎'
-            : importedAsModule ? '📦'
-            : '⏸️';
-
-          this.#commands.set(uri, {
-            icon,
-            title: `Imported by ${uriName(cssImporters, moduleImporters, globalImporters)}`,
-            arguments: [...cssImporters, ...moduleImporters, ...globalImporters],
-          });
+          title = `Imported by ${uriName(cssImporters, moduleImporters, globalImporters)}`;
+          args = [...cssImporters, ...moduleImporters, ...globalImporters];
 
           if (isCssGlobal(uri)) {
-            // A global CSS file that is imported directly into a code file.
-            if (!importedAsMixins) {
-              if (importedAsGlobal && importedAsModule) {
-                diagnose(`${uriName(uri)} is imported both as Global CSS and Module CSS.`);
-              } else if (importedAsModule) {
-                if (codeImporters.size > 0) {
-                  diagnose(`${uriName(uri)} is imported as Module CSS.`);
-                }
-              } else if (!importedAsGlobal) {
-                diagnose(`${uriName(uri)} is not imported.`);
+            if (importedAsMixins) {
+              tooltip = 'This CSS file has no class definitions.';
+            } else if (importedAsGlobal) {
+              if (importedAsModule) {
+                tooltip = 'This CSS file is imported both as Global and Module CSS.';
+                diagnose(`Imported both as Global CSS and Module CSS.`);
+              } else {
+                tooltip = 'This CSS file is imported as Global CSS.';
               }
+            }
+            if (importedAsModule) {
+              tooltip = 'This CSS file is imported as Module CSS.';
+            } else {
+              tooltip = 'This CSS file is not imported into any code file.';
+              diagnose(`CSS file is not imported into any code file.`);
             }
           }
 
           if (isCssModule(uri)) {
-            // A module CSS file that is imported directly into a code file.
-            if (!importedAsMixins) {
-              if (importedAsGlobal && importedAsModule) {
-                diagnose(`${uriName(uri)} is imported both as Global CSS and Module CSS.`);
-              } else if (importedAsGlobal) {
-                diagnose(`${uriName(uri)} is imported as Global CSS.`);
-              } else if (!importedAsModule) {
-                diagnose(`${uriName(uri)} is not imported.`);
+            if (importedAsMixins) {
+              tooltip = 'This Module CSS file has no class definitions.';
+            } else if (importedAsGlobal) {
+              if (importedAsModule) {
+                tooltip = 'This Module CSS file is imported both as Module and Global CSS.';
+                diagnose(`Imported both as Module CSS and Global CSS.`);
+              } else {
+                tooltip = 'This Module CSS file is imported as Global CSS.';
+                diagnose('Module CSS file is imported as Global CSS');
               }
+            } else if (importedAsModule) {
+              tooltip = 'This Module CSS file is imported as Module CSS.';
+            } else {
+              tooltip = 'This Module CSS file is not imported into any code file.';
+              diagnose(`Module CSS file is not imported into any code file.`);
             }
           }
         }
 
+        this.#commands.set(uri, {
+          icon,
+          title,
+          tooltip,
+          arguments: [uri, args],
+        });
+
         for (const className of classes) {
-          const locations = cssInfo.locationsOfClass.get(className);
+          const locations = cssInfo.locationsOfClassName.get(className);
           if (locations) {
             for (const { location } of locations) {
               let range: Range;
@@ -247,17 +263,18 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         }));
 
       if (newCssInformation) {
-        if (!deepEquals(newCssInformation, oldCssInformation)) {
+        const isEqual = deepEquals(newCssInformation, oldCssInformation);
+
+        if (!isEqual) {
           this.logger.trace(fileOperation(uri, 'examined'));
 
           this.#cssInformation.set(uri, newCssInformation);
-
-          if (
-            isCssModule(uri) &&
-            (override || newCssInformation.hasDts || this.options.css.generateDts)
-          ) {
-            await newCssInformation.writeTypeDefinition(this.logger);
-          }
+        }
+        if (
+          isCssModule(uri) &&
+          (override || (!isEqual && (newCssInformation.hasDts || this.options.css.generateDts)))
+        ) {
+          await newCssInformation.writeTypeDefinition(this.logger);
         }
       } else {
         this.#cssInformation.delete(uri);
@@ -278,38 +295,6 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
   }
 
   //#region Event Handlers
-  protected async handleEditTab(uri: Uri): Promise<void> {
-    if (isCss(uri)) {
-      this.logger.debug(fileOperation(uri, 'edited'));
-      const affectedUris = new UriSet();
-
-      const affected = (): void => {
-        for (const importer of this.filesImporting(uri)) {
-          affectedUris.add(importer);
-          affectedUris.addAll(this.filesImporting(importer));
-        }
-
-        const imports = this.cssInformation(uri)?.importedFiles;
-        if (imports) {
-          affectedUris.addAll(imports);
-        }
-      };
-
-      affected(); // get all files before the change
-      await this.updateInformation(uri);
-      affected(); // get all files after the change
-
-      for (const affectedUri of affectedUris) {
-        await this.updateInformation(affectedUri);
-      }
-
-      await this.updateDiagnostics(uri);
-      for (const affectedUri of affectedUris) {
-        await this.updateDiagnostics(affectedUri);
-      }
-    }
-  }
-
   protected async handleIgnored(): Promise<void> {
     for (const css of Array.from(this.#cssInformation.keys())) {
       if (this.isIgnored(css)) {
@@ -349,7 +334,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       }
       this.passTabs.delete(uri);
 
-      this.logger.debug(fileOperation(uri, action));
+      this.logger.trace(fileOperation(uri, action));
       if (action === 'unlink') {
         await this.updateInformation(uri);
 
@@ -364,12 +349,12 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           ]) {
             const generatedUri = uri.with({ path: file });
             await workspace.fs.delete(generatedUri).then(() => {
-              this.logger.debug(fileOperation(generatedUri, 'deleted'));
+              this.logger.trace(fileOperation(generatedUri, 'deleted'));
             }, noop);
           }
         }
       } else {
-        await this.updateInformation(uri);
+        await this.updateAffected(uri);
       }
     }
     //#endregion CSS Module
@@ -380,7 +365,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       }
       this.passTabs.delete(uri);
 
-      this.logger.debug(fileOperation(uri, action));
+      this.logger.trace(fileOperation(uri, action));
       for (const [file, { importedFiles }] of this.#cssInformation) {
         if (importedFiles.has(uri)) {
           await this.updateDiagnostics(file);
@@ -391,7 +376,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     //#region DTS
     const cssFile = correspondingSource(uri);
     if (cssFile) {
-      this.logger.debug(fileOperation(uri, action));
+      this.logger.trace(fileOperation(uri, action));
       const oldCssInformation = this.#cssInformation.get(cssFile);
       if (oldCssInformation) {
         if (action === 'add' || action === 'unlink') {
@@ -399,7 +384,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
           if (oldCssInformation.hasDts !== hasDts) {
             const newCssInformation = await CssModuleInformation.create({
-              uri,
+              uri: cssFile,
               logger: this.logger,
               options: this.options,
               root: this.folder.uri,
@@ -418,12 +403,43 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
   }
   //#endregion Event Handlers
 
+  protected async updateAffected(uri: Uri): Promise<void> {
+    if (isCss(uri)) {
+      const affectedUris = new UriSet();
+
+      const affected = (): void => {
+        for (const importer of this.filesImporting(uri)) {
+          affectedUris.add(importer);
+          affectedUris.addAll(this.filesImporting(importer));
+        }
+
+        const imports = this.cssInformation(uri)?.importedFiles;
+        if (imports) {
+          affectedUris.addAll(imports);
+        }
+      };
+
+      affected(); // get all files before the change
+      await this.updateInformation(uri);
+      affected(); // get all files after the change
+
+      for (const affectedUri of affectedUris) {
+        await this.updateInformation(affectedUri);
+      }
+
+      await this.updateDiagnostics(uri);
+      for (const affectedUri of affectedUris) {
+        await this.updateDiagnostics(affectedUri);
+      }
+    }
+  }
+
   public command(uri: Uri): CssCommand | undefined {
     return this.#commands.get(uri);
   }
 
-  public cssInformation(uri: Uri): CssInformation | undefined {
-    return this.#cssInformation.get(uri);
+  public cssInformation<T extends CssInformation = CssInformation>(uri: Uri): T | undefined {
+    return this.#cssInformation.get(uri) as T | undefined;
   }
 
   public abstract codeInformation(uri: Uri): CodeInformation | undefined;
@@ -450,7 +466,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     await this.findUnignoredFiles(`**/${globIsCssModule()}`).then(async (uris) => {
       for (const uri of uris) {
         await this.updateInformation(uri, true);
-        const result = this.cssInformation(uri) as CssModuleInformation;
+        const result = this.cssInformation<CssModuleInformation>(uri);
         if (result) {
           typedefs.delete(result.dtsFilename);
         }

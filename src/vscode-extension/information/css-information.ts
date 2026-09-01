@@ -5,7 +5,7 @@ import { type ReadonlyUriSet } from '../helpers/index.ts';
 
 export interface CssInformation {
   readonly classNames: ReadonlySet<string>;
-  readonly locationsOfClass: ReadonlyMap<string, readonly CssLocation[]>;
+  readonly locationsOfClassName: ReadonlyMap<string, readonly CssLocation[]>;
   readonly importedFiles: ReadonlyUriSet;
   readonly localClassNames: (localName: string) => ReadonlySet<string> | undefined;
   readonly hasDts: boolean;

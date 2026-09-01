@@ -39,12 +39,12 @@ export abstract class FolderCode extends FolderCss implements Disposable {
 
         for (const importUri of codeInfo.importedFiles) {
           if (isCssModule(importUri)) {
-            const cssInfo = this.cssInformation(importUri) as CssModuleInformation;
+            const cssInfo = this.cssInformation<CssModuleInformation>(importUri);
             if (cssInfo && !cssInfo.hasDts) {
               const usages = codeInfo.usages.get(importUri);
               if (usages) {
                 for (const usage of usages) {
-                  if (!cssInfo.localClass.has(usage.localName)) {
+                  if (!cssInfo.classNamesOfLocalName.has(usage.localName)) {
                     const error = new Diagnostic(
                       usage.range,
                       `Class "${usage.localName}" is not defined in "${Utils.basename(importUri)}"`,
@@ -107,9 +107,40 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     super.deleteInformation(uri);
   }
   //#region Event Handlers
-  protected override async handleEditTab(uri: Uri): Promise<void> {
+
+  protected override async handleIgnored(): Promise<void> {
+    for (const uri of Array.from(this.#codeInformation.keys())) {
+      if (this.isIgnored(uri)) {
+        this.#codeInformation.delete(uri);
+      }
+    }
+
+    return super.handleIgnored();
+  }
+
+  protected override async handleWatcher({
+    action,
+    uri,
+  }: {
+    action: Action;
+    uri: Uri;
+  }): Promise<void> {
     if (isCode(uri)) {
-      this.logger.debug(fileOperation(uri, 'edited'));
+      if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
+        return;
+      }
+      this.passTabs.delete(uri);
+
+      this.logger.trace(fileOperation(uri, action));
+      await this.updateInformation(uri);
+    }
+
+    return super.handleWatcher({ action, uri });
+  }
+  //#endregion Event Handlers
+
+  protected override async updateAffected(uri: Uri): Promise<void> {
+    if (isCode(uri)) {
       const uris = new UriSet();
 
       const affected = (): void => {
@@ -140,41 +171,10 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       for (const code of uris) {
         await this.updateDiagnostics(code);
       }
-      return;
+    } else {
+      return super.updateAffected(uri);
     }
-    return super.handleEditTab(uri);
   }
-
-  protected override async handleIgnored(): Promise<void> {
-    for (const uri of Array.from(this.#codeInformation.keys())) {
-      if (this.isIgnored(uri)) {
-        this.#codeInformation.delete(uri);
-      }
-    }
-
-    return super.handleIgnored();
-  }
-
-  protected override async handleWatcher({
-    action,
-    uri,
-  }: {
-    action: Action;
-    uri: Uri;
-  }): Promise<void> {
-    if (isCode(uri)) {
-      if (this.openTabs.has(uri) && !this.passTabs.has(uri)) {
-        return;
-      }
-      this.passTabs.delete(uri);
-
-      this.logger.debug(fileOperation(uri, action));
-      await this.updateInformation(uri);
-    }
-
-    return super.handleWatcher({ action, uri });
-  }
-  //#endregion Event Handlers
 
   public codeInformation(uri: Uri): CodeInformation | undefined {
     return this.#codeInformation.get(uri);
@@ -221,53 +221,55 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }: EditCodeArguments): Promise<void> {
     await this.refreshAllInformation();
 
-    const cssInfo = this.cssInformation(importUri) as CssModuleInformation;
-    if (cssInfo) {
-      const locations = cssInfo.cssLocations({ className, localName, importUri });
-      if (locations) {
-        for (const location of locations) {
-          this.passTabs.add(location.uri);
-          we.replace(location.uri, location.range, cssReplacement);
-        }
-      }
-
-      const locals = cssInfo.localNames({ className, localName });
-
-      for (const codeInfo of this.#codeInformation.values()) {
-        if (token?.isCancellationRequested) {
-          return;
+    if (isCssModule(importUri)) {
+      const cssInfo = this.cssInformation<CssModuleInformation>(importUri)!;
+      if (cssInfo) {
+        const locations = cssInfo.cssLocations({ className, localName, importUri });
+        if (locations) {
+          for (const location of locations) {
+            this.passTabs.add(location.uri);
+            we.replace(location.uri, location.range, cssReplacement);
+          }
         }
 
-        const usages = codeInfo.usages
-          .get(importUri)
-          ?.filter((usage) => locals.has(usage.localName));
-        if (usages) {
-          for (const usage of usages) {
-            const { range } = usage;
-            const document = await workspace.openTextDocument(codeInfo.file);
+        const locals = cssInfo.localNames({ className, localName });
 
-            if (range.start.character >= 2) {
-              const expandedRange = new Range(
-                new Position(range.start.line, range.start.character - 1),
-                new Position(range.end.line, range.end.character + 1),
-              );
+        for (const codeInfo of this.#codeInformation.values()) {
+          if (token?.isCancellationRequested) {
+            return;
+          }
 
-              if (/^\[(?:(?:'.*')|(?:".*"))\]$/v.test(document.getText(expandedRange))) {
-                this.passTabs.add(document.uri);
-                we.replace(document.uri, expandedRange, codeReplacement);
-                continue;
+          const usages = codeInfo.usages
+            .get(importUri)
+            ?.filter((usage) => locals.has(usage.localName));
+          if (usages) {
+            for (const usage of usages) {
+              const { range } = usage;
+              const document = await workspace.openTextDocument(codeInfo.file);
+
+              if (range.start.character >= 2) {
+                const expandedRange = new Range(
+                  new Position(range.start.line, range.start.character - 1),
+                  new Position(range.end.line, range.end.character + 1),
+                );
+
+                if (/^\[(?:(?:'.*')|(?:".*"))\]$/v.test(document.getText(expandedRange))) {
+                  this.passTabs.add(document.uri);
+                  we.replace(document.uri, expandedRange, codeReplacement);
+                  continue;
+                }
               }
-            }
 
-            if (range.start.character >= 1) {
-              const expandedRange = new Range(
-                new Position(range.start.line, range.start.character - 1),
-                new Position(range.end.line, range.end.character),
-              );
+              if (range.start.character >= 1) {
+                const expandedRange = new Range(
+                  new Position(range.start.line, range.start.character - 1),
+                  new Position(range.end.line, range.end.character),
+                );
 
-              if (/^\..*$/v.test(document.getText(expandedRange))) {
-                this.passTabs.add(document.uri);
-                we.replace(document.uri, expandedRange, codeReplacement);
+                if (/^\..*$/v.test(document.getText(expandedRange))) {
+                  this.passTabs.add(document.uri);
+                  we.replace(document.uri, expandedRange, codeReplacement);
+                }
               }
             }
           }

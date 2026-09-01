@@ -21,6 +21,7 @@ export abstract class FolderFiles extends FolderOptions implements Disposable {
   protected abstract updateInformation(uri: Uri): Promise<void>;
   protected abstract refreshInformation(uri: Uri): Promise<void>;
   protected abstract updateDiagnostics(uri: Uri): Promise<void>;
+  protected abstract updateAffected(uri: Uri): Promise<void>;
 
   protected async refreshAllInformation(): Promise<void> {
     if (!this.#refresh) {

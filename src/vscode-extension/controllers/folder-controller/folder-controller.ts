@@ -1,6 +1,6 @@
 import { type Disposable, type Uri } from 'vscode';
 
-import { operation } from '../../../common/index.ts';
+import { fileOperation, isCode, isCss, operation } from '../../../common/index.ts';
 
 import { UriSet } from '../../helpers/uri-set.ts';
 
@@ -15,22 +15,6 @@ export class FolderController extends FolderCode implements Disposable {
 
   public constructor({ workspaceController, folder }: FolderControllerArguments) {
     super({ workspaceController, folder });
-  }
-
-  private async prepare(): Promise<void> {
-    if (this.#prepare) {
-      return this.#prepare;
-    }
-
-    this.workspaceController.spin(true);
-
-    this.logger.info(operation(this.folder.name, 'start'));
-    this.#prepare = Promise.all(this.init())
-      .then(() => this.logger.info(operation(this.folder.name, 'prepare')))
-      .then(async () => this.refreshAllInformation())
-      .then(() => this.logger.info(operation(this.folder.name, 'ready')))
-      .finally(() => this.workspaceController.spin(false));
-    return this.#prepare;
   }
 
   protected override async updateDiagnostics(uri: Uri): Promise<void> {
@@ -64,9 +48,12 @@ export class FolderController extends FolderCode implements Disposable {
   }
 
   protected override async handleEditTab(uri: Uri): Promise<void> {
-    await this.prepare();
-    await super.handleEditTab(uri);
-    this.workspaceController.refreshCodeLenses();
+    if (isCode(uri) || isCss(uri)) {
+      this.logger.debug(fileOperation(uri, 'edited'));
+      await this.prepare();
+      await super.updateAffected(uri);
+      this.workspaceController.refreshCodeLenses();
+    }
   }
 
   protected override async handleCloseTab(uri: Uri): Promise<void> {
@@ -77,8 +64,25 @@ export class FolderController extends FolderCode implements Disposable {
     return super.init();
   }
 
+  public async prepare(): Promise<void> {
+    if (this.#prepare) {
+      return this.#prepare;
+    }
+
+    this.workspaceController.spin(true);
+
+    this.logger.info(operation(this.folder.name, 'start'));
+    this.#prepare = Promise.all(this.init())
+      .then(async () => this.refreshAllInformation())
+      .then(() => this.logger.info(operation(this.folder.name, 'ready')))
+      .finally(() => this.workspaceController.spin(false));
+    return this.#prepare;
+  }
+
   public override async close(): Promise<void> {
     await this.dispose();
-    this.logger.debug(operation(this.folder.name, 'stop'));
+    if (this.#prepare) {
+      this.logger.info(operation(this.folder.name, 'stop'));
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { commands, type Disposable } from 'vscode';
+import { commands, type Disposable, window } from 'vscode';
 
 import { type WorkspaceController } from '../controllers/index.ts';
 
@@ -9,11 +9,20 @@ type CommandDeleteTypesOptions = {
 export function commandDeleteCssModuleTypeDefinitions({
   controller,
 }: CommandDeleteTypesOptions): Disposable {
-  return commands.registerCommand('cmtd.deleteCssModuleTypeDefinitions', async () =>
-    Promise.all(
+  return commands.registerCommand('cmtd.deleteCssModuleTypeDefinitions', async () => {
+    const choice = await window.showQuickPick(
       controller
         .folderControllers()
-        .map(async (folder) => folder.deleteAllCssModuleTypeDefinitionFiles()),
-    ),
-  );
+        .map((fc) => ({ label: fc.folder.name, picked: true, fc }))
+        .toArray(),
+      { canPickMany: true, placeHolder: 'Select folders to delete CSS module type definitions' },
+    );
+
+    if (choice) {
+      for (const { fc } of choice) {
+        await fc.prepare();
+        await fc.deleteAllCssModuleTypeDefinitionFiles();
+      }
+    }
+  });
 }

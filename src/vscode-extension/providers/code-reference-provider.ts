@@ -37,7 +37,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
         const { localName, importUri, accessorType } = localInfo;
         const locations: Location[] = [];
 
-        const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
+        const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
         if (cssInfo) {
           const cssLocations = cssInfo.cssLocations({ localName, importUri });
           if (cssLocations) {

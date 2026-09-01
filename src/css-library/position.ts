@@ -1,71 +1,48 @@
-export type CMTDPosition = {
-  readonly line: number;
-  readonly column: number;
-};
+export class Pos {
+  public readonly line: number;
+  public readonly column: number;
 
-export type CMTDMappedPosition = CMTDPosition & {
-  readonly source: string;
-};
-
-export type CMTDRange = {
-  readonly start: CMTDPosition;
-  readonly end: CMTDPosition;
-};
-
-export type CMTDLocation = {
-  readonly source: string;
-  readonly range: CMTDRange;
-};
-
-export function positionOfOffset(text: string, offset: number): CMTDPosition {
-  let line = 0;
-  let column = 0;
-
-  for (const char of text.slice(0, offset)) {
-    if (char === '\n') {
-      line++;
-      column = 0;
-    } else if (char === '\r') {
-      // Ignore carriage returns, as they may be part of a CRLF sequence.
-    } else {
-      column++;
-    }
-  }
-  return { line, column };
-}
-
-export function offsetOfPosition(text: string, position: CMTDPosition): number {
-  let offset = 0;
-  let line = 0;
-  let column = 0;
-
-  for (const char of text) {
-    if (line === position.line && column === position.column) {
-      return offset;
-    }
-
-    if (char === '\n') {
-      if (line === position.line) {
-        return offset;
-      }
-
-      line++;
-      column = 0;
-    } else if (char === '\r') {
-      // Ignore carriage returns, as they may be part of a CRLF sequence.
-    } else {
-      column++;
-    }
-
-    offset++;
+  public constructor(line: number, column: number) {
+    this.line = line;
+    this.column = column;
   }
 
-  return offset;
+  public add(delta: Pos): Pos {
+    return new Pos(this.line + delta.line, this.column + delta.column);
+  }
 }
 
-export function positionAdd(base: CMTDPosition, delta: CMTDPosition): CMTDPosition {
-  return {
-    line: base.line + delta.line,
-    column: base.column + delta.column,
-  };
+export class MappedPos extends Pos {
+  public readonly source: string;
+
+  public constructor(line: number, column: number, source: string) {
+    super(line, column);
+    this.source = source;
+  }
+}
+
+export class PosRange {
+  public readonly start: Pos;
+  public readonly end: Pos;
+
+  public constructor(start: Pos, end: Pos) {
+    this.start = start;
+    this.end = end;
+  }
+}
+
+export class Loc {
+  public readonly source: string;
+  public readonly range: PosRange;
+
+  public constructor(
+    source: string,
+    startLine: number,
+    startColumn: number,
+    endLine: number,
+    endColumn: number,
+  ) {
+    this.source = source;
+    this.range = new PosRange(new Pos(startLine, startColumn), new Pos(endLine, endColumn));
+  }
 }

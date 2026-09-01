@@ -1,17 +1,17 @@
 import path from 'node:path';
 
-import { empty, toError } from '@technobuddha/library';
+import { empty } from '@technobuddha/library';
 import {
   type RawSourceMap,
   SourceMapConsumer as JSSourceMapConsumer,
   SourceMapGenerator as JSSourceMapGenerator,
 } from 'source-map-js';
 
-import { type Logger } from '../common/index.ts';
+import { fileOperation, type Logger } from '../common/index.ts';
 
-import { type CMTDMappedPosition, type CMTDPosition } from './position.ts';
+import { MappedPos, type Pos } from './position.ts';
 
-// source-map-js uses line base-1 column base-0, so we need to both base-0;
+// source-map-js uses line base-1 column base-0, so we need both to be base-0;
 
 const reBadSource = /^(?:\.\.\/)+;charset=utf-8,/v;
 
@@ -32,7 +32,7 @@ export class SourceMapConsumer {
     this.#logger = logger;
   }
 
-  public originalPosition(position: CMTDPosition): CMTDMappedPosition {
+  public originalPosition(position: Pos): MappedPos {
     if (this.#smc) {
       try {
         let { line, column, source } = this.#smc.originalPositionFor({
@@ -48,13 +48,13 @@ export class SourceMapConsumer {
           throw new Error(`Position ${position.line}:${position.column} not found.`);
         }
 
-        return { line: line - 1, column, source };
-      } catch (e) {
-        this.#logger.error(toError(e).message);
-        throw e;
+        return new MappedPos(line - 1, column, source);
+      } catch (error) {
+        this.#logger.error(fileOperation(this.#source, 'error', error));
+        throw error;
       }
     }
-    return { line: position.line, column: position.column, source: this.#source };
+    return new MappedPos(position.line, position.column, this.#source);
   }
 }
 
@@ -65,8 +65,8 @@ type SMGArguments = {
 
 type AddMappingArguments = {
   readonly source: string;
-  readonly generated: CMTDPosition;
-  readonly original: CMTDPosition;
+  readonly generated: Pos;
+  readonly original: Pos;
 };
 
 export class SourceMapGenerator {

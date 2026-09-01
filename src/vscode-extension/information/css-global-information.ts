@@ -10,7 +10,7 @@ import { cssImporter } from '../css-importer/index.ts';
 import { ReadonlyUriSet } from '../helpers/index.ts';
 
 import { type CssInformation } from './css-information.ts';
-import { toLocation } from './to-location.ts';
+import { LocationAndSnippet } from './location-and-snippet.ts';
 
 type Arguments = {
   readonly uri: Uri;
@@ -43,19 +43,19 @@ export class CssGlobalInformation implements CssInformation {
   }
 
   public classNames: ReadonlySet<string>;
-  public locationsOfClass: ReadonlyMap<string, readonly CssLocation[]>;
+  public locationsOfClassName: ReadonlyMap<string, readonly CssLocation[]>;
   public importedFiles: ReadonlyUriSet;
   public hasDts = false;
 
-  private constructor({ locationsOfClass: classLocations, importedFiles }: CssGlobalInfo) {
-    this.locationsOfClass = classLocations;
+  private constructor({ locationsOfClassName: classLocations, importedFiles }: CssGlobalInfo) {
+    this.locationsOfClassName = classLocations;
     this.importedFiles = new ReadonlyUriSet(importedFiles.values().map((file) => Uri.file(file)));
 
     this.classNames = new Set(classLocations.keys());
   }
 
   public localClassNames(localName: string): ReadonlySet<string> | undefined {
-    return this.locationsOfClass.has(localName) ? new Set([localName]) : undefined;
+    return this.locationsOfClassName.has(localName) ? new Set([localName]) : undefined;
   }
 
   public async writeTypeDefinition(_logger: Logger): Promise<void> {
@@ -69,9 +69,11 @@ export class CssGlobalInformation implements CssInformation {
     className: string;
     importUri: Uri;
   }): readonly Location[] | null {
-    const locations = this.locationsOfClass.get(className);
+    const locations = this.locationsOfClassName.get(className);
     if (locations) {
-      return locations.map(({ location }) => toLocation(location, importUri));
+      return locations.map(
+        ({ location, snippet }) => new LocationAndSnippet(location, importUri, className, snippet),
+      );
     }
 
     return null;

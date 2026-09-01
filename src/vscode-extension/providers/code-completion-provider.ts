@@ -13,6 +13,8 @@ import {
   TextEdit,
 } from 'vscode';
 
+import { isCssModule } from '../../common/index.ts';
+
 import { type WorkspaceController } from '../controllers/index.ts';
 import { getImportInfo } from '../helpers/index.ts';
 import { type CssModuleInformation } from '../information/index.ts';
@@ -35,21 +37,23 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
     { triggerKind, triggerCharacter }: CompletionContext,
   ): Promise<CompletionItem[] | CompletionList | null | undefined> {
     if (triggerKind === CompletionTriggerKind.TriggerCharacter && !token.isCancellationRequested) {
-      const folderController = this.#workspaceController.folderController(document.uri);
-      if (folderController && !folderController.options.css.generateDts) {
+      const fc = this.#workspaceController.folderController(document.uri);
+      if (fc) {
         const importInfo = await getImportInfo(document, position);
         if (importInfo) {
           const { importUri } = importInfo;
 
-          const cssInfo = folderController.cssInformation(importUri) as CssModuleInformation;
-          if (cssInfo) {
-            const { localClass } = cssInfo;
+          if (isCssModule(importUri)) {
+            const cssInfo = fc.cssInformation<CssModuleInformation>(importUri);
+            if (cssInfo && !cssInfo.hasDts) {
+              const { classNamesOfLocalName } = cssInfo;
 
-            return new CompletionList(
-              Array.from(localClass.keys(), (key) =>
-                toCompletionItem(key, triggerCharacter, position),
-              ),
-            );
+              return new CompletionList(
+                Array.from(classNamesOfLocalName.keys(), (key) =>
+                  toCompletionItem(key, triggerCharacter, position),
+                ),
+              );
+            }
           }
         }
       }

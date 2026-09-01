@@ -2018,9 +2018,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/project@npm:1.0.0-209":
-  version: 1.0.0-209
-  resolution: "@technobuddha/project@npm:1.0.0-209"
+"@technobuddha/project@npm:1.0.0-212":
+  version: 1.0.0-212
+  resolution: "@technobuddha/project@npm:1.0.0-212"
   dependencies:
     "@commander-js/extra-typings": "npm:15.0.0"
     "@cspell/cspell-types": "npm:10.1.1"
@@ -2099,7 +2099,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/7070037182cd6e9f57fd860bcd84952e2fa75eae585f2e3e0d63edc0c14140fda1376fda203204304815b653acb8bc62487e271cba039568d6a1da64bdf4ff00
+  checksum: 10c0/b8097cf0a21786bcf8ffaed96ae071d7d39517aac89e04a962e3ee5e102f9bbb6a3d4d2a823e91779d64591ae69f2a386b647e2046a751a53f87161d3b96777e
   languageName: node
   linkType: hard
 
@@ -3997,7 +3997,7 @@ __metadata:
   dependencies:
     "@cspell/cspell-types": "npm:10.1.1"
     "@technobuddha/library": "npm:2.1.0-198"
-    "@technobuddha/project": "npm:1.0.0-209"
+    "@technobuddha/project": "npm:1.0.0-212"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:26.4.0"
     "@types/postcss-import": "npm:^14.0.3"

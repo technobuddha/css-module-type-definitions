@@ -10,6 +10,7 @@ import { toPathname } from './to-pathname.ts';
 
 type Operation =
   | 'error'
+  | 'warn'
   | 'created'
   | 'updated'
   | 'deleted'
@@ -68,7 +69,8 @@ export function fileOperation(file: string | URI, action: Operation, error?: unk
     }
 
     case 'note':
-    case 'error': {
+    case 'error':
+    case 'warn': {
       if (error) {
         return `${chalk.red(pad(`〘〘${action}〙〙`))} ${display}: ${toError(error).message}`;
       }

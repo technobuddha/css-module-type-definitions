@@ -300,7 +300,7 @@ styles.button; // ✓ (pseudo-classes are ignored)
 
 ```typescript
 // Only local classes are exported
-styles.localClass; // ✓
+styles.classNamesOfLocalName; // ✓
 styles.globalClass; // ✗
 ```
 

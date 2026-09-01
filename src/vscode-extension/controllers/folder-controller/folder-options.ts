@@ -26,6 +26,7 @@ import { FolderIgnorer, type FolderIgnorerArguments } from './folder-ignorer.ts'
 export type FolderOptionsArguments = FolderIgnorerArguments;
 
 export abstract class FolderOptions extends FolderIgnorer implements Disposable {
+  #logger: Logger;
   #options = defaultOptions;
   #cmtdConfigFile: string | undefined;
   #cmtdConfig: CMTDOptions | undefined;
@@ -35,6 +36,11 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
 
   public constructor({ workspaceController, folder }: FolderOptionsArguments) {
     super({ workspaceController, folder });
+
+    const loglevel =
+      workspace.getConfiguration(SETTINGS_PREFIX, folder.uri)?.get<LogLevel>('logLevel') ??
+      defaultOptions.logLevel;
+    this.#logger = loggerForLevel(workspaceController.logger, loglevel);
   }
 
   private async readCMTDConfig(): Promise<void> {
@@ -121,6 +127,7 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     }
 
     this.#options = newOptions;
+    this.#logger = loggerForLevel(this.workspaceController.logger, newOptions.logLevel);
     await this.fire('options', { oldOptions, newOptions });
   }
 
@@ -159,14 +166,14 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     uri: Uri;
   }): Promise<void> {
     if (uri.fsPath === this.#viteConfigFile) {
-      this.logger.debug(fileOperation(uri, action));
+      this.logger.trace(fileOperation(uri, action));
       await this.readViteConfig();
       await this.changeOptions();
       return;
     }
 
     if (uri.fsPath === this.#cmtdConfigFile) {
-      this.logger.debug(fileOperation(uri, action));
+      this.logger.trace(fileOperation(uri, action));
       await this.readCMTDConfig();
       await this.changeOptions();
       return;
@@ -180,9 +187,6 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
   }
 
   public get logger(): Logger {
-    const { logLevel } = this.options;
-    const { logger } = this.workspaceController;
-
-    return loggerForLevel(logger, logLevel);
+    return this.#logger;
   }
 }

@@ -123,7 +123,7 @@ export class Ignorer implements AsyncDisposable {
     return glob(pattern, { cwd: this.#root, dot: true })
       .then((files) => files.filter((file) => !this.isIgnored(file)))
       .catch((error) => {
-        this.logger.error(operation(`${this.#root}::findUnignoredFiles`, 'error', toError(error)));
+        this.logger.error(operation(`${this.#root}::findUnignoredFiles`, 'error', error));
         return [];
       });
   }
