@@ -51,7 +51,7 @@ export class CssRenameProvider implements RenameProvider {
 
       const classInfo = getClassInfo(document, position);
       if (classInfo) {
-        const { className } = classInfo;
+        const { exportName } = classInfo;
         const { cssReplacement, codeReplacement } = replacementName(newName, options);
         const we = new WorkspaceEdit();
 
@@ -61,7 +61,7 @@ export class CssRenameProvider implements RenameProvider {
             importUri,
             codeReplacement,
             cssReplacement,
-            className,
+            exportName,
             token,
           });
         }

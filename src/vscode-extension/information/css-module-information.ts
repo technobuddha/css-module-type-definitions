@@ -1,25 +1,22 @@
 import os from 'node:os';
 
-import { Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
+import { type Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
 import {
-  type CssLocation,
   type CssModuleInfo,
   generateCssModuleInfo,
-  type PosRange,
+  type Range as CssRange,
 } from '../../css-library/index.ts';
 
+import { type LocalOrExport } from '../controllers/folder-controller/local-or-export.ts';
 import { cssImporter } from '../css-importer/index.ts';
-import { ReadonlyUriSet } from '../helpers/index.ts';
 
 import { type ClassUsage } from './class-usage.ts';
-import { type CssInformation } from './css-information.ts';
+import { CssGlobalInformation } from './css-global-information.ts';
+import { type CssInformation, type Snippet } from './css-information.ts';
 import { extractUsage } from './extract-usage.ts';
-import { LocationAndSnippet } from './location-and-snippet.ts';
-
-type LocalOrClass = { localName?: string; className?: string };
 
 type Arguments = {
   readonly uri: Uri;
@@ -28,8 +25,8 @@ type Arguments = {
   readonly root: Uri;
 };
 
-export class CssModuleInformation implements CssInformation {
-  public static async create({
+export class CssModuleInformation extends CssGlobalInformation implements CssInformation {
+  public static override async create({
     uri,
     logger,
     options,
@@ -52,45 +49,38 @@ export class CssModuleInformation implements CssInformation {
     return undefined;
   }
 
-  public classNames: ReadonlySet<string>;
-
-  public dtsContents: string;
-  public locationsOfClassName: ReadonlyMap<string, readonly CssLocation[]>;
-  public importedFiles: ReadonlyUriSet;
-  public localNamesOfClassName: ReadonlyMap<string, ReadonlySet<string>>;
-  public scopeNameOfClassName: ReadonlyMap<string, string>;
-  public classNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
-  public dtsRange: ReadonlyMap<string, PosRange>;
+  public localNamesOfExport: ReadonlyMap<string, ReadonlySet<string>>;
+  public scopeNameOfExportName: ReadonlyMap<string, string>;
+  public exportNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
+  public dtsRange: ReadonlyMap<string, CssRange>;
   public dtsFilename: string;
-  public hasDts: boolean;
+  public dtsContents: string;
 
-  private constructor({
-    dtsFilename,
-    dtsContents,
-    locationsOfClassName,
-    importedFiles,
-    localNamesOfClassName,
-    scopeNameOfClassName,
-    classNamesOfLocalName,
-    dtsRange,
-    dtsFilename: dtsFile,
-    hasDts,
-  }: CssModuleInfo) {
+  protected constructor(cssInfo: CssModuleInfo) {
+    super(cssInfo);
+
+    const {
+      localNamesOfExport,
+      scopeNameOfExportName,
+      exportNamesOfLocalName,
+      dtsRange,
+      dtsFilename,
+      dtsContents,
+      hasDts,
+    } = cssInfo;
+
+    this.localNamesOfExport = localNamesOfExport;
+    this.scopeNameOfExportName = scopeNameOfExportName;
+    this.exportNamesOfLocalName = exportNamesOfLocalName;
+    this.dtsRange = dtsRange;
     this.dtsFilename = dtsFilename;
     this.dtsContents = dtsContents;
-    this.locationsOfClassName = locationsOfClassName;
-    this.importedFiles = new ReadonlyUriSet(importedFiles.values().map((u) => Uri.file(u)));
-    this.localNamesOfClassName = localNamesOfClassName;
-    this.scopeNameOfClassName = scopeNameOfClassName;
-    this.classNamesOfLocalName = classNamesOfLocalName;
-    this.dtsRange = dtsRange;
-    this.dtsFilename = dtsFile;
     this.hasDts = hasDts;
 
-    this.classNames = new Set(locationsOfClassName.keys());
+    this.exportNames = new Set(this.exports.keys());
   }
 
-  public async writeTypeDefinition(logger: Logger): Promise<void> {
+  public override async writeTypeDefinition(logger: Logger): Promise<void> {
     const { dtsFilename, dtsContents } = this;
     const dtsUri = Uri.file(dtsFilename);
 
@@ -125,76 +115,93 @@ export class CssModuleInformation implements CssInformation {
     }
   }
 
-  public cssLocations({
-    className,
+  public override cssSnippets({
+    exportName,
     localName,
-    importUri,
-  }: LocalOrClass & { importUri: Uri }): readonly LocationAndSnippet[] | null {
-    if (className) {
-      const locations = this.locationsOfClassName.get(className);
-      if (locations) {
-        return locations.map(
-          ({ location, snippet }) =>
-            new LocationAndSnippet(location, importUri, className, snippet),
-        );
+  }: LocalOrExport): readonly Snippet[] | undefined {
+    if (exportName) {
+      const snippets = this.exports.get(exportName)?.snippet;
+      if (snippets) {
+        return snippets.map((snippet) => ({ snippet, exportName }));
       }
     }
 
     if (localName) {
-      const classes = this.classNamesOfLocalName.get(localName);
-      if (classes) {
-        const result: LocationAndSnippet[] = [];
+      const exportNames = this.exportNamesOfLocalName.get(localName);
+      if (exportNames) {
+        const result: Snippet[] = [];
 
-        for (const className of classes) {
-          const locations = this.locationsOfClassName.get(className);
-          if (locations) {
-            result.push(
-              ...locations.map(({ location, snippet }) => {
-                const loc: LocationAndSnippet = new LocationAndSnippet(
-                  location,
-                  importUri,
-                  className,
-                  snippet,
-                );
-                return loc;
-              }),
-            );
+        for (const exportName of exportNames) {
+          const snippets = this.exports.get(exportName)?.snippet;
+          if (snippets) {
+            for (const snippet of snippets) {
+              result.push({ snippet, exportName });
+            }
           }
         }
         return result;
       }
     }
 
-    return null;
+    return undefined;
   }
 
-  public localClassNames(localName: string): ReadonlySet<string> | undefined {
-    return this.classNamesOfLocalName.get(localName);
-  }
+  public override cssLocations({
+    exportName,
+    localName,
+  }: LocalOrExport): readonly Location[] | undefined {
+    if (exportName) {
+      const locations = this.exports.get(exportName)?.location;
+      if (locations) {
+        return locations;
+      }
+    }
 
-  public aliases({ className, localName }: LocalOrClass): ReadonlySet<string> {
     if (localName) {
-      const classNames = this.classNamesOfLocalName.get(localName);
-      if (classNames) {
+      const exportNames = this.exportNamesOfLocalName.get(localName);
+      if (exportNames) {
+        const result: Location[] = [];
+
+        for (const exportName of exportNames) {
+          const locations = this.exports.get(exportName)?.location;
+          if (locations) {
+            result.push(...locations);
+          }
+        }
+        return result;
+      }
+    }
+
+    return undefined;
+  }
+
+  public override localExportNames(localName: string): ReadonlySet<string> | undefined {
+    return this.exportNamesOfLocalName.get(localName);
+  }
+
+  public aliases({ exportName, localName }: LocalOrExport): ReadonlySet<string> {
+    if (localName) {
+      const exportNames = this.exportNamesOfLocalName.get(localName);
+      if (exportNames) {
         return new Set(
-          Array.from(classNames).flatMap((cn) =>
-            Array.from(this.localNamesOfClassName.get(cn) ?? []),
+          Array.from(exportNames).flatMap((en) =>
+            Array.from(this.localNamesOfExport.get(en) ?? []),
           ),
         );
       }
     }
 
-    if (className) {
-      return new Set(this.localNamesOfClassName.get(className));
+    if (exportName) {
+      return new Set(this.localNamesOfExport.get(exportName));
     }
 
     return new Set();
   }
 
-  public dtsRanges(args: { className: string } | { localName: string }): Iterable<Range> {
-    if ('className' in args) {
-      const { className } = args;
-      return this.aliases({ className })
+  public dtsRanges(args: { exportName: string } | { localName: string }): Iterable<Range> {
+    if ('exportName' in args) {
+      const { exportName } = args;
+      return this.aliases({ exportName })
         .values()
         .map((alias) => this.dtsRange.get(alias))
         .filter((range) => range != null)
@@ -220,38 +227,38 @@ export class CssModuleInformation implements CssInformation {
     return [];
   }
 
-  public localNames({ localName, className }: LocalOrClass): ReadonlySet<string> {
+  public localNames({ localName, exportName }: LocalOrExport): ReadonlySet<string> {
     return new Set(
       localName ?
-        Array.from(this.classNamesOfLocalName.get(localName) ?? []).flatMap((cn) =>
-          Array.from(this.localNamesOfClassName.get(cn) ?? []),
+        Array.from(this.exportNamesOfLocalName.get(localName) ?? []).flatMap((cn) =>
+          Array.from(this.localNamesOfExport.get(cn) ?? []),
         )
-      : className ? this.localNamesOfClassName.get(className)
+      : exportName ? this.localNamesOfExport.get(exportName)
       : [],
     );
   }
 
   public async classUsage({
     localName,
-    className,
+    exportName,
     file,
     importUri,
-  }: LocalOrClass & { file: Uri; importUri: Uri }): Promise<ClassUsage | null> {
+  }: LocalOrExport & { file: Uri; importUri: Uri }): Promise<ClassUsage | null> {
     let localNames: ReadonlySet<string> | undefined;
 
     if (localName) {
-      const classNames = this.classNamesOfLocalName.get(localName);
-      if (classNames) {
+      const exportNames = this.exportNamesOfLocalName.get(localName);
+      if (exportNames) {
         localNames = new Set(
-          Array.from(classNames).flatMap((cn) =>
-            Array.from(this.localNamesOfClassName.get(cn) ?? []),
+          Array.from(exportNames).flatMap((en) =>
+            Array.from(this.localNamesOfExport.get(en) ?? []),
           ),
         );
       }
     }
 
-    if (className) {
-      localNames = this.localNamesOfClassName.get(className);
+    if (exportName) {
+      localNames = this.localNamesOfExport.get(exportName);
     }
 
     if (localNames) {

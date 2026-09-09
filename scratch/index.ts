@@ -1,10 +1,3 @@
-import all from './all.module.css';
-import main from './main.module.css';
+import values from './values.module.css';
 
-void main.a;
-void main.m;
-void main.z;
-
-void all.camelCase;
-void all.PascalCase;
-// void all.notDefined;
+void values.blue;

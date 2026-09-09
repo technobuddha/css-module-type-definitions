@@ -4,9 +4,7 @@ import {
   Location,
   Position,
   type TextDocument,
-  Uri,
 } from 'vscode';
-import { Utils } from 'vscode-uri';
 
 import { isCssModule } from '../../common/file-types.ts';
 
@@ -39,18 +37,12 @@ export class CodeDefinitionProvider implements DefinitionProvider {
         if (isCssModule(importUri)) {
           const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
           if (cssInfo && !cssInfo.hasDts) {
-            const classNames = cssInfo.aliases({ localName });
-            for (const className of classNames) {
-              const extracted = cssInfo.locationsOfClassName.get(className);
+            const exportNames = cssInfo.aliases({ localName });
+            for (const exportName of exportNames) {
+              const extracted = cssInfo.exports.get(exportName)?.location;
               if (extracted) {
-                const [{ location }] = extracted;
-
-                const target = Uri.joinPath(Utils.dirname(importUri), location.source);
-
-                return new Location(
-                  target,
-                  new Position(location.range.start.line, location.range.start.column),
-                );
+                const [location] = extracted;
+                return location;
               }
             }
           }

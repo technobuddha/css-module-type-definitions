@@ -9,14 +9,14 @@ import {
 
 import { fileOperation, type Logger } from '../common/index.ts';
 
-import { MappedPos, type Pos } from './position.ts';
+import { MappedPosition, type Position } from './position.ts';
 
 // source-map-js uses line base-1 column base-0, so we need both to be base-0;
 
 const reBadSource = /^(?:\.\.\/)+;charset=utf-8,/v;
 
 type SMCArguments = {
-  readonly sourceMap?: RawSourceMap;
+  readonly sourceMap?: RawSourceMap | undefined;
   readonly source: string;
   readonly logger: Logger;
 };
@@ -32,7 +32,7 @@ export class SourceMapConsumer {
     this.#logger = logger;
   }
 
-  public originalPosition(position: Pos): MappedPos {
+  public originalPosition(position: Position): MappedPosition {
     if (this.#smc) {
       try {
         let { line, column, source } = this.#smc.originalPositionFor({
@@ -48,13 +48,13 @@ export class SourceMapConsumer {
           throw new Error(`Position ${position.line}:${position.column} not found.`);
         }
 
-        return new MappedPos(line - 1, column, source);
+        return new MappedPosition(source, line - 1, column);
       } catch (error) {
         this.#logger.error(fileOperation(this.#source, 'error', error));
         throw error;
       }
     }
-    return new MappedPos(position.line, position.column, this.#source);
+    return new MappedPosition(this.#source, position.line, position.column);
   }
 }
 
@@ -65,8 +65,8 @@ type SMGArguments = {
 
 type AddMappingArguments = {
   readonly source: string;
-  readonly generated: Pos;
-  readonly original: Pos;
+  readonly generated: Position;
+  readonly original: Position;
 };
 
 export class SourceMapGenerator {

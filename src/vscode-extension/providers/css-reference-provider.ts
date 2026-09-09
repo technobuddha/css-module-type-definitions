@@ -38,21 +38,21 @@ export class CssReferenceProvider implements ReferenceProvider {
 
       const classInfo = getClassInfo(document, position);
       if (classInfo) {
-        const { className } = classInfo;
+        const { exportName } = classInfo;
 
         for (const importUri of folderController.filesImporting(document.uri)) {
           const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
           if (cssInfo) {
-            const { localNamesOfClassName } = cssInfo;
+            const { localNamesOfExport } = cssInfo;
 
-            if (localNamesOfClassName.has(className)) {
+            if (localNamesOfExport.has(exportName)) {
               for (const [file, codeInfo] of await folderController.allCodeInformation()) {
                 if (token.isCancellationRequested) {
                   return [];
                 }
 
                 if (isCssModule(importUri) && codeInfo.importedFiles.has(importUri)) {
-                  const classUsages = await cssInfo.classUsage({ className, file, importUri });
+                  const classUsages = await cssInfo.classUsage({ exportName, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {
                       locations.push(new Location(file, usage.range));
@@ -61,7 +61,7 @@ export class CssReferenceProvider implements ReferenceProvider {
 
                   const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFilename);
                   if (await vscodeFileExists(dtsFile)) {
-                    const ranges = cssInfo.dtsRanges({ className });
+                    const ranges = cssInfo.dtsRanges({ exportName });
                     for (const range of ranges) {
                       locations.push(new Location(dtsFile, range));
                     }

@@ -1,12 +1,12 @@
 import { Location, Position, Range, Uri } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { type Loc } from '../../css-library/index.ts';
+import { type Location as CssLocation } from '../../css-library/index.ts';
 
 export class LocationAndSnippet extends Location {
-  public readonly className: string;
+  public readonly exportName: string;
   public readonly snippet: string;
-  public constructor(location: Loc, importUri: Uri, className: string, snippet: string) {
+  public constructor(location: CssLocation, importUri: Uri, exportName: string, snippet: string) {
     const { source, range } = location;
     super(
       Uri.joinPath(Utils.dirname(importUri), source),
@@ -15,7 +15,7 @@ export class LocationAndSnippet extends Location {
         new Position(range.end.line, range.end.column),
       ),
     );
-    this.className = className;
+    this.exportName = exportName;
     this.snippet = snippet;
   }
 }

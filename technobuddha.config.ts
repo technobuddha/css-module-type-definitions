@@ -25,4 +25,11 @@ export default defineConfig({
       'promise/prefer-catch': { rule: 'off' },
     },
   },
+  tsconfig: {
+    base: {
+      compilerOptions: {
+        exactOptionalPropertyTypes: true,
+      },
+    },
+  },
 });

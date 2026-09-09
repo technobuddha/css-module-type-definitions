@@ -46,10 +46,10 @@ export class CodeCompletionItemProvider implements CompletionItemProvider {
           if (isCssModule(importUri)) {
             const cssInfo = fc.cssInformation<CssModuleInformation>(importUri);
             if (cssInfo && !cssInfo.hasDts) {
-              const { classNamesOfLocalName } = cssInfo;
+              const { exportNamesOfLocalName } = cssInfo;
 
               return new CompletionList(
-                Array.from(classNamesOfLocalName.keys(), (key) =>
+                Array.from(exportNamesOfLocalName.keys(), (key) =>
                   toCompletionItem(key, triggerCharacter, position),
                 ),
               );

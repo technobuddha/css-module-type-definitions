@@ -1,18 +1,18 @@
 import { type Position, type TextDocument } from 'vscode';
 
 type ClassInfo = {
-  readonly className: string;
+  readonly exportName: string;
 };
 
 export function getClassInfo(document: TextDocument, position: Position): ClassInfo | null {
   const range = document.getWordRangeAtPosition(position);
   if (range?.isSingleLine) {
-    let className = document.getText(range);
+    let exportName = document.getText(range);
 
-    if (className.startsWith('.')) {
-      className = className.slice(1);
+    if (exportName.startsWith('.')) {
+      exportName = exportName.slice(1);
 
-      return { className };
+      return { exportName };
     }
   }
 

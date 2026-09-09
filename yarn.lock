@@ -2004,23 +2004,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-197":
-  version: 2.1.0-197
-  resolution: "@technobuddha/library@npm:2.1.0-197"
-  checksum: 10c0/b58025862b33167e7efa1379cc5d5fbe3c31fc8a7276fe0d3456e2b6b03dddfe0f45d95b10e66897cca23f4ce7b6846405ff055018bbb70480bc37d7b4a72cf2
+"@technobuddha/library@npm:2.1.0-199":
+  version: 2.1.0-199
+  resolution: "@technobuddha/library@npm:2.1.0-199"
+  checksum: 10c0/48d60cc5226fe1af9a64ddc3e808847f4ad01cacff1ca74af9938b72ef4d658bd0dddbeca4caf95ad07a2e514237a10ff215640f67c2567dda9512290edeb21e
   languageName: node
   linkType: hard
 
-"@technobuddha/library@npm:2.1.0-198":
-  version: 2.1.0-198
-  resolution: "@technobuddha/library@npm:2.1.0-198"
-  checksum: 10c0/734e681304649810a6c66f1951003392f2dcb34c113206c2210322e0cbbc405c60ac44c007dc9899e48e0949b6d5adfe07c60e56b14f3dc5f4cb02ab7a1398a1
-  languageName: node
-  linkType: hard
-
-"@technobuddha/project@npm:1.0.0-212":
-  version: 1.0.0-212
-  resolution: "@technobuddha/project@npm:1.0.0-212"
+"@technobuddha/project@npm:1.0.0-215":
+  version: 1.0.0-215
+  resolution: "@technobuddha/project@npm:1.0.0-215"
   dependencies:
     "@commander-js/extra-typings": "npm:15.0.0"
     "@cspell/cspell-types": "npm:10.1.1"
@@ -2030,7 +2023,7 @@ __metadata:
     "@eslint/css": "npm:1.4.0"
     "@eslint/markdown": "npm:8.0.3"
     "@html-eslint/eslint-plugin": "npm:0.65.0"
-    "@technobuddha/library": "npm:2.1.0-198"
+    "@technobuddha/library": "npm:2.1.0-199"
     "@types/cli-progress": "npm:^3.11.6"
     "@types/eslint": "npm:9.6.1"
     "@types/ignore-walk": "npm:4.0.3"
@@ -2068,7 +2061,7 @@ __metadata:
     eslint-plugin-react-web-api: "npm:5.18.6"
     eslint-plugin-react-x: "npm:5.18.6"
     eslint-plugin-simple-import-sort: "npm:14.0.0"
-    eslint-plugin-technobuddha: "npm:2.0.0-78"
+    eslint-plugin-technobuddha: "npm:2.0.0-79"
     eslint-plugin-unicorn: "npm:73.0.0"
     globals: "npm:17.11.0"
     husky: "npm:9.1.7"
@@ -2099,7 +2092,7 @@ __metadata:
     eslint-comments: dist/eslint-comments/eslint-comments.js
     tb: dist/tb/tb.js
     unexported-files: dist/unexported-files/unexported-files.js
-  checksum: 10c0/b8097cf0a21786bcf8ffaed96ae071d7d39517aac89e04a962e3ee5e102f9bbb6a3d4d2a823e91779d64591ae69f2a386b647e2046a751a53f87161d3b96777e
+  checksum: 10c0/b05a2b89894495a88923c3dcbd1a728c35b5a4d6a42ef1e13e659d476298274d66a5be5cba65ea03f6192bca055b67da4fce08852603ef8e39a8d86906101d72
   languageName: node
   linkType: hard
 
@@ -2271,6 +2264,15 @@ __metadata:
   dependencies:
     postcss: "npm:^8.0.0"
   checksum: 10c0/9d3649bde28f8dfe034820475751080f52f4b3bf56e28d9925582d5dec9fe84ae07a158b7191e8beb981fceadfb7b6b68a9e1818214d530e3f65e11375bf09c8
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^19":
+  version: 19.2.18
+  resolution: "@types/react@npm:19.2.18"
+  dependencies:
+    csstype: "npm:^3.2.2"
+  checksum: 10c0/d04216172b4b4362b310017c210dfbe019fb4f4e7dffd0313e70b3acb3051d5c3e76e7e84e3cf4c6a3c824993ffadfe3949e589a6398a09d4200e7670e2962de
   languageName: node
   linkType: hard
 
@@ -3996,11 +3998,12 @@ __metadata:
   resolution: "css-module-type-definitions@workspace:."
   dependencies:
     "@cspell/cspell-types": "npm:10.1.1"
-    "@technobuddha/library": "npm:2.1.0-198"
-    "@technobuddha/project": "npm:1.0.0-212"
+    "@technobuddha/library": "npm:2.1.0-199"
+    "@technobuddha/project": "npm:1.0.0-215"
     "@types/less": "npm:3.0.8"
     "@types/node": "npm:26.4.0"
     "@types/postcss-import": "npm:^14.0.3"
+    "@types/react": "npm:^19"
     "@types/vscode": "npm:1.125.0"
     chalk: "npm:6.0.0"
     chokidar: "npm:5.0.0"
@@ -4015,6 +4018,8 @@ __metadata:
     postcss-import: "npm:^16.2.0"
     postcss-modules: "npm:9.0.1"
     postcss-selector-parser: "npm:7.1.5"
+    postcss-value-parser: "npm:4.2.0"
+    react: "npm:19.2.8"
     sass: "npm:1.102.0"
     source-map-js: "npm:1.2.1"
     sugarss: "npm:5.0.1"
@@ -4048,6 +4053,13 @@ __metadata:
   bin:
     cssesc: bin/cssesc
   checksum: 10c0/6bcfd898662671be15ae7827120472c5667afb3d7429f1f917737f3bf84c4176003228131b643ae74543f17a394446247df090c597bb9a728cce298606ed0aa7
+  languageName: node
+  linkType: hard
+
+"csstype@npm:^3.2.2":
+  version: 3.2.3
+  resolution: "csstype@npm:3.2.3"
+  checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
   languageName: node
   linkType: hard
 
@@ -5149,17 +5161,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-technobuddha@npm:2.0.0-78":
-  version: 2.0.0-78
-  resolution: "eslint-plugin-technobuddha@npm:2.0.0-78"
+"eslint-plugin-technobuddha@npm:2.0.0-79":
+  version: 2.0.0-79
+  resolution: "eslint-plugin-technobuddha@npm:2.0.0-79"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@microsoft/tsdoc-config": "npm:0.18.1"
-    "@technobuddha/library": "npm:2.1.0-197"
+    "@technobuddha/library": "npm:2.1.0-199"
     eslint: "npm:10.9.1"
     eslint-vitest-rule-tester: "npm:3.1.0"
     get-tsconfig: "npm:4.14.0"
-  checksum: 10c0/1c7baafedd9a13998260b485a3a57f4bc80c33189a93f8ad8b9c0d0b2ee2c0d5b421d5bf8ff9dfdf0d829b261efc90629d16dbab578180ebef370152e996d029
+  checksum: 10c0/c62f1e4bbdd0bf853131065ac5b12084f1d3ca2e1a9a2b50c866cb8f78298c0403577a3523bcd4b02950606c76eb81d3cde464ac215d9f91609b8356415ec0b9
   languageName: node
   linkType: hard
 
@@ -8433,7 +8445,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-value-parser@npm:^4.0.0, postcss-value-parser@npm:^4.1.0":
+"postcss-value-parser@npm:4.2.0, postcss-value-parser@npm:^4.0.0, postcss-value-parser@npm:^4.1.0":
   version: 4.2.0
   resolution: "postcss-value-parser@npm:4.2.0"
   checksum: 10c0/f4142a4f56565f77c1831168e04e3effd9ffcc5aebaf0f538eee4b2d465adfd4b85a44257bb48418202a63806a7da7fe9f56c330aebb3cac898e46b4cbf49161
@@ -8637,6 +8649,13 @@ __metadata:
   version: 17.0.2
   resolution: "react-is@npm:17.0.2"
   checksum: 10c0/2bdb6b93fbb1820b024b496042cce405c57e2f85e777c9aabd55f9b26d145408f9f74f5934676ffdc46f3dcff656d78413a6e43968e7b3f92eea35b3052e9053
+  languageName: node
+  linkType: hard
+
+"react@npm:19.2.8":
+  version: 19.2.8
+  resolution: "react@npm:19.2.8"
+  checksum: 10c0/5f86bdb56426652fd6d989d30a6f2e603c057272c47c9ca3a3fbe190a3a39ee9ccce937d63cfc039717abed1b8891d6a499134bc35311acc07eafdacd86537cd
   languageName: node
   linkType: hard
 

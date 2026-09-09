@@ -1,12 +1,12 @@
 import { empty } from '@technobuddha/library';
 import { type AtRule, type Plugin, type PluginCreator } from 'postcss';
 
-import { type Loc } from './position.ts';
+import { type Location } from './position.ts';
 
 export type Import = {
   readonly type: 'collect-imports';
   readonly import: string;
-  readonly location: Loc;
+  readonly location: Location;
 };
 
 const collectImports: PluginCreator<void> = (): Plugin => ({

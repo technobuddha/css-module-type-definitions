@@ -24,7 +24,7 @@ export async function transformSass(
       style: 'expanded',
       syntax: ext === 'sass' ? 'indented' : 'scss',
       url: URL.parse(filename)!,
-      importers: cssImporter ? cssImporter.sass : undefined,
+      ...(cssImporter && { importers: cssImporter.sass }),
     }).then(({ css, sourceMap, loadedUrls }) => ({
       css,
       sourceMap: fixSassSourceMap(sourceMap, directory, filename),

@@ -1,19 +1,19 @@
-import { type CssLocation } from './extract-locations.ts';
-import { type PosRange } from './position.ts';
+import { type Export, type ValueInformation } from './generate-css-global-info/index.ts';
+import { type Location, type Range } from './position.ts';
 
 export type CssGlobalInfo = {
-  locationsOfClassName: Map<string, CssLocation[]>;
-  importedFiles: Set<string>;
+  locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
+  informationOfValues: ReadonlyMap<string, ValueInformation>;
+  exports: ReadonlyMap<string, Export>;
+  importedFiles: ReadonlySet<string>;
 };
 
-export type CssModuleInfo = {
+export type CssModuleInfo = CssGlobalInfo & {
   readonly dtsFilename: string;
   readonly dtsContents: string;
-  readonly locationsOfClassName: ReadonlyMap<string, readonly CssLocation[]>;
-  readonly importedFiles: ReadonlySet<string>;
-  readonly localNamesOfClassName: ReadonlyMap<string, ReadonlySet<string>>;
-  readonly scopeNameOfClassName: ReadonlyMap<string, string>;
-  readonly classNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
-  readonly dtsRange: ReadonlyMap<string, PosRange>;
+  readonly localNamesOfExport: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly scopeNameOfExportName: ReadonlyMap<string, string>;
+  readonly exportNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly dtsRange: ReadonlyMap<string, Range>;
   readonly hasDts: boolean;
 };

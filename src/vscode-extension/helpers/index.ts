@@ -23,6 +23,7 @@ export { importModuleFromDeclaration } from './import-module-from-declaration.ts
 export { isExtendedIdentifier } from './is-extended-identifier.ts';
 export { isWithin } from './is-within.ts';
 export { normalizeLocations } from './normalize-locations.ts';
+export { toDiagnostic, toLocation, toPosition, toRange } from './position.ts';
 export { propertyNameRange } from './property-name-range.ts';
 export { replacementName } from './replacement-name.ts';
 export { requireCallModule } from './require-call-module.ts';

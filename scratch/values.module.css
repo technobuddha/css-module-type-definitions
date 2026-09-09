@@ -1,0 +1,14 @@
+@value afore: not;
+@value class: classy;
+@value value: valvoline;
+@value z-attr: attr;
+@value data: datum;
+
+.class:afore(.value) {
+  content: z-attr(data);
+}
+
+/* TODO tomorrow:
+
+2) the .d.ts file does not match the scoped output from toJSON
+*/

@@ -1,4 +1,3 @@
-import { unindent } from '@technobuddha/library';
 import {
   type CancellationToken,
   Hover,
@@ -40,16 +39,17 @@ export class CodeHoverProvider implements HoverProvider {
           const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
           if (cssInfo) {
             const { hasDts } = cssInfo;
-            const locations = cssInfo.cssLocations({ importUri, localName });
+            const locations = cssInfo.cssSnippets({ localName });
 
             if (locations) {
               const md = new MarkdownString();
               const scopes: Set<string> = new Set();
 
-              for (const { snippet, className } of locations) {
-                md.appendCodeblock(unindent(snippet), 'css');
+              for (const { snippet, exportName } of locations) {
+                // md.appendCodeblock(unindent(snippet), `css`);
+                md.appendMarkdown(snippet);
 
-                const scope = cssInfo.scopeNameOfClassName.get(className);
+                const scope = cssInfo.scopeNameOfExportName.get(exportName);
                 if (scope) {
                   scopes.add(scope);
                 }

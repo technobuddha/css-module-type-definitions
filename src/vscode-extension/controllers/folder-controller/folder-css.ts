@@ -1,8 +1,16 @@
 import path from 'node:path';
 
-import { conjoin, deepEquals, empty, noop, toArray } from '@technobuddha/library';
+import { capitalize, conjoin, deepEquals, empty, noop, toArray } from '@technobuddha/library';
 import { type SetOptional } from 'type-fest';
-import { type Command, Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
+import {
+  type Command,
+  Diagnostic,
+  DiagnosticSeverity,
+  type Disposable,
+  Range,
+  Uri,
+  workspace,
+} from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import {
@@ -57,7 +65,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
       const cssInfo = this.cssInformation(uri);
       if (cssInfo) {
-        const classes = new Set(cssInfo.classNames);
+        const exports = new Set(cssInfo.exportNames);
 
         const removeUsedClasses = async (
           importers: ReadonlyUriSet,
@@ -73,10 +81,10 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
                     const usages = codeInfo.usages.get(u);
                     if (usages) {
                       for (const usage of usages) {
-                        const classNames = cssInfo.localClassNames(usage.localName);
-                        if (classNames) {
-                          for (const className of classNames) {
-                            classes.delete(className);
+                        const exportNames = cssInfo.localExportNames(usage.localName);
+                        if (exportNames) {
+                          for (const exportName of exportNames) {
+                            exports.delete(exportName);
                           }
                         }
                       }
@@ -98,6 +106,47 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           diagnostics.push(diagnostic);
         };
 
+        for (const [animation, [location]] of cssInfo.locationsOfAnimation) {
+          if (exports.has(animation)) {
+            exports.delete(animation);
+          } else {
+            const diagnostic = new Diagnostic(
+              location.range,
+              `Animation "${animation}" is not defined.`,
+              toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+            );
+            diagnostic.source = 'cmtd';
+            diagnostics.push(diagnostic);
+          }
+        }
+
+        // for (const value of cssInfo.usagesOfValue.keys()) {
+        //   exports.delete(value);
+        // }
+        for (const info of cssInfo.informationOfValues.values()) {
+          for (const d of info.diagnostics) {
+            diagnostics.push(d);
+          }
+
+          if (info.usages.length === 0) {
+            for (const l of info.location) {
+              diagnostics.push(
+                new Diagnostic(l.range, `${info.name} is unused.`, DiagnosticSeverity.Warning),
+              );
+            }
+          }
+
+          for (const { type, range } of info.usages) {
+            diagnostics.push(
+              new Diagnostic(
+                range,
+                `${capitalize(type)} "${info.name}" will be replaced by "${info.value}".`,
+                DiagnosticSeverity.Information,
+              ),
+            );
+          }
+        }
+
         const codeImporters = new UriSet(importers.values().filter((importer) => isCode(importer)));
         const cssImporters = new UriSet(importers.values().filter((importer) => isCss(importer)));
 
@@ -112,7 +161,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           tooltip = `This ${isCssModule(uri) ? 'Module' : 'Global'} CSS file is not imported.`;
 
           diagnose(`${uriName(uri)} is not imported.`);
-          classes.clear();
+          exports.clear();
         } else {
           const globalImporters = new UriSet(
             cssImporters.flatMap((importer) =>
@@ -136,7 +185,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             ),
           );
 
-          const importedAsMixins = classes.size === 0;
+          const importedAsMixins = exports.size === 0;
           const importedAsGlobal = globalImporters.size > 0;
           const importedAsModule = moduleImporters.size > 0;
 
@@ -144,13 +193,13 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             icon = '⭐';
           } else if (importedAsGlobal) {
             icon = importedAsModule ? '🔀' : '🔵';
-            classes.clear();
+            exports.clear();
           } else if (importedAsModule) {
             icon = '🟪';
             await removeUsedClasses(moduleImporters, new UriSet([uri], cssImporters));
           } else {
             icon = '⏸️';
-            classes.clear();
+            exports.clear();
           }
 
           title = `Imported by ${uriName(cssImporters, moduleImporters, globalImporters)}`;
@@ -202,38 +251,27 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           arguments: [uri, args],
         });
 
-        for (const className of classes) {
-          const locations = cssInfo.locationsOfClassName.get(className);
-          if (locations) {
-            for (const { location } of locations) {
-              let range: Range;
-              let message: string;
+        for (const exportName of exports) {
+          const exportInfo = cssInfo.exports.get(exportName);
+          if (exportInfo) {
+            const typeName =
+              exportInfo.type === 'class' ? 'Class '
+              : exportInfo.type === 'value' ? 'Value '
+              : exportInfo.type === 'keyframe' ? 'Keyframe '
+              : empty;
 
-              if (uri.fsPath === Uri.joinPath(Utils.dirname(uri), location.source).fsPath) {
-                range = new Range(
-                  location.range.start.line,
-                  location.range.start.column,
-                  location.range.end.line,
-                  location.range.end.column,
+            for (const location of exportInfo.location) {
+              if (uri.fsPath === location.uri.fsPath) {
+                const message = `${typeName}"${exportName}" is not used.`;
+
+                const diagnostic = new Diagnostic(
+                  location.range,
+                  message,
+                  toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
                 );
-                message = `Class "${className}" is not used.`;
-              } else {
-                continue;
-                // if (!this.options.unusedImportedClassesDiagnostics) {
-                //   continue;
-                // }
-
-                // range = new Range(0, 0, 0, 0);
-                // message = `Class "${className}" imported from "${location.source}" is not used.`;
+                diagnostic.source = 'cmtd';
+                diagnostics.push(diagnostic);
               }
-
-              const diagnostic = new Diagnostic(
-                range,
-                message,
-                toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
-              );
-              diagnostic.source = 'cmtd';
-              diagnostics.push(diagnostic);
             }
           }
         }

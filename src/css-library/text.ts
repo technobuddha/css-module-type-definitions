@@ -1,13 +1,17 @@
-import { Pos } from './position.ts';
+import { Position, type Range } from './position.ts';
 
-export class Document {
+export class Text {
   readonly #source: string;
 
   public constructor(source: string) {
     this.#source = source;
   }
 
-  public positionAt(offset: number): Pos {
+  public get text(): string {
+    return this.#source;
+  }
+
+  public positionAt(offset: number): Position {
     let line = 0;
     let column = 0;
 
@@ -21,10 +25,18 @@ export class Document {
         column++;
       }
     }
-    return new Pos(line, column);
+    return new Position(line, column);
   }
 
-  public offsetAt(position: Pos): number {
+  public get size(): Position {
+    return this.positionAt(-1).add({ column: 1 });
+  }
+
+  public increment(position: Position, amount: number): Position {
+    return this.positionAt(this.offsetAt(position) + amount);
+  }
+
+  public offsetAt(position: Position): number {
     let offset = 0;
     let line = 0;
     let column = 0;
@@ -57,9 +69,16 @@ export class Document {
     return this.#source.slice(start, end);
   }
 
-  public lines(start: number, end: number): string {
-    const startOffset = this.offsetAt(new Pos(start, 0));
-    const endOffset = this.offsetAt(new Pos(end + 1, 0));
+  public range(range: Range): string {
+    const offsetStart = this.offsetAt(range.start);
+    const offsetEnd = this.offsetAt(range.end);
+
+    return this.slice(offsetStart, offsetEnd);
+  }
+
+  public lines(start: number, end = start): string {
+    const startOffset = this.offsetAt(new Position(start, 0));
+    const endOffset = this.offsetAt(new Position(end + 1, 0));
 
     return this.slice(startOffset, endOffset);
   }

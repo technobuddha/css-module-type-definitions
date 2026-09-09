@@ -1,0 +1,12 @@
+.panel {
+  content: 'panel';
+}
+.unused {
+  content: 'unused';
+}
+:global(.global) {
+  content: 'global';
+}
+:global(.not-used) {
+  content: 'not-used';
+}

@@ -58,25 +58,27 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
         }
 
         const fc = this.workspaceController.folderController(cssUri);
-        const root = fc?.folder.uri ?? Uri.file(os.homedir());
+        if (fc) {
+          const root = fc.folder.uri ?? Uri.file(os.homedir());
 
-        void window
-          .showQuickPick(
-            importUris.map((uri) => ({
-              uri,
-              label: path.relative(cssUri.fsPath, uri.fsPath),
-              detail: path.relative(root.fsPath, uri.fsPath),
-            })),
-            {
-              placeHolder: 'Select a file to open',
-              prompt: fc?.folder.name,
-            },
-          )
-          .then(async (pick) => {
-            if (pick) {
-              workspace.openTextDocument(pick.uri).then((doc) => window.showTextDocument(doc));
-            }
-          });
+          void window
+            .showQuickPick(
+              importUris.map((uri) => ({
+                uri,
+                label: path.relative(cssUri.fsPath, uri.fsPath),
+                detail: path.relative(root.fsPath, uri.fsPath),
+              })),
+              {
+                placeHolder: 'Select a file to open',
+                prompt: fc.folder.name,
+              },
+            )
+            .then(async (pick) => {
+              if (pick) {
+                workspace.openTextDocument(pick.uri).then((doc) => window.showTextDocument(doc));
+              }
+            });
+        }
       }),
     );
   }

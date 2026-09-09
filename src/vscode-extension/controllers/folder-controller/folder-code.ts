@@ -24,6 +24,7 @@ import { type ReadonlyUriMap, ReadonlyUriSet, UriMap, UriSet } from '../../helpe
 import { CodeInformation, type CssModuleInformation } from '../../information/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
+import { type LocalOrExport } from './local-or-export.ts';
 
 export type FolderCodeArguments = FolderCssArguments;
 
@@ -44,7 +45,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
               const usages = codeInfo.usages.get(importUri);
               if (usages) {
                 for (const usage of usages) {
-                  if (!cssInfo.classNamesOfLocalName.has(usage.localName)) {
+                  if (!cssInfo.exportNamesOfLocalName.has(usage.localName)) {
                     const error = new Diagnostic(
                       usage.range,
                       `Class "${usage.localName}" is not defined in "${Utils.basename(importUri)}"`,
@@ -215,7 +216,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     importUri,
     codeReplacement,
     cssReplacement,
-    className,
+    exportName,
     localName,
     token,
   }: EditCodeArguments): Promise<void> {
@@ -224,7 +225,10 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     if (isCssModule(importUri)) {
       const cssInfo = this.cssInformation<CssModuleInformation>(importUri)!;
       if (cssInfo) {
-        const locations = cssInfo.cssLocations({ className, localName, importUri });
+        const locations =
+          exportName ? cssInfo.cssLocations({ exportName })
+          : localName ? cssInfo.cssLocations({ localName })
+          : undefined;
         if (locations) {
           for (const location of locations) {
             this.passTabs.add(location.uri);
@@ -232,7 +236,10 @@ export abstract class FolderCode extends FolderCss implements Disposable {
           }
         }
 
-        const locals = cssInfo.localNames({ className, localName });
+        const locals =
+          exportName ? cssInfo.localNames({ exportName })
+          : localName ? cssInfo.localNames({ localName })
+          : new Set();
 
         for (const codeInfo of this.#codeInformation.values()) {
           if (token?.isCancellationRequested) {
@@ -279,10 +286,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }
 }
 
-type LocalOrClass =
-  { localName: string; className?: undefined } | { localName?: undefined; className: string };
-
-type EditCodeArguments = LocalOrClass & {
+type EditCodeArguments = LocalOrExport & {
   we: WorkspaceEdit;
   importUri: Uri;
   codeReplacement: string;

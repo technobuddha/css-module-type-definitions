@@ -39,7 +39,7 @@ export class CodeReferenceProvider implements ReferenceProvider {
 
         const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
         if (cssInfo) {
-          const cssLocations = cssInfo.cssLocations({ localName, importUri });
+          const cssLocations = cssInfo.cssLocations({ localName });
           if (cssLocations) {
             if (context.includeDeclaration) {
               locations.push(...cssLocations);

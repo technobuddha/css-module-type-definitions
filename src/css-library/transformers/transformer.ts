@@ -11,7 +11,7 @@ import { transformSass } from './transform-sass.ts';
 export type TransformerReturn = {
   readonly css: string;
   readonly importedFiles: Set<string>;
-  readonly sourceMap?: RawSourceMap;
+  readonly sourceMap?: RawSourceMap | undefined;
 };
 
 export type TransformerArguments = {
@@ -19,7 +19,7 @@ export type TransformerArguments = {
   readonly directory: string;
   readonly options: Options;
   readonly logger: Logger;
-  readonly cssImporter?: CssImporter;
+  readonly cssImporter?: CssImporter | undefined;
 };
 
 export async function transformer(
