@@ -20,6 +20,4 @@ declare const react: React;
 
 export default react;
 
-// scoped= {"panel":"react-module_panel_63t8Z","unused":"react-module_unused_4-KfK","global":"global","not-used":"not-used","notUsed":"not-used"}
-
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInJlYWN0Lm1vZHVsZS5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7V0FBQTtXQUdBO1dBR1E7V0FHQTtXQUFBIiwiZmlsZSI6InJlYWN0Lm1vZHVsZS5kLmNzcy50cyIsInNvdXJjZVJvb3QiOiIifQ==
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvcmVhY3QubW9kdWxlLmNzcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7OztXQUFDO1dBR0E7V0FHUTtXQUdBO1dBQUEiLCJmaWxlIjoicmVhY3QubW9kdWxlLmQuY3NzLnRzIiwic291cmNlUm9vdCI6IiJ9

@@ -17,6 +17,4 @@ declare const animated: Animated;
 
 export default animated;
 
-// scoped= {"root":"animated-module_root_hMWtt","rotate":"animated-module_rotate_6qudT"}
-
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImFuaW1hdGVkLm1vZHVsZS5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7V0FBQTtXQVNVIiwiZmlsZSI6ImFuaW1hdGVkLm1vZHVsZS5kLmNzcy50cyIsInNvdXJjZVJvb3QiOiIifQ==
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvYW5pbWF0ZWQubW9kdWxlLmNzcyIsImFuaW1hdGVkLm1vZHVsZS5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7V0FBQztXQ1NVIiwiZmlsZSI6ImFuaW1hdGVkLm1vZHVsZS5kLmNzcy50cyIsInNvdXJjZVJvb3QiOiIifQ==
