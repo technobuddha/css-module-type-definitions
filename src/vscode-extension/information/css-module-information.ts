@@ -4,11 +4,7 @@ import { type Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'v
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
-import {
-  type CssModuleInfo,
-  generateCssModuleInfo,
-  type Range as CssRange,
-} from '../../css-library/index.ts';
+import { type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
 
 import { type LocalOrExport } from '../controllers/folder-controller/local-or-export.ts';
 import { cssImporter } from '../css-importer/index.ts';
@@ -44,40 +40,24 @@ export class CssModuleInformation extends CssGlobalInformation implements CssInf
 
       return new CssModuleInformation(cssInfo);
     } catch (error) {
-      logger.error(fileOperation(uri, 'error', error));
+      logger.error(fileOperation(uri, 'error', error), '<== css-module-information:47');
     }
     return undefined;
   }
 
-  public localNamesOfExport: ReadonlyMap<string, ReadonlySet<string>>;
-  public scopeNameOfExportName: ReadonlyMap<string, string>;
-  public exportNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
-  public dtsRange: ReadonlyMap<string, CssRange>;
-  public dtsFilename: string;
-  public dtsContents: string;
+  public readonly scopeNameOfExportName: ReadonlyMap<string, string>;
+  public readonly dtsFilename: string;
+  public readonly dtsContents: string;
 
   protected constructor(cssInfo: CssModuleInfo) {
     super(cssInfo);
 
-    const {
-      localNamesOfExport,
-      scopeNameOfExportName,
-      exportNamesOfLocalName,
-      dtsRange,
-      dtsFilename,
-      dtsContents,
-      hasDts,
-    } = cssInfo;
+    const { scopeNameOfExportName, dtsFilename, dtsContents, hasDts } = cssInfo;
 
-    this.localNamesOfExport = localNamesOfExport;
     this.scopeNameOfExportName = scopeNameOfExportName;
-    this.exportNamesOfLocalName = exportNamesOfLocalName;
-    this.dtsRange = dtsRange;
     this.dtsFilename = dtsFilename;
     this.dtsContents = dtsContents;
     this.hasDts = hasDts;
-
-    this.exportNames = new Set(this.exports.keys());
   }
 
   public override async writeTypeDefinition(logger: Logger): Promise<void> {
@@ -110,7 +90,7 @@ export class CssModuleInformation extends CssGlobalInformation implements CssInf
           logger.info(fileOperation(dtsUri, 'created'));
         });
       } catch (error) {
-        logger.error(fileOperation(dtsUri, 'error', error));
+        logger.error(fileOperation(dtsUri, 'error', error), '<== css-module-information:113>');
       }
     }
   }
@@ -196,35 +176,6 @@ export class CssModuleInformation extends CssGlobalInformation implements CssInf
     }
 
     return new Set();
-  }
-
-  public dtsRanges(args: { exportName: string } | { localName: string }): Iterable<Range> {
-    if ('exportName' in args) {
-      const { exportName } = args;
-      return this.aliases({ exportName })
-        .values()
-        .map((alias) => this.dtsRange.get(alias))
-        .filter((range) => range != null)
-        .map(
-          ({ start, end }) =>
-            new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
-        );
-    }
-
-    if ('localName' in args) {
-      const { localName } = args;
-      return this.aliases({ localName })
-        .values()
-        .filter((alias) => alias !== localName)
-        .map((alias) => this.dtsRange.get(alias))
-        .filter((range) => range != null)
-        .map(
-          ({ start, end }) =>
-            new Range(new Position(start.line, start.column), new Position(end.line, end.column)),
-        );
-    }
-
-    return [];
   }
 
   public localNames({ localName, exportName }: LocalOrExport): ReadonlySet<string> {

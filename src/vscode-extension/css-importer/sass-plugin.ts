@@ -63,7 +63,7 @@ export function sassPlugin({ root, logger }: Arguments): Importer<'async'>[] {
         const contents = await workspace.openTextDocument(uri).then(
           (doc) => doc.getText(),
           (error) => {
-            logger.error(fileOperation(uri, 'error', error));
+            logger.error(fileOperation(uri, 'error', error), '<== sass-plugin:66>');
             return empty;
           },
         );

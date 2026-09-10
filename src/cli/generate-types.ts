@@ -32,7 +32,10 @@ export async function generateTypes(
                     logger.info(fileOperation(dtsFilename, 'updated'));
                   })
                   .catch((error) => {
-                    logger.error(fileOperation(dtsFilename, 'error', error));
+                    logger.error(
+                      fileOperation(dtsFilename, 'error', error),
+                      '<== generate-types:35',
+                    );
                   });
               }
             })
@@ -43,15 +46,15 @@ export async function generateTypes(
                   logger.info(fileOperation(dtsFilename, 'created'));
                 })
                 .catch((error) => {
-                  logger.error(fileOperation(dtsFilename, 'error', error));
+                  logger.error(fileOperation(dtsFilename, 'error', error), '<== generate-types:46');
                 }),
             );
         })
         .catch((error) => {
-          logger.error(fileOperation(file, 'error', error));
+          logger.error(fileOperation(file, 'error', error), '<== generate-types:51');
         });
     })
     .catch((error) => {
-      logger.error(fileOperation(file, 'error', error));
+      logger.error(fileOperation(file, 'error', error), '<== generate-types:54');
     });
 }

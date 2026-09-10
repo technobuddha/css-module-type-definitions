@@ -65,6 +65,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
       const cssInfo = this.cssInformation(uri);
       if (cssInfo) {
+        diagnostics.push(...cssInfo.diagnostics);
         const exports = new Set(cssInfo.exportNames);
 
         const removeUsedClasses = async (
@@ -525,7 +526,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             this.logger.info(fileOperation(uri, 'deleted'));
           },
           (error) => {
-            this.logger.error(fileOperation(uri, 'error', error));
+            this.logger.error(fileOperation(uri, 'error', error), '<== folder-css:529');
           },
         );
       }

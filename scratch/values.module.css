@@ -1,14 +1,11 @@
-@value afore: not;
-@value class: classy;
-@value value: valvoline;
-@value z-attr: attr;
-@value data: datum;
+@value flop: green;
 
-.class:afore(.value) {
-  content: z-attr(data);
+.foo {
+  color: flop;
 }
 
-/* TODO tomorrow:
-
-2) the .d.ts file does not match the scoped output from toJSON
-*/
+.bar {
+  composes: foo;
+  composes: disabled from global;
+  composes: blue from './compose.css';
+}

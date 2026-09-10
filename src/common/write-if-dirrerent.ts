@@ -30,7 +30,7 @@ export async function writeIfDifferent({
         logger.info(fileOperation(file, 'created'));
         await fs.writeFile(file, newContent, 'utf-8');
       } else {
-        logger.error(fileOperation(file, 'error', error));
+        logger.error(fileOperation(file, 'error', error), '<== write-if-different:33');
       }
     });
 }

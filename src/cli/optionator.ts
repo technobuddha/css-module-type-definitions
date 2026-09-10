@@ -21,8 +21,8 @@ import {
 
 type OptionatorArguments = {
   readonly root: string;
-  readonly watch?: boolean;
-  readonly logger?: Logger;
+  readonly watch?: boolean | undefined;
+  readonly logger?: Logger | undefined;
 };
 
 export class Optionator implements LoggerController, AsyncDisposable {

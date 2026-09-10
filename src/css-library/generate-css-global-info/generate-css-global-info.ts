@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { empty, zipperMerge } from '@technobuddha/library';
+import { camelCase, empty, zipperMerge } from '@technobuddha/library';
 import postcss, { type Root } from 'postcss';
 import postcssImport from 'postcss-import';
 
@@ -9,6 +9,7 @@ import { type Logger, type Options } from '../../common/index.ts';
 
 import { type CssImporter } from '../css-importer.ts';
 import { type CssGlobalInfo } from '../css-info.ts';
+import { dashes } from '../dashes.ts';
 import {
   fixSourceMap,
   type RawSourceMap,
@@ -18,6 +19,7 @@ import {
 import { Text } from '../text.ts';
 import { transformer } from '../transformers/index.ts';
 
+import { type Diagnostic } from './diagnostic.ts';
 import { type Export } from './export.ts';
 import { extractLocationsOfAnimation } from './extract-locations-of-animation.ts';
 import { extractLocationsOfClassName } from './extract-locations-of-class-name.ts';
@@ -29,12 +31,13 @@ export type ExtractorArguments = {
   readonly text: Text;
   readonly file: string;
   readonly directory: string;
-  readonly smc: SourceMapConsumer | string;
+  readonly smc: SourceMapConsumer;
   readonly sources: Map<string, Text>;
   readonly options: Options;
   readonly cssImporter?: CssImporter | undefined;
   readonly relativeTo: string;
   readonly importedFiles: Set<string>;
+  readonly diagnostics: Diagnostic[];
   readonly logger: Logger;
 };
 
@@ -79,7 +82,9 @@ export async function generateCssGlobalInfo(
           }
         }
 
-        const allFiles = new Set([filename, ...importedFiles].map((f) => path.resolve(f)));
+        const allFiles = new Set(
+          [filename, ...importedFiles].map((f) => path.resolve(directory, f)),
+        );
         const sources = new Map(
           zipperMerge(
             allFiles,
@@ -93,6 +98,7 @@ export async function generateCssGlobalInfo(
         const sourceMap = fixSourceMap(map?.toJSON(), directory, relativeTo);
         const smc = new SourceMapConsumer({ sourceMap, source: sourceFile, logger });
         const text = new Text(css);
+        const diagnostics: Diagnostic[] = [];
 
         const { root } = postcss().process(css, { from: path.basename(filename) });
 
@@ -108,6 +114,7 @@ export async function generateCssGlobalInfo(
           cssImporter,
           relativeTo,
           importedFiles,
+          diagnostics,
         };
 
         const locationsOfClassName = await extractLocationsOfClassName(extractorArguments);
@@ -136,9 +143,52 @@ export async function generateCssGlobalInfo(
         for (const [key, value] of locationsOfKeyframe) {
           exports.set(key, {
             type: 'keyframe',
-            location: value.flatMap((v) => v.location),
-            snippet: value.flatMap((v) => v.snippet),
+            location: value.map((v) => v.location),
+            snippet: value.map((v) => v.snippet),
           });
+        }
+
+        const localNamesOfExport: Map<string, Set<string>> = new Map();
+        for (const exportName of exports.keys()) {
+          if (!localNamesOfExport.has(exportName)) {
+            switch (options.css.modules.localsConvention) {
+              case 'camelCase': {
+                localNamesOfExport.set(exportName, new Set([exportName, camelCase(exportName)]));
+                break;
+              }
+              case 'camelCaseOnly': {
+                localNamesOfExport.set(exportName, new Set([camelCase(exportName)]));
+                break;
+              }
+              case 'dashes': {
+                localNamesOfExport.set(exportName, new Set([exportName, dashes(exportName)]));
+                break;
+              }
+              case 'dashesOnly': {
+                localNamesOfExport.set(exportName, new Set([dashes(exportName)]));
+                break;
+              }
+              case 'all': {
+                localNamesOfExport.set(
+                  exportName,
+                  new Set([exportName, camelCase(exportName), dashes(exportName)]),
+                );
+                break;
+              }
+              case 'none':
+              case undefined:
+              default: {
+                localNamesOfExport.set(exportName, new Set([exportName]));
+                break;
+              }
+            }
+          }
+        }
+        const exportNamesOfLocalName: Map<string, Set<string>> = new Map();
+        for (const [exportName, set] of localNamesOfExport) {
+          for (const alias of set) {
+            exportNamesOfLocalName.getOrInsertComputed(alias, () => new Set()).add(exportName);
+          }
         }
 
         return {
@@ -148,8 +198,11 @@ export async function generateCssGlobalInfo(
             locationsOfAnimation,
             locationsOfKeyframe,
             informationOfValues,
+            localNamesOfExport,
+            exportNamesOfLocalName,
             exports,
             importedFiles,
+            diagnostics,
           },
         };
       }),

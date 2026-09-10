@@ -88,7 +88,7 @@ export class Ignorer implements AsyncDisposable {
             this.ignorers.set(dir, ign);
           })
           .catch((error) => {
-            this.logger.error(fileOperation(file, 'error', toError(error)));
+            this.logger.error(fileOperation(file, 'error', toError(error)), '<== ignorer:90');
           });
       }
     });
@@ -123,7 +123,10 @@ export class Ignorer implements AsyncDisposable {
     return glob(pattern, { cwd: this.#root, dot: true })
       .then((files) => files.filter((file) => !this.isIgnored(file)))
       .catch((error) => {
-        this.logger.error(operation(`${this.#root}::findUnignoredFiles`, 'error', error));
+        this.logger.error(
+          operation(`${this.#root}::findUnignoredFiles`, 'error', error),
+          '<== ignorer:126',
+        );
         return [];
       });
   }

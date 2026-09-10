@@ -5,14 +5,12 @@ import {
   type ReferenceContext,
   type ReferenceProvider,
   type TextDocument,
-  Uri,
 } from 'vscode';
-import { Utils } from 'vscode-uri';
 
 import { isCssModule } from '../../common/file-types.ts';
 
 import { type WorkspaceController } from '../controllers/index.ts';
-import { getClassInfo, normalizeLocations, vscodeFileExists } from '../helpers/index.ts';
+import { getClassInfo, normalizeLocations } from '../helpers/index.ts';
 import { type CssModuleInformation } from '../information/index.ts';
 
 type Arguments = {
@@ -56,14 +54,6 @@ export class CssReferenceProvider implements ReferenceProvider {
                   if (classUsages) {
                     for (const usage of classUsages.usages) {
                       locations.push(new Location(file, usage.range));
-                    }
-                  }
-
-                  const dtsFile = Uri.joinPath(Utils.dirname(importUri), cssInfo.dtsFilename);
-                  if (await vscodeFileExists(dtsFile)) {
-                    const ranges = cssInfo.dtsRanges({ exportName });
-                    for (const range of ranges) {
-                      locations.push(new Location(dtsFile, range));
                     }
                   }
                 }

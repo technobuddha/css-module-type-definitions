@@ -13,7 +13,6 @@ import { walkClasses } from './walk-classes.ts';
 export async function extractLocationsOfClassName({
   root,
   directory,
-  file,
   smc,
 }: ExtractorArguments): Promise<Map<string, LocationAndSnippet[]>> {
   const locationsOfClassName: Map<string, LocationAndSnippet[]> = new Map();
@@ -25,9 +24,6 @@ export async function extractLocationsOfClassName({
 
   for (const rule of rules) {
     const { source, position } = mappedPosition(rule, smc);
-
-    // eslint-disable-next-line no-console
-    console.log('==>', { file, source, line: position.line, column: position.column });
 
     for (const { name, range } of walkClasses(rule.selector)) {
       const snippet = [

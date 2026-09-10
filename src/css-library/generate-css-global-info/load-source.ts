@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises';
 
-import { empty } from '@technobuddha/library';
-
 import { Text } from '../text.ts';
 
 export async function loadSource(sources: Map<string, Text>, filename: string): Promise<Text> {
@@ -10,7 +8,7 @@ export async function loadSource(sources: Map<string, Text>, filename: string): 
     return text;
   }
 
-  text = new Text(await fs.readFile(filename, 'utf-8').catch(() => empty));
+  text = new Text(await fs.readFile(filename, 'utf-8'));
 
   sources.set(filename, text);
   return text;

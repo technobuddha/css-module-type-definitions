@@ -40,7 +40,10 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
               this.ignorers.set(dir, ign);
             },
             (error) => {
-              this.logger.error(fileOperation(file, 'error', toError(error)));
+              this.logger.error(
+                fileOperation(file, 'error', toError(error)),
+                '<== folder-ignorer:43>',
+              );
             },
           );
         }
@@ -48,7 +51,10 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
         await this.fire('ignored');
       },
       (error) => {
-        this.logger.error(fileOperation(this.folder.uri, 'error', toError(error)));
+        this.logger.error(
+          fileOperation(this.folder.uri, 'error', toError(error)),
+          '<== folder-ignorer:51>',
+        );
       },
     );
   }
@@ -91,7 +97,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
       try {
         return ignorer.ignores(relativePath);
       } catch (error) {
-        this.logger.error(fileOperation(file, 'error', toError(error)));
+        this.logger.error(fileOperation(file, 'error', toError(error)), '<== folder-ignorer:94>');
         return true;
       }
     }
@@ -104,6 +110,7 @@ export abstract class FolderIgnorer extends FolderBase implements Disposable {
       (error) => {
         this.logger.error(
           operation(`${this.folder.name}::findUnignoredFiles`, 'error', toError(error)),
+          '<== folder-ignorer:107',
         );
         return [];
       },

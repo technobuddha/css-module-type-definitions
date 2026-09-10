@@ -1,11 +1,14 @@
 import path from 'node:path';
 
-import { unquote } from '@technobuddha/library';
+import { toError, unquote } from '@technobuddha/library';
 import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
+import { DiagnosticSeverity } from 'vscode';
 
-import { Location, Position } from '../../position.ts';
+import { Location, Position, Range } from '../../position.ts';
+import { SourceMapConsumer } from '../../source-map.ts';
 import { Text } from '../../text.ts';
 
+import { Diagnostic } from '../diagnostic.ts';
 import { type ExtractorArguments } from '../generate-css-global-info.ts';
 import { loadSource } from '../load-source.ts';
 import { mappedPosition } from '../mapped-position.ts';
@@ -23,7 +26,7 @@ export async function extractInformationOfValues(
   args: ExtractorArguments,
   full = true,
 ): Promise<Map<string, ValueInformation>> {
-  const { root, smc, directory, sources, importedFiles, logger } = args;
+  const { root, smc, directory, sources, importedFiles, diagnostics, logger } = args;
   const informationOfValues: Map<string, ValueInformation> = new Map();
 
   const atRules: AtRule[] = [];
@@ -32,94 +35,149 @@ export async function extractInformationOfValues(
   });
 
   for (const atRule of atRules) {
-    if (atRule.params) {
-      let {
-        source,
-        position: { line, column },
-      } = mappedPosition(atRule, smc);
-      column += atRule.name.length + 1 + (atRule.raws.afterName?.length ?? 0);
+    const { source, position } = smc.node(atRule);
+    const column = position.column + atRule.name.length + 1 + (atRule.raws.afterName?.length ?? 0);
 
-      const importMatch = reImport.exec(atRule.params);
-      const varMatch = reVar.exec(atRule.params);
+    const importMatch = reImport.exec(atRule.params);
+    const varMatch = reVar.exec(atRule.params);
 
-      if (importMatch) {
-        const [, variables, from, origin] = importMatch;
-        const position = new Position(line, column + variables.length + from.length);
+    if (importMatch) {
+      const [, variables, from, origin] = importMatch;
+      const pos = new Position(position.line, column + variables.length + from.length);
 
-        const importedFrom = path.resolve(
-          directory,
-          unquote(evaluateValue({ value: origin, position, informationOfValues })),
-        );
+      const importedFrom = path.resolve(
+        directory,
+        unquote(evaluateValue({ value: origin, position: pos, informationOfValues })),
+      );
 
-        importedFiles.add(importedFrom);
-        const css = await loadSource(sources, importedFrom);
+      await loadSource(sources, importedFrom)
+        .then(async (css) => {
+          importedFiles.add(importedFrom);
 
-        const locVal = await extractInformationOfValues(
-          {
-            ...args,
-            smc: importedFrom,
-            directory: path.dirname(importedFrom),
-            root: postcss().process(css.text, { from: path.basename(importedFrom) }).root,
-          },
-          false,
-        );
+          const importedValues = await extractInformationOfValues(
+            {
+              ...args,
+              smc: new SourceMapConsumer({ source: importedFrom, logger }),
+              directory: path.dirname(importedFrom),
+              root: postcss().process(css.text, { from: path.basename(importedFrom) }).root,
+            },
+            false,
+          );
 
-        const variableOffsets = variables
-          .matchAll(/\s*([^,]+?)\s*(?=,|$)/gv)
-          .map((m) => ({
-            name: m[1],
-            offset: m.index + m[0].indexOf(m[1]),
-          }))
-          .toArray();
+          const variableOffsets = variables
+            .matchAll(/\s*([^,]+?)\s*(?=,|$)/gv)
+            .map((m) => ({
+              name: m[1],
+              offset: m.index + m[0].indexOf(m[1]),
+            }))
+            .toArray();
 
-        for (const { name, offset } of variableOffsets) {
-          const nameMatch = reName.exec(name);
+          for (const { name, offset } of variableOffsets) {
+            const nameMatch = reName.exec(name);
 
-          if (nameMatch) {
-            const [, importName, as, rename] = nameMatch;
-            const finalName = rename ?? importName;
+            if (nameMatch) {
+              const [, importName, as, rename] = nameMatch;
+              const finalName = rename ?? importName;
 
-            const snippet = await loadSource(sources, path.resolve(directory, source)).then(
-              (text) => text.lines(line),
-            );
+              await loadSource(sources, path.resolve(directory, source))
+                .then((text) => {
+                  const snippet = [
+                    `###### ${path.basename(source)}:${position.line + 1}`,
+                    '```css',
+                    text.lines(position.line),
+                    '```',
+                  ].join('\n');
 
-            const parent = locVal.get(importName);
+                  const parent = importedValues.get(importName);
 
-            const col =
-              column +
-              offset +
-              nameMatch.index +
-              (as?.length ?? 0) +
-              (rename ? importName.length : 0);
+                  const col =
+                    column +
+                    offset +
+                    nameMatch.index +
+                    (as?.length ?? 0) +
+                    (rename ? importName.length : 0);
 
-            informationOfValues
-              .getOrInsertComputed(finalName, () => new ValueInformation(finalName))
-              .import({
-                parent,
-                snippet,
-                location: new Location(source, line, col, line, col + finalName.length),
-                importedFrom,
-                importName,
-              });
+                  informationOfValues
+                    .getOrInsertComputed(finalName, () => new ValueInformation(finalName))
+                    .import({
+                      parent,
+                      snippet,
+                      location: new Location(
+                        source,
+                        position.line,
+                        col,
+                        position.line,
+                        col + finalName.length,
+                      ),
+                      importedFrom,
+                      importName,
+                    });
+                })
+                .catch((error) => {
+                  diagnostics.push(
+                    new Diagnostic(
+                      new Range(position, position.add(new Text(atRule.toString()).size)),
+                      toError(error).message,
+                      DiagnosticSeverity.Error,
+                    ),
+                  );
+                });
+            }
           }
-        }
-      } else if (varMatch) {
-        const [, varName, colon, value] = varMatch;
-        const snippet = await loadSource(sources, path.resolve(directory, source)).then((text) =>
-          text.lines(line),
-        );
+        })
+        .catch((error) => {
+          diagnostics.push(
+            new Diagnostic(
+              new Range(position, position.add(new Text(atRule.toString()).size)),
+              toError(error).message,
+              DiagnosticSeverity.Error,
+            ),
+          );
+        });
+    } else if (varMatch) {
+      const [, varName, colon, value] = varMatch;
 
-        const position = new Position(line, column + varName.length + colon.length);
-        informationOfValues
-          .getOrInsertComputed(varName, () => new ValueInformation(varName))
-          .define({
-            value: evaluateValue({ value, position, informationOfValues }),
-            snippet,
-            location: new Location(source, line, column, line, column + varName.length),
-          });
-      } else {
-        logger.error(`Unsupported "@value" rule ${atRule.params}`);
-      }
+      await loadSource(sources, path.resolve(directory, source))
+        .then((text) => {
+          const snippet = [
+            `###### ${path.basename(source)}:${position.line + 1}`,
+            '```css',
+            text.lines(position.line),
+            '```',
+          ].join('\n');
+
+          const pos = new Position(position.line, column + varName.length + colon.length);
+          informationOfValues
+            .getOrInsertComputed(varName, () => new ValueInformation(varName))
+            .define({
+              value: evaluateValue({ value, position: pos, informationOfValues }),
+              snippet,
+              location: new Location(
+                source,
+                position.line,
+                column,
+                position.line,
+                column + varName.length,
+              ),
+            });
+        })
+        .catch((error) => {
+          diagnostics.push(
+            new Diagnostic(
+              new Range(position, position.add(new Text(atRule.toString()).size)),
+              toError(error).message,
+              DiagnosticSeverity.Error,
+            ),
+          );
+        });
+    } else {
+      diagnostics.push(
+        new Diagnostic(
+          new Range(position, position.add(new Text(atRule.toString()).size)),
+          `@value syntax error`,
+          DiagnosticSeverity.Error,
+        ),
+      );
     }
   }
 

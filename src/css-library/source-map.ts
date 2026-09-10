@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { empty } from '@technobuddha/library';
+import { type Node } from 'postcss';
 import {
   type RawSourceMap,
   SourceMapConsumer as JSSourceMapConsumer,
@@ -9,6 +10,8 @@ import {
 
 import { fileOperation, type Logger } from '../common/index.ts';
 
+// TODO this import is should be index.ts
+import { range } from './generate-css-global-info/range.ts';
 import { MappedPosition, type Position } from './position.ts';
 
 // source-map-js uses line base-1 column base-0, so we need both to be base-0;
@@ -50,11 +53,15 @@ export class SourceMapConsumer {
 
         return new MappedPosition(source, line - 1, column);
       } catch (error) {
-        this.#logger.error(fileOperation(this.#source, 'error', error));
+        this.#logger.error(fileOperation(this.#source, 'error', error), '<== source-map:56');
         throw error;
       }
     }
     return new MappedPosition(this.#source, position.line, position.column);
+  }
+
+  public node(node: Node): MappedPosition {
+    return this.originalPosition(range(node).start);
   }
 }
 

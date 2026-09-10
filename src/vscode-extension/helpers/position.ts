@@ -20,5 +20,7 @@ export function toLocation(location: CssLocation): Location {
 }
 
 export function toDiagnostic(diagnostic: CssDiagnostic): Diagnostic {
-  return new Diagnostic(toRange(diagnostic.range), diagnostic.message, diagnostic.severity);
+  const diag = new Diagnostic(toRange(diagnostic.range), diagnostic.message, diagnostic.severity);
+  diag.source = diagnostic.source;
+  return diag;
 }

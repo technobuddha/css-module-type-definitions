@@ -1,20 +1,22 @@
 import path from 'node:path';
 
 import { type AtRule } from 'postcss';
+import { DiagnosticSeverity } from 'vscode';
 
-import { Location } from '../position.ts';
+import { Location, Range } from '../position.ts';
 
+import { Diagnostic } from './diagnostic.ts';
 import { type ExtractorArguments } from './generate-css-global-info.ts';
 import { loadSource } from './load-source.ts';
 import { type LocationAndSnippet } from './location-and-snippet.ts';
 import { mappedPosition } from './mapped-position.ts';
-import { range } from './range.ts';
 
 export async function extractLocationsOfKeyframe({
   root,
   directory,
   sources,
   smc,
+  diagnostics,
 }: ExtractorArguments): Promise<Map<string, LocationAndSnippet[]>> {
   const locationsOfKeyframe: Map<string, LocationAndSnippet[]> = new Map();
 
@@ -30,14 +32,29 @@ export async function extractLocationsOfKeyframe({
     } = mappedPosition(atRule, smc);
     column += atRule.name.length + 1 + (atRule.raws.afterName?.length ?? 0);
 
-    const snippet = await loadSource(sources, path.resolve(directory, source)).then((text) =>
-      text.range(range(atRule)),
-    );
+    await loadSource(sources, path.resolve(directory, source))
+      .then((text) => {
+        const snippet = [
+          `###### ${path.basename(source)}:${line + 1}`,
+          '```css',
+          text.lines(line),
+          '```',
+        ].join('\n');
 
-    locationsOfKeyframe.getOrInsert(atRule.params, []).push({
-      snippet,
-      location: new Location(source, line, column, line, column + atRule.params.length),
-    });
+        locationsOfKeyframe.getOrInsert(atRule.params, []).push({
+          snippet,
+          location: new Location(source, line, column, line, column + atRule.params.length),
+        });
+      })
+      .catch((error) => {
+        diagnostics.push(
+          new Diagnostic(
+            new Range(line, column, line, column + atRule.params.length),
+            error.message,
+            DiagnosticSeverity.Error,
+          ),
+        );
+      });
   }
 
   return locationsOfKeyframe;

@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { type Location, Uri, workspace } from 'vscode';
+import { type Diagnostic, type Location, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger, type Options } from '../../common/index.ts';
@@ -8,7 +8,7 @@ import { type CssGlobalInfo, generateCssGlobalInfo } from '../../css-library/ind
 
 import { type LocalOrExport } from '../controllers/folder-controller/local-or-export.ts';
 import { cssImporter } from '../css-importer/index.ts';
-import { ReadonlyUriSet, toLocation } from '../helpers/index.ts';
+import { ReadonlyUriSet, toDiagnostic, toLocation } from '../helpers/index.ts';
 
 import { type CssInformation, type Export, type Snippet } from './css-information.ts';
 import { ValueInformation } from './value-information.ts';
@@ -37,23 +37,30 @@ export class CssGlobalInformation implements CssInformation {
 
       return new CssGlobalInformation(info);
     } catch (error) {
-      logger.error(fileOperation(uri, 'error', error));
+      logger.error(fileOperation(uri, 'error', error), '<== css-global-information:40');
     }
 
     return undefined;
   }
 
-  public exportNames: ReadonlySet<string>;
-  public locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
-  public informationOfValues: ReadonlyMap<string, ValueInformation>;
-  public exports: ReadonlyMap<string, Export>;
-  public importedFiles: ReadonlyUriSet;
-  public hasDts = false;
+  public readonly exportNames: ReadonlySet<string>;
+  public readonly locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
+  public readonly informationOfValues: ReadonlyMap<string, ValueInformation>;
+  public readonly exports: ReadonlyMap<string, Export>;
+  public readonly localNamesOfExport: ReadonlyMap<string, ReadonlySet<string>>;
+  public readonly exportNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
+
+  public readonly diagnostics: readonly Diagnostic[];
+  public readonly importedFiles: ReadonlyUriSet;
+  public hasDts: boolean;
 
   protected constructor({
     locationsOfAnimation,
     informationOfValues,
+    localNamesOfExport,
+    exportNamesOfLocalName,
     exports,
+    diagnostics,
     importedFiles,
   }: CssGlobalInfo) {
     this.locationsOfAnimation = new Map(
@@ -72,9 +79,18 @@ export class CssGlobalInformation implements CssInformation {
         },
       ]),
     );
+    this.localNamesOfExport = new Map(
+      localNamesOfExport.entries().map(([key, value]) => [key, new Set(value)]),
+    );
+    this.exportNamesOfLocalName = new Map(
+      exportNamesOfLocalName.entries().map(([key, value]) => [key, new Set(value)]),
+    );
+
+    this.diagnostics = diagnostics.map(toDiagnostic);
     this.importedFiles = new ReadonlyUriSet(importedFiles.values().map((file) => Uri.file(file)));
 
     this.exportNames = new Set(exports.keys());
+    this.hasDts = false;
   }
 
   public localExportNames(localName: string): ReadonlySet<string> | undefined {

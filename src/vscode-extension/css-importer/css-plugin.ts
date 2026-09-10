@@ -8,7 +8,7 @@ export function cssPlugin(logger: Logger): (filename: string) => Promise<string>
     workspace.openTextDocument(filename).then(
       (doc) => doc.getText(),
       (error) => {
-        logger.error(fileOperation(filename, 'error', error));
+        logger.error(fileOperation(filename, 'error', error), '<== css-plugin:11>');
         return empty;
       },
     );
