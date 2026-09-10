@@ -1,7 +1,7 @@
 import { type URI as Uri } from 'vscode-uri';
 
 import { type Logger } from '../../common/index.ts';
-import { type CssImporter } from '../../css-library/css-importer.ts';
+import { type CssImporter } from '../../css-library/index.ts';
 
 import { cssPlugin } from './css-plugin.ts';
 import { lessPlugin } from './less-plugin.ts';

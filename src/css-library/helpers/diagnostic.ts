@@ -1,4 +1,4 @@
-import { type Range } from '../position.ts';
+import { type Range } from './range.ts';
 
 export enum DiagnosticSeverity {
   Error = 0,

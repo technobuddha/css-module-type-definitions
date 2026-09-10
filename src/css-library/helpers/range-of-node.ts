@@ -1,8 +1,8 @@
 import { type Node } from 'postcss';
 
-import { Range } from '../position.ts';
+import { Range } from './range.ts';
 
-export function range(node: Node): Range {
+export function rangeOfNode(node: Node): Range {
   return new Range(
     (node.source?.start?.line ?? 1) - 1,
     (node.source?.start?.column ?? 1) - 1,

@@ -18,13 +18,13 @@ import {
   globIsCode,
   isCode,
   isCssModule,
+  type LocalOrExport,
 } from '../../../common/index.ts';
 
 import { type ReadonlyUriMap, ReadonlyUriSet, UriMap, UriSet } from '../../helpers/index.ts';
 import { CodeInformation, type CssModuleInformation } from '../../information/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
-import { type LocalOrExport } from './local-or-export.ts';
 
 export type FolderCodeArguments = FolderCssArguments;
 

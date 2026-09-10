@@ -1,4 +1,4 @@
-import { type Location } from '../position.ts';
+import { type Location } from './location.ts';
 
 type ExportType = 'class' | 'keyframe' | 'value' | 'value-class';
 

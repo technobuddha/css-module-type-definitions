@@ -2,21 +2,24 @@ import path from 'node:path';
 
 import { toError, unquote } from '@technobuddha/library';
 import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
-import { DiagnosticSeverity } from 'vscode';
 
-import { Location, Position, Range } from '../../position.ts';
-import { SourceMapConsumer } from '../../source-map.ts';
-import { Text } from '../../text.ts';
+import {
+  Diagnostic,
+  DiagnosticSeverity,
+  loadSource,
+  Location,
+  Position,
+  Range,
+  SourceMapConsumer,
+  Text,
+  ValueInformation,
+} from '../../helpers/index.ts';
 
-import { Diagnostic } from '../diagnostic.ts';
 import { type ExtractorArguments } from '../generate-css-global-info.ts';
-import { loadSource } from '../load-source.ts';
-import { mappedPosition } from '../mapped-position.ts';
 
 import { evaluateProp } from './evaluate-prop.ts';
 import { evaluateSelectors } from './evaluate-selector.ts';
 import { evaluateValue } from './evaluate-value.ts';
-import { ValueInformation } from './value-information.ts';
 
 const reImport = /(.+)(\s+from\s+)(.+)/v;
 const reVar = /([a-zA-Z_\-][\w\-]*)(\s*:\s*)(.+)/v;
@@ -59,7 +62,7 @@ export async function extractInformationOfValues(
               ...args,
               smc: new SourceMapConsumer({ source: importedFrom, logger }),
               directory: path.dirname(importedFrom),
-              root: postcss().process(css.text, { from: path.basename(importedFrom) }).root,
+              root: postcss().process(css.source, { from: path.basename(importedFrom) }).root,
             },
             false,
           );
@@ -190,7 +193,7 @@ export async function extractInformationOfValues(
     for (const decl of decls) {
       const {
         position: { line, column },
-      } = mappedPosition(decl, smc);
+      } = smc.node(decl);
 
       evaluateProp({
         prop: decl.prop,
@@ -210,7 +213,7 @@ export async function extractInformationOfValues(
     for (const rule of rules) {
       const {
         position: { line, column },
-      } = mappedPosition(rule, smc);
+      } = smc.node(rule);
       const position = new Position(line, column);
 
       evaluateSelectors({

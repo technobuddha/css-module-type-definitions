@@ -1,4 +1,4 @@
-import { type Location } from '../position.ts';
+import { type Location } from './location.ts';
 
 export type LocationAndSnippet = {
   snippet: string;

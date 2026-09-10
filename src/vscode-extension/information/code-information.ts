@@ -2,7 +2,8 @@ import { type Uri, workspace } from 'vscode';
 
 import { type ReadonlyUriMap, ReadonlyUriSet } from '../helpers/index.ts';
 
-import { extractUsage, type Usage } from './extract-usage.ts';
+import { extractUsage } from './extract-usage.ts';
+import { type Usage } from './usage.ts';
 
 export class CodeInformation {
   public static async create(file: Uri): Promise<CodeInformation> {

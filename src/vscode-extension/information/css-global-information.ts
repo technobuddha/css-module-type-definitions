@@ -3,15 +3,33 @@ import os from 'node:os';
 import { type Diagnostic, type Location, Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, type Logger, type Options } from '../../common/index.ts';
-import { type CssGlobalInfo, generateCssGlobalInfo } from '../../css-library/index.ts';
+import {
+  fileOperation,
+  type LocalOrExport,
+  type Logger,
+  type Options,
+} from '../../common/index.ts';
+import {
+  type CssGlobalInfo,
+  type Export as CssExport,
+  generateCssGlobalInfo,
+} from '../../css-library/index.ts';
 
-import { type LocalOrExport } from '../controllers/folder-controller/local-or-export.ts';
 import { cssImporter } from '../css-importer/index.ts';
 import { ReadonlyUriSet, toDiagnostic, toLocation } from '../helpers/index.ts';
 
-import { type CssInformation, type Export, type Snippet } from './css-information.ts';
 import { ValueInformation } from './value-information.ts';
+
+export type Export = {
+  readonly type: CssExport['type'];
+  readonly location: readonly Location[];
+  readonly snippet: string[];
+};
+
+export type Snippet = {
+  readonly snippet: string;
+  readonly exportName: string;
+};
 
 type Arguments = {
   readonly uri: Uri;
@@ -19,7 +37,7 @@ type Arguments = {
   readonly options: Options;
 };
 
-export class CssGlobalInformation implements CssInformation {
+export class CssGlobalInformation {
   public static async create({
     uri,
     logger,

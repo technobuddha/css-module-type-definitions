@@ -3,12 +3,9 @@ import path from 'node:path';
 import { unindent } from '@technobuddha/library';
 import { type Rule } from 'postcss';
 
-import { Location } from '../position.ts';
+import { Location, type LocationAndSnippet, walkClasses } from '../helpers/index.ts';
 
 import { type ExtractorArguments } from './generate-css-global-info.ts';
-import { type LocationAndSnippet } from './location-and-snippet.ts';
-import { mappedPosition } from './mapped-position.ts';
-import { walkClasses } from './walk-classes.ts';
 
 export async function extractLocationsOfClassName({
   root,
@@ -23,7 +20,7 @@ export async function extractLocationsOfClassName({
   });
 
   for (const rule of rules) {
-    const { source, position } = mappedPosition(rule, smc);
+    const { source, position } = smc.node(rule);
 
     for (const { name, range } of walkClasses(rule.selector)) {
       const snippet = [

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { Text } from '../text.ts';
+import { Text } from './text.ts';
 
 export async function loadSource(sources: Map<string, Text>, filename: string): Promise<Text> {
   let text = sources.get(filename);

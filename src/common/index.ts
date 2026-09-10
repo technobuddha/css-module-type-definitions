@@ -19,6 +19,7 @@ export {
   isCssGlobal,
   isCssModule,
 } from './file-types.ts';
+export { type LocalOrExport } from './local-or-export.ts';
 export {
   defaultLogger,
   type Logger,

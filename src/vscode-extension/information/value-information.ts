@@ -5,7 +5,7 @@ import {
   type ValueInformation as CssValueInformation,
 } from '../../css-library/index.ts';
 
-import { toDiagnostic, toLocation, toRange } from '../helpers/position.ts';
+import { toDiagnostic, toLocation, toRange } from '../helpers/index.ts';
 
 type Import = { from: string; name: string };
 type Usage = { type: UsageType; range: Range };

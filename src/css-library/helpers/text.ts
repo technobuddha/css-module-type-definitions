@@ -1,4 +1,5 @@
-import { Position, type Range } from './position.ts';
+import { Position } from './position.ts';
+import { type Range } from './range.ts';
 
 export class Text {
   readonly #source: string;
@@ -7,7 +8,7 @@ export class Text {
     this.#source = source;
   }
 
-  public get text(): string {
+  public get source(): string {
     return this.#source;
   }
 
@@ -26,14 +27,6 @@ export class Text {
       }
     }
     return new Position(line, column);
-  }
-
-  public get size(): Position {
-    return this.positionAt(-1).add({ column: 1 });
-  }
-
-  public increment(position: Position, amount: number): Position {
-    return this.positionAt(this.offsetAt(position) + amount);
   }
 
   public offsetAt(position: Position): number {
@@ -65,15 +58,22 @@ export class Text {
     return offset;
   }
 
-  public slice(start: number, end?: number): string {
-    return this.#source.slice(start, end);
+  public slice(start: number, end?: number): string;
+  public slice(range: Range): string;
+  public slice(arg1: number | Range, arg2?: number): string {
+    if (typeof arg1 === 'number') {
+      return this.#source.slice(arg1, arg2);
+    }
+
+    return this.slice(this.offsetAt(arg1.start), this.offsetAt(arg1.end));
   }
 
-  public range(range: Range): string {
-    const offsetStart = this.offsetAt(range.start);
-    const offsetEnd = this.offsetAt(range.end);
+  public get size(): Position {
+    return this.positionAt(-1).add({ column: 1 });
+  }
 
-    return this.slice(offsetStart, offsetEnd);
+  public increment(position: Position, amount: number): Position {
+    return this.positionAt(this.offsetAt(position) + amount);
   }
 
   public lines(start: number, end = start): string {

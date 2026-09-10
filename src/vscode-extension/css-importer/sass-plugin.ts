@@ -1,11 +1,9 @@
-import { empty } from '@technobuddha/library';
+import { empty, fileExists } from '@technobuddha/library';
 import { type Importer } from 'sass';
 import { Uri, workspace } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import { fileOperation, type Logger } from '../../common/index.ts';
-
-import { vscodeFileExists } from '../helpers/index.ts';
 
 type Arguments = {
   readonly root: Uri;
@@ -26,7 +24,7 @@ export function sassPlugin({ root, logger }: Arguments): Importer<'async'>[] {
 
           for (const prefix of basename.startsWith('_') ? [empty] : [empty, '_']) {
             const possible = Uri.file(`${dirname}/${prefix}${basename}`);
-            if (await vscodeFileExists(possible)) {
+            if (await fileExists(possible.fsPath)) {
               possibles.push(possible);
             }
 
@@ -40,7 +38,7 @@ export function sassPlugin({ root, logger }: Arguments): Importer<'async'>[] {
                 '/index.css',
               ]) {
                 const possible = Uri.file(`${dirname}/${prefix}${basename}${suffix}`);
-                if (await vscodeFileExists(possible)) {
+                if (await fileExists(possible.fsPath)) {
                   possibles.push(possible);
                 }
               }

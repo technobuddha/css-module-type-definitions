@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import less from 'less';
 
-import { type RawSourceMap, removeInlineSourceMap } from '../source-map.ts';
+import { type RawSourceMap, removeInlineSourceMap } from '../helpers/index.ts';
 
 import { getSource } from './get-source.ts';
 import { type TransformerArguments, type TransformerReturn } from './transformer.ts';

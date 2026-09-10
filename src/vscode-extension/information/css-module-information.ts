@@ -3,15 +3,16 @@ import os from 'node:os';
 import { type Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
 import { Utils } from 'vscode-uri';
 
-import { fileOperation, type Logger, type Options } from '../../common/index.ts';
-import { type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
-
-import { type LocalOrExport } from '../controllers/folder-controller/local-or-export.ts';
-import { cssImporter } from '../css-importer/index.ts';
+import {
+  fileOperation,
+  type LocalOrExport,
+  type Logger,
+  type Options,
+} from '../../common/index.ts';
+import { cssImporter, type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
 
 import { type ClassUsage } from './class-usage.ts';
-import { CssGlobalInformation } from './css-global-information.ts';
-import { type CssInformation, type Snippet } from './css-information.ts';
+import { CssGlobalInformation, type Snippet } from './css-global-information.ts';
 import { extractUsage } from './extract-usage.ts';
 
 type Arguments = {
@@ -21,7 +22,7 @@ type Arguments = {
   readonly root: Uri;
 };
 
-export class CssModuleInformation extends CssGlobalInformation implements CssInformation {
+export class CssModuleInformation extends CssGlobalInformation {
   public static override async create({
     uri,
     logger,

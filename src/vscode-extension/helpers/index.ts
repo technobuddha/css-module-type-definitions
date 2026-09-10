@@ -23,13 +23,16 @@ export { importModuleFromDeclaration } from './import-module-from-declaration.ts
 export { isExtendedIdentifier } from './is-extended-identifier.ts';
 export { isWithin } from './is-within.ts';
 export { normalizeLocations } from './normalize-locations.ts';
-export { toDiagnostic, toLocation, toPosition, toRange } from './position.ts';
 export { propertyNameRange } from './property-name-range.ts';
 export { replacementName } from './replacement-name.ts';
 export { requireCallModule } from './require-call-module.ts';
 export { resolveImportPath } from './resolve-import-path.ts';
 export { scriptKind } from './script-kind.ts';
+export { toDiagnostic } from './to-diagnostic.ts';
 export { toDiagnosticSeverity } from './to-diagnostic-severity.ts';
+export { toLocation } from './to-location.ts';
+export { toPosition } from './to-position.ts';
+export { toRange } from './to-range.ts';
 export { unwrapExpression } from './unwrap-expression.ts';
 export { ReadonlyUriMap, UriMap } from './uri-map.ts';
 export { ReadonlyUriSet, UriSet } from './uri-set.ts';

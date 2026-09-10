@@ -1,9 +1,7 @@
-import {
-  type Diagnostic,
-  type Export,
-  type ValueInformation,
-} from './generate-css-global-info/index.ts';
-import { type Location } from './position.ts';
+import { type Diagnostic } from './diagnostic.ts';
+import { type Export } from './export.ts';
+import { type Location } from './location.ts';
+import { type ValueInformation } from './value-information.ts';
 
 export type CssGlobalInfo = {
   readonly locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;

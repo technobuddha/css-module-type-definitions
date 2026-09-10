@@ -15,19 +15,22 @@ import postcssModules from 'postcss-modules';
 
 import { fileOperation, type Logger, type Options } from '../common/index.ts';
 
-import { type CssImporter } from './css-importer.ts';
-import { type CssModuleInfo } from './css-info.ts';
-import { dtsBottom } from './dts-bottom.ts';
-import { dtsInfo } from './dts-info.ts';
-import { dtsMiddle } from './dts-middle.ts';
-import { dtsTop } from './dts-top.ts';
+import { generateCssGlobalInfo } from './generate-css-global-info/index.ts';
 import {
+  type CssImporter,
+  type CssModuleInfo,
   Diagnostic,
   DiagnosticSeverity,
-  generateCssGlobalInfo,
-} from './generate-css-global-info/index.ts';
-import { type Location, Position, Range } from './position.ts';
-import { removeInlineSourceMap, SourceMapGenerator } from './source-map.ts';
+  dtsBottom,
+  dtsInfo,
+  dtsMiddle,
+  dtsTop,
+  type Location,
+  Position,
+  Range,
+  removeInlineSourceMap,
+  SourceMapGenerator,
+} from './helpers/index.ts';
 
 type Arguments = {
   readonly options: Options;

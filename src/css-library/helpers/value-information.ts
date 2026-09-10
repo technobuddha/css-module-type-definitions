@@ -1,6 +1,6 @@
-import { type Location, type Range } from '../../position.ts';
-
-import { Diagnostic, DiagnosticSeverity } from '../diagnostic.ts';
+import { Diagnostic, DiagnosticSeverity } from './diagnostic.ts';
+import { type Location } from './location.ts';
+import { type Range } from './range.ts';
 
 export type UsageType =
   'prop' | 'attribute' | 'class' | 'id' | 'tag' | 'pseudo' | 'word' | 'function';

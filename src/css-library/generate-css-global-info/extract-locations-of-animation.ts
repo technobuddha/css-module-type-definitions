@@ -1,9 +1,8 @@
 import { delimited, space } from '@technobuddha/library';
 
-import { Location } from '../position.ts';
+import { Location } from '../helpers/index.ts';
 
 import { type ExtractorArguments } from './generate-css-global-info.ts';
-import { mappedPosition } from './mapped-position.ts';
 
 export async function extractLocationsOfAnimation({
   root,
@@ -14,7 +13,7 @@ export async function extractLocationsOfAnimation({
     let {
       source,
       position: { line, column },
-    } = mappedPosition(decl, smc);
+    } = smc.node(decl);
     column += decl.prop.length + (decl.raws.between?.length ?? 0);
 
     const value = delimited(decl.value, space, 0);

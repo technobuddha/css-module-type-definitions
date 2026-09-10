@@ -1,15 +1,17 @@
 import path from 'node:path';
 
 import { type AtRule } from 'postcss';
-import { DiagnosticSeverity } from 'vscode';
 
-import { Location, Range } from '../position.ts';
+import {
+  Diagnostic,
+  DiagnosticSeverity,
+  loadSource,
+  Location,
+  type LocationAndSnippet,
+  Range,
+} from '../helpers/index.ts';
 
-import { Diagnostic } from './diagnostic.ts';
 import { type ExtractorArguments } from './generate-css-global-info.ts';
-import { loadSource } from './load-source.ts';
-import { type LocationAndSnippet } from './location-and-snippet.ts';
-import { mappedPosition } from './mapped-position.ts';
 
 export async function extractLocationsOfKeyframe({
   root,
@@ -29,7 +31,7 @@ export async function extractLocationsOfKeyframe({
     let {
       source,
       position: { line, column },
-    } = mappedPosition(atRule, smc);
+    } = smc.node(atRule);
     column += atRule.name.length + 1 + (atRule.raws.afterName?.length ?? 0);
 
     await loadSource(sources, path.resolve(directory, source))

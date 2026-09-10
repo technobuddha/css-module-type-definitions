@@ -1,7 +1,7 @@
 import { empty } from '@technobuddha/library';
 import { type AtRule, type Plugin, type PluginCreator } from 'postcss';
 
-import { type Location } from './position.ts';
+import { type Location } from './location.ts';
 
 export type Import = {
   readonly type: 'collect-imports';

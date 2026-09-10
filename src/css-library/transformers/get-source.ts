@@ -1,6 +1,6 @@
 import { type Options } from '../../common/index.ts';
 
-import { type RawSourceMap } from '../source-map.ts';
+import { type RawSourceMap } from '../helpers/index.ts';
 
 type AdditionalData = NonNullable<
   Options['css']['preprocessor']['less' | 'sass' | 'scss']

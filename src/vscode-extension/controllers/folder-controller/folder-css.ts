@@ -37,7 +37,6 @@ import {
 import {
   type CodeInformation,
   CssGlobalInformation,
-  type CssInformation,
   CssModuleInformation,
 } from '../../information/index.ts';
 
@@ -48,7 +47,7 @@ export type FolderCssArguments = FolderEventArguments;
 type CssCommand = SetOptional<Omit<Command, 'command'>, 'tooltip'> & { icon?: string };
 
 export abstract class FolderCss extends FolderEvent implements Disposable {
-  readonly #cssInformation: UriMap<CssInformation> = new UriMap();
+  readonly #cssInformation: UriMap<CssGlobalInformation> = new UriMap();
   readonly #commands: UriMap<CssCommand> = new UriMap();
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
@@ -477,7 +476,9 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     return this.#commands.get(uri);
   }
 
-  public cssInformation<T extends CssInformation = CssInformation>(uri: Uri): T | undefined {
+  public cssInformation<T extends CssGlobalInformation = CssGlobalInformation>(
+    uri: Uri,
+  ): T | undefined {
     return this.#cssInformation.get(uri) as T | undefined;
   }
 

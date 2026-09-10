@@ -1,7 +1,4 @@
-import { type Position, Range } from '../../position.ts';
-
-import { type ValueInformation } from './value-information.ts';
-import { walkSelectors } from './walk-selectors.ts';
+import { type Position, Range, type ValueInformation, walkSelectors } from '../../helpers/index.ts';
 
 export function evaluateSelectors({
   selectors,

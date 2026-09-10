@@ -8,11 +8,11 @@ import {
   SourceMapGenerator as JSSourceMapGenerator,
 } from 'source-map-js';
 
-import { fileOperation, type Logger } from '../common/index.ts';
+import { fileOperation, type Logger } from '../../common/index.ts';
 
-// TODO this import is should be index.ts
-import { range } from './generate-css-global-info/range.ts';
-import { MappedPosition, type Position } from './position.ts';
+import { MappedPosition } from './mapped-position.ts';
+import { type Position } from './position.ts';
+import { rangeOfNode } from './range-of-node.ts';
 
 // source-map-js uses line base-1 column base-0, so we need both to be base-0;
 
@@ -61,7 +61,7 @@ export class SourceMapConsumer {
   }
 
   public node(node: Node): MappedPosition {
-    return this.originalPosition(range(node).start);
+    return this.originalPosition(rangeOfNode(node).start);
   }
 }
 

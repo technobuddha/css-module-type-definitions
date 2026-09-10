@@ -2,7 +2,8 @@ import fs from 'node:fs/promises';
 
 import { toError } from '@technobuddha/library';
 
-import { fileOperation, type Logger } from './index.ts';
+import { fileOperation } from './file-operation.ts';
+import { type Logger } from './logger.ts';
 
 type WriteIfDifferentArguments = {
   readonly file: string;

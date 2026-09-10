@@ -18,7 +18,7 @@ import {
   type StringLiteralLike,
   SyntaxKind,
 } from 'typescript';
-import { type Range, type TextDocument, type Uri } from 'vscode';
+import { type TextDocument, type Uri } from 'vscode';
 
 import { isCss } from '../../common/index.ts';
 
@@ -35,11 +35,7 @@ import {
   UriSet,
 } from '../helpers/index.ts';
 
-export type Usage = {
-  readonly localName: string;
-  readonly range: Range;
-  readonly accessorType: 'property' | 'element';
-};
+import { type Usage } from './usage.ts';
 
 type ImportBinding = {
   readonly importModule: string;

@@ -1,6 +1,4 @@
-import { type Position, Range } from '../../position.ts';
-
-import { type ValueInformation } from './value-information.ts';
+import { type Position, Range, type ValueInformation } from '../../helpers/index.ts';
 
 export function evaluateProp({
   prop,

@@ -1,9 +1,6 @@
 import valueParser from 'postcss-value-parser';
 
-import { type Position, Range } from '../../position.ts';
-import { Text } from '../../text.ts';
-
-import { type ValueInformation } from './value-information.ts';
+import { type Position, Range, Text, type ValueInformation } from '../../helpers/index.ts';
 
 export function evaluateValue({
   value,

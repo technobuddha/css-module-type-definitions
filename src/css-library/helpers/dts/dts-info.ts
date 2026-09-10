@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { camelCase, empty, isJsVariable, pascalCase } from '@technobuddha/library';
 
-import { type Options } from '../common/index.ts';
+import { type Options } from '../../../common/index.ts';
 
 export type DtsInfo = {
   readonly variable: string;

@@ -1,8 +1,8 @@
 import {
   type CancellationToken,
   type DefinitionProvider,
-  Location,
-  Position,
+  type Location,
+  type Position,
   type TextDocument,
 } from 'vscode';
 

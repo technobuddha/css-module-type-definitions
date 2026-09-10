@@ -7,20 +7,20 @@ import postcssImport from 'postcss-import';
 
 import { type Logger, type Options } from '../../common/index.ts';
 
-import { type CssImporter } from '../css-importer.ts';
-import { type CssGlobalInfo } from '../css-info.ts';
-import { dashes } from '../dashes.ts';
 import {
+  type CssGlobalInfo,
+  type CssImporter,
+  dashes,
+  type Diagnostic,
+  type Export,
   fixSourceMap,
   type RawSourceMap,
   removeInlineSourceMap,
   SourceMapConsumer,
-} from '../source-map.ts';
-import { Text } from '../text.ts';
+  Text,
+} from '../helpers/index.ts';
 import { transformer } from '../transformers/index.ts';
 
-import { type Diagnostic } from './diagnostic.ts';
-import { type Export } from './export.ts';
 import { extractLocationsOfAnimation } from './extract-locations-of-animation.ts';
 import { extractLocationsOfClassName } from './extract-locations-of-class-name.ts';
 import { extractLocationsOfKeyframe } from './extract-locations-of-keyframe.ts';

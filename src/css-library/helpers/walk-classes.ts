@@ -1,6 +1,6 @@
 import selectorParser from 'postcss-selector-parser';
 
-import { Range } from '../position.ts';
+import { Range } from './range.ts';
 
 export type ClassPosition = {
   name: string;
