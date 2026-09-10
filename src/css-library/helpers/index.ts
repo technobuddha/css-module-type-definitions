@@ -2,7 +2,7 @@ export { type CssImporter } from './css-importer.ts';
 export { type CssGlobalInfo, type CssModuleInfo } from './css-info.ts';
 export { dashes } from './dashes.ts';
 export { Diagnostic, DiagnosticSeverity } from './diagnostic.ts';
-export * from './dts/index.ts';
+export { DtsBuilder } from './dts-builder.ts';
 export { type Export } from './export.ts';
 export { loadSource } from './load-source.ts';
 export { Location } from './location.ts';

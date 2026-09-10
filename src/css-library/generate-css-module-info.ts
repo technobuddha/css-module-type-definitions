@@ -1,14 +1,6 @@
 import path from 'node:path';
 
-import {
-  empty,
-  encodeBase64,
-  fileExists,
-  omitProperties,
-  quote,
-  space,
-  toError,
-} from '@technobuddha/library';
+import { fileExists, omitProperties, toError } from '@technobuddha/library';
 import genericNames from 'generic-names';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
@@ -21,15 +13,10 @@ import {
   type CssModuleInfo,
   Diagnostic,
   DiagnosticSeverity,
-  dtsBottom,
-  dtsInfo,
-  dtsMiddle,
-  dtsTop,
+  DtsBuilder,
   type Location,
-  Position,
   Range,
   removeInlineSourceMap,
-  SourceMapGenerator,
 } from './helpers/index.ts';
 
 type Arguments = {
@@ -85,9 +72,7 @@ export async function generateCssModuleInfo(
           }
         }
 
-        const info = dtsInfo(file, options);
-        const dts = dtsTop(info);
-        const smg = new SourceMapGenerator({ file: dtsFilename, logger });
+        const dts = new DtsBuilder(file, dtsFilename, options, logger);
         let scopeNameOfExportName: Map<string, string> = new Map();
 
         await postcss()
@@ -111,15 +96,11 @@ export async function generateCssModuleInfo(
                 ).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
                 for (const [localName, location] of localLocations) {
-                  smg.addMapping({
-                    source: location.source,
-                    // 11 = length of {space.repeat(2)}readonly{space}{quote},
-                    generated: new Position(dts.length, 11),
-                    original: location.range.start,
-                  });
-
-                  dts.push(
-                    `${space.repeat(2)}readonly${space}${quote(localName)}:${space}${quote(scopeNameOfExportName.get(localName)!)};`,
+                  dts.add(
+                    location.source,
+                    location.range.start,
+                    localName,
+                    scopeNameOfExportName.get(localName)!,
                   );
                 }
               },
@@ -140,15 +121,8 @@ export async function generateCssModuleInfo(
             );
           });
 
-        dts.push(
-          ...dtsMiddle(info),
-          empty,
-          `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${encodeBase64(JSON.stringify(smg.sourceMap()), 'utf-8')}`,
-          ...dtsBottom(info),
-        );
-
         return {
-          dtsContents: dts.join('\n'),
+          dtsContents: dts.finalize(),
           dtsFilename: path.resolve(dir, dtsFilename),
           hasDts,
           locationsOfAnimation,

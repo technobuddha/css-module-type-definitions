@@ -9,7 +9,9 @@ import {
   type Logger,
   type Options,
 } from '../../common/index.ts';
-import { cssImporter, type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
+import { type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
+
+import { cssImporter } from '../css-importer/index.ts';
 
 import { type ClassUsage } from './class-usage.ts';
 import { CssGlobalInformation, type Snippet } from './css-global-information.ts';
