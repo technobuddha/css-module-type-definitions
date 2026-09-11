@@ -9,13 +9,12 @@
 
 // prettier-ignore
 type Values = {
-  readonly 'bar': 'values-module_bar_Oiv-D values-module_foo_TXa31 disabled compose_blue_hbdaC';
-  readonly 'flop': 'green';
-  readonly 'foo': 'values-module_foo_TXa31';
+  readonly 'global': 'global';
+  readonly 'local': 'values-module_local_XVfeS';
 };
 
 declare const values: Values;
 
 export default values;
 
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvdmFsdWVzLm1vZHVsZS5jc3MiLCJ2YWx1ZXMubW9kdWxlLmNzcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7OztXQU1DO1dDTk07V0RFTiIsImZpbGUiOiJ2YWx1ZXMubW9kdWxlLmQuY3NzLnRzIiwic291cmNlUm9vdCI6IiJ9
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvdmFsdWVzLm1vZHVsZS5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7V0FJUztXQUpSIiwiZmlsZSI6InZhbHVlcy5tb2R1bGUuZC5jc3MudHMiLCJzb3VyY2VSb290IjoiIn0=

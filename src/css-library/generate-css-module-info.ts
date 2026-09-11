@@ -68,7 +68,7 @@ export async function generateCssModuleInfo(
         const locationsOfLocalNames: Map<string, Location> = new Map();
         for (const [exportName, localNames] of localNamesOfExport) {
           for (const localName of localNames) {
-            locationsOfLocalNames.set(localName, exports.get(exportName)!.location[0]);
+            locationsOfLocalNames.set(localName, exports.get(exportName)!.at(0)!.location);
           }
         }
 
@@ -90,7 +90,8 @@ export async function generateCssModuleInfo(
                       localNames
                         .values()
                         .map(
-                          (localName) => [localName, exports.get(exportName)!.location[0]] as const,
+                          (localName) =>
+                            [localName, exports.get(exportName)!.at(0)!.location] as const,
                         ),
                     ),
                 ).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }));

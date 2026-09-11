@@ -100,18 +100,26 @@ if (import.meta.main) {
               description: 'Logging level.',
               order: 1,
             },
-            'cmtd.unusedClassesDiagnostics': {
+            'cmtd.unusedExportsDiagnostics': {
               type: 'string',
               enum: SEVERITYLEVELS,
-              default: defaultOptions.unusedClassesDiagnostics,
-              description: 'Severity level for unused classes diagnostics.',
+              default: defaultOptions.unusedExportsDiagnostics,
+              description: 'Severity level for unused Css exports.',
               order: 2,
             },
-            'cmtd.unusedImportedClassesDiagnostics': {
-              type: 'boolean',
-              default: defaultOptions.unusedImportedClassesDiagnostics,
-              description: 'Whether to show diagnostics for unused imported classes.',
-              order: 3,
+            'cmtd.multipleTypeExportsDiagnostics': {
+              type: 'string',
+              enum: SEVERITYLEVELS,
+              default: defaultOptions.multipleTypeExportsDiagnostics,
+              description: 'Severity level for multiple type exports.',
+              order: 2,
+            },
+            'cmtd.localAndGlobalExportsDiagnostics': {
+              type: 'string',
+              enum: SEVERITYLEVELS,
+              default: defaultOptions.localAndGlobalExportsDiagnostics,
+              description: 'Severity level for exports defined as local and global.',
+              order: 2,
             },
             'cmtd.css.dtsHeader': {
               type: 'string',

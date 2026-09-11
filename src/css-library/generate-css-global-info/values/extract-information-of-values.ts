@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { toError, unquote } from '@technobuddha/library';
+import { empty, toError, unquote } from '@technobuddha/library';
 import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
 
 import {
@@ -89,6 +89,7 @@ export async function extractInformationOfValues(
                     '```css',
                     text.lines(position.line),
                     '```',
+                    empty,
                   ].join('\n');
 
                   const parent = importedValues.get(importName);
@@ -147,6 +148,7 @@ export async function extractInformationOfValues(
             '```css',
             text.lines(position.line),
             '```',
+            empty,
           ].join('\n');
 
           const pos = new Position(position.line, column + varName.length + colon.length);

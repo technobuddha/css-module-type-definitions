@@ -1,11 +1,5 @@
+import { DiagnosticSeverity } from './diagnostic-severity.ts';
 import { type Range } from './range.ts';
-
-export enum DiagnosticSeverity {
-  Error = 0,
-  Warning = 1,
-  Information = 2,
-  Hint = 3,
-}
 
 export class Diagnostic {
   public readonly range: Range;

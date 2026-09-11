@@ -36,11 +36,14 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
 
   public constructor({ workspaceController, folder }: FolderOptionsArguments) {
     super({ workspaceController, folder });
+    this.#logger = this.createLogger();
+  }
 
+  private createLogger(): Logger {
     const loglevel =
-      workspace.getConfiguration(SETTINGS_PREFIX, folder.uri)?.get<LogLevel>('logLevel') ??
+      workspace.getConfiguration(SETTINGS_PREFIX, this.folder.uri)?.get<LogLevel>('logLevel') ??
       defaultOptions.logLevel;
-    this.#logger = loggerForLevel(workspaceController.logger, loglevel);
+    return loggerForLevel(this.workspaceController.logger, loglevel);
   }
 
   private async readCMTDConfig(): Promise<void> {
@@ -60,12 +63,15 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
   private readOptions(): Options {
     return {
       logLevel: this.#vscodeSettings?.get<LogLevel>('logLevel') ?? defaultOptions.logLevel,
-      unusedClassesDiagnostics:
-        this.#vscodeSettings?.get<SeverityLevel>('unusedClassesDiagnostics') ??
-        defaultOptions.unusedClassesDiagnostics,
-      unusedImportedClassesDiagnostics:
-        this.#vscodeSettings?.get<boolean>('unusedImportedClassesDiagnostics') ??
-        defaultOptions.unusedImportedClassesDiagnostics,
+      unusedExportsDiagnostics:
+        this.#vscodeSettings?.get<SeverityLevel>('unusedExportsDiagnostics') ??
+        defaultOptions.unusedExportsDiagnostics,
+      multipleTypeExportsDiagnostics:
+        this.#vscodeSettings?.get<SeverityLevel>('multipleTypeExportsDiagnostics') ??
+        defaultOptions.multipleTypeExportsDiagnostics,
+      localAndGlobalExportsDiagnostics:
+        this.#vscodeSettings?.get<SeverityLevel>('localAndGlobalExportsDiagnostics') ??
+        defaultOptions.localAndGlobalExportsDiagnostics,
       css: {
         preprocessor: {
           less: {
@@ -127,7 +133,7 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
     }
 
     this.#options = newOptions;
-    this.#logger = loggerForLevel(this.workspaceController.logger, newOptions.logLevel);
+    this.#logger = this.createLogger();
     await this.fire('options', { oldOptions, newOptions });
   }
 

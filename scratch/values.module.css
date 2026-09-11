@@ -1,11 +1,7 @@
-@value flop: green;
-
-.foo {
-  color: flop;
+.local {
+  content: 'local';
 }
 
-.bar {
-  composes: foo;
-  composes: disabled from global;
-  composes: blue from './compose.css';
+:global(.global) {
+  content: 'global';
 }

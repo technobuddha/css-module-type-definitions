@@ -22,8 +22,8 @@ import { ValueInformation } from './value-information.ts';
 
 export type Export = {
   readonly type: CssExport['type'];
-  readonly location: readonly Location[];
-  readonly snippet: string[];
+  readonly location: Location;
+  readonly snippet: string;
 };
 
 export type Snippet = {
@@ -64,7 +64,7 @@ export class CssGlobalInformation {
   public readonly exportNames: ReadonlySet<string>;
   public readonly locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
   public readonly informationOfValues: ReadonlyMap<string, ValueInformation>;
-  public readonly exports: ReadonlyMap<string, Export>;
+  public readonly exports: ReadonlyMap<string, Export[]>;
   public readonly localNamesOfExport: ReadonlyMap<string, ReadonlySet<string>>;
   public readonly exportNamesOfLocalName: ReadonlyMap<string, ReadonlySet<string>>;
 
@@ -90,11 +90,11 @@ export class CssGlobalInformation {
     this.exports = new Map(
       exports.entries().map(([key, value]) => [
         key,
-        {
-          type: value.type,
-          location: value.location.map(toLocation),
-          snippet: [...value.snippet],
-        },
+        value.map(({ type, location, snippet }) => ({
+          type,
+          location: toLocation(location),
+          snippet,
+        })),
       ]),
     );
     this.localNamesOfExport = new Map(
@@ -107,7 +107,12 @@ export class CssGlobalInformation {
     this.diagnostics = diagnostics.map(toDiagnostic);
     this.importedFiles = new ReadonlyUriSet(importedFiles.values().map((file) => Uri.file(file)));
 
-    this.exportNames = new Set(exports.keys());
+    this.exportNames = new Set(
+      exports
+        .entries()
+        .filter(([, exps]) => exps.some((e) => e.scope === 'local'))
+        .map(([key]) => key),
+    );
     this.hasDts = false;
   }
 
@@ -121,17 +126,14 @@ export class CssGlobalInformation {
 
   public cssSnippets({ exportName }: LocalOrExport): readonly Snippet[] | undefined {
     if (exportName) {
-      const snippets = this.exports.get(exportName)?.snippet;
-      if (snippets) {
-        return snippets.map((snippet) => ({ snippet, exportName }));
-      }
+      return this.exports.get(exportName)?.map(({ snippet }) => ({ snippet, exportName }));
     }
     return undefined;
   }
 
   public cssLocations({ exportName }: LocalOrExport): readonly Location[] | undefined {
     if (exportName) {
-      return this.exports.get(exportName)?.location;
+      return this.exports.get(exportName)?.map(({ location }) => location);
     }
     return undefined;
   }

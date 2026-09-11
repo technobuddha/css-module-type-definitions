@@ -16,4 +16,8 @@ export class Range {
     this.start = new Position(args[0] as number, args[1] as number);
     this.end = new Position(args[2] as number, args[3] as number);
   }
+
+  public extend(length: number): Range {
+    return new Range(this.start, new Position(this.end.line, this.end.column + length));
+  }
 }

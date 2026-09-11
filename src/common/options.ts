@@ -43,8 +43,9 @@ type CMTDSassPreprocessorOptions = Omit<
 
 export interface Options {
   readonly logLevel: LogLevel;
-  readonly unusedClassesDiagnostics: SeverityLevel;
-  readonly unusedImportedClassesDiagnostics: boolean;
+  readonly unusedExportsDiagnostics: SeverityLevel;
+  readonly multipleTypeExportsDiagnostics: SeverityLevel;
+  readonly localAndGlobalExportsDiagnostics: SeverityLevel;
 
   readonly css: {
     readonly preprocessor: {
@@ -77,14 +78,16 @@ export type CMTDOptions = {
 
 export type PartialOptions = CMTDOptions & {
   readonly logLevel?: Options['logLevel'];
-  readonly unusedClassesDiagnostics?: Options['unusedClassesDiagnostics'];
-  unusedImportedClassesDiagnostics?: Options['unusedImportedClassesDiagnostics'];
+  readonly unusedExportsDiagnostics?: Options['unusedExportsDiagnostics'];
+  readonly multipleTypeExportsDiagnostics?: Options['multipleTypeExportsDiagnostics'];
+  readonly localAndGlobalExportsDiagnostics?: Options['localAndGlobalExportsDiagnostics'];
 };
 
 export const defaultOptions = Object.freeze<Options>({
   logLevel: 'info',
-  unusedClassesDiagnostics: 'warning',
-  unusedImportedClassesDiagnostics: false,
+  unusedExportsDiagnostics: 'warning',
+  multipleTypeExportsDiagnostics: 'warning',
+  localAndGlobalExportsDiagnostics: 'error',
   css: {
     preprocessor: {
       less: {},

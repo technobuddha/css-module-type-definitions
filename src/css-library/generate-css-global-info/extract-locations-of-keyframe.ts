@@ -1,13 +1,14 @@
 import path from 'node:path';
 
+import { empty } from '@technobuddha/library';
 import { type AtRule } from 'postcss';
 
 import {
   Diagnostic,
   DiagnosticSeverity,
+  type Export,
   loadSource,
   Location,
-  type LocationAndSnippet,
   Range,
 } from '../helpers/index.ts';
 
@@ -19,8 +20,8 @@ export async function extractLocationsOfKeyframe({
   sources,
   smc,
   diagnostics,
-}: ExtractorArguments): Promise<Map<string, LocationAndSnippet[]>> {
-  const locationsOfKeyframe: Map<string, LocationAndSnippet[]> = new Map();
+}: ExtractorArguments): Promise<Map<string, Export[]>> {
+  const locationsOfKeyframe: Map<string, Export[]> = new Map();
 
   const atRules: AtRule[] = [];
   root.walkAtRules('keyframes', (atRule) => {
@@ -41,11 +42,14 @@ export async function extractLocationsOfKeyframe({
           '```css',
           text.lines(line),
           '```',
+          empty,
         ].join('\n');
 
         locationsOfKeyframe.getOrInsert(atRule.params, []).push({
+          type: 'keyframe',
           snippet,
           location: new Location(source, line, column, line, column + atRule.params.length),
+          scope: 'local', // TODO
         });
       })
       .catch((error) => {

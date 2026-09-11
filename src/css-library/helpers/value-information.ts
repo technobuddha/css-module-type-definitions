@@ -1,4 +1,5 @@
-import { Diagnostic, DiagnosticSeverity } from './diagnostic.ts';
+import { Diagnostic } from './diagnostic.ts';
+import { DiagnosticSeverity } from './diagnostic-severity.ts';
 import { type Location } from './location.ts';
 import { type Range } from './range.ts';
 

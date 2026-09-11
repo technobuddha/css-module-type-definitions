@@ -1,9 +1,11 @@
 import { type Location } from './location.ts';
 
-type ExportType = 'class' | 'keyframe' | 'value' | 'value-class';
+export type ExportType = 'class' | 'id' | 'keyframe' | 'value' | 'value-class';
+export type ExportScope = 'global' | 'local';
 
 export type Export = {
   readonly type: ExportType;
-  readonly location: readonly Location[];
-  readonly snippet: readonly string[];
+  readonly location: Location;
+  readonly snippet: string;
+  readonly scope: ExportScope;
 };

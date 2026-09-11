@@ -100,11 +100,13 @@ export class Optionator implements LoggerController, AsyncDisposable {
   private compileOptions(): Options {
     return {
       logLevel: this.#top.logLevel ?? defaultOptions.logLevel,
-      unusedClassesDiagnostics:
-        this.#top?.unusedClassesDiagnostics ?? defaultOptions.unusedClassesDiagnostics,
-      unusedImportedClassesDiagnostics:
-        this.#top?.unusedImportedClassesDiagnostics ??
-        defaultOptions.unusedImportedClassesDiagnostics,
+      unusedExportsDiagnostics:
+        this.#top?.unusedExportsDiagnostics ?? defaultOptions.unusedExportsDiagnostics,
+      multipleTypeExportsDiagnostics:
+        this.#top?.multipleTypeExportsDiagnostics ?? defaultOptions.multipleTypeExportsDiagnostics,
+      localAndGlobalExportsDiagnostics:
+        this.#top?.localAndGlobalExportsDiagnostics ??
+        defaultOptions.localAndGlobalExportsDiagnostics,
       css: {
         preprocessor: {
           less:

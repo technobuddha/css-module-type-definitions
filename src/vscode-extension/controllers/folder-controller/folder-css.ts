@@ -24,7 +24,6 @@ import {
   isCssGlobal,
   isCssModule,
   operation,
-  type Options,
 } from '../../../common/index.ts';
 
 import {
@@ -52,7 +51,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
     if (isCss(uri)) {
-      if (this.options.unusedClassesDiagnostics === 'none') {
+      if (this.options.unusedExportsDiagnostics === 'none') {
         this.diagnostics.delete(uri);
         return;
       }
@@ -100,7 +99,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           const diagnostic = new Diagnostic(
             new Range(0, 0, 0, 0),
             message,
-            toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+            toDiagnosticSeverity(this.options.unusedExportsDiagnostics),
           );
           diagnostic.source = 'cmtd';
           diagnostics.push(diagnostic);
@@ -113,7 +112,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             const diagnostic = new Diagnostic(
               location.range,
               `Animation "${animation}" is not defined.`,
-              toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
+              toDiagnosticSeverity(this.options.unusedExportsDiagnostics),
             );
             diagnostic.source = 'cmtd';
             diagnostics.push(diagnostic);
@@ -252,26 +251,20 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         });
 
         for (const exportName of exports) {
-          const exportInfo = cssInfo.exports.get(exportName);
-          if (exportInfo) {
-            const typeName =
-              exportInfo.type === 'class' ? 'Class '
-              : exportInfo.type === 'value' ? 'Value '
-              : exportInfo.type === 'keyframe' ? 'Keyframe '
-              : empty;
+          const exportInfos = cssInfo.exports.get(exportName);
+          if (exportInfos) {
+            const exportInfo = exportInfos.find((e) => uri.fsPath === e.location.uri.fsPath);
+            if (exportInfo) {
+              const type = new Set(exportInfos.values().map((e) => e.type));
+              const message = `${capitalize(conjoin(type))} "${exportName}" is not used.`;
 
-            for (const location of exportInfo.location) {
-              if (uri.fsPath === location.uri.fsPath) {
-                const message = `${typeName}"${exportName}" is not used.`;
-
-                const diagnostic = new Diagnostic(
-                  location.range,
-                  message,
-                  toDiagnosticSeverity(this.options.unusedClassesDiagnostics),
-                );
-                diagnostic.source = 'cmtd';
-                diagnostics.push(diagnostic);
-              }
+              const diagnostic = new Diagnostic(
+                exportInfo.location.range,
+                message,
+                toDiagnosticSeverity(this.options.unusedExportsDiagnostics),
+              );
+              diagnostic.source = 'cmtd';
+              diagnostics.push(diagnostic);
             }
           }
         }
@@ -341,20 +334,13 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     }
   }
 
-  protected async handleOptions({
-    oldOptions,
-    newOptions,
-  }: {
-    oldOptions: Options;
-    newOptions: Options;
-  }): Promise<void> {
+  protected async handleOptions(): Promise<void> {
     this.logger.trace(operation(`${this.folder.name}::options`, 'changed'));
-    if (deepEquals(oldOptions.css, newOptions.css)) {
-      return;
-    }
-
     for (const css of Array.from(this.#cssInformation.keys())) {
       await this.updateInformation(css);
+    }
+    for (const tab of this.openTabs) {
+      await this.updateDiagnostics(tab);
     }
   }
 

@@ -1,3 +1,7 @@
+import { Range } from './range.ts';
+
+type LC = { line?: number; column: number };
+
 export class Position {
   public readonly line: number;
   public readonly column: number;
@@ -7,7 +11,15 @@ export class Position {
     this.column = column;
   }
 
-  public add({ line, column }: Position | { line?: number; column: number }): Position {
+  public add(increment: Position | LC): Position;
+  public add(increment: Range): Range;
+  public add(increment: Position | LC | Range): Position | Range {
+    if (increment instanceof Range) {
+      return new Range(this.add(increment.start), this.add(increment.end));
+    }
+
+    const { line, column } = increment;
+
     if (!line) {
       return new Position(this.line, this.column + column);
     }

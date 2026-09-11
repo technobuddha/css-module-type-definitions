@@ -103,10 +103,7 @@ export class CssModuleInformation extends CssGlobalInformation {
     localName,
   }: LocalOrExport): readonly Snippet[] | undefined {
     if (exportName) {
-      const snippets = this.exports.get(exportName)?.snippet;
-      if (snippets) {
-        return snippets.map((snippet) => ({ snippet, exportName }));
-      }
+      return this.exports.get(exportName)?.map(({ snippet }) => ({ snippet, exportName }));
     }
 
     if (localName) {
@@ -115,11 +112,11 @@ export class CssModuleInformation extends CssGlobalInformation {
         const result: Snippet[] = [];
 
         for (const exportName of exportNames) {
-          const snippets = this.exports.get(exportName)?.snippet;
+          const snippets = this.exports
+            .get(exportName)
+            ?.map(({ snippet }) => ({ snippet, exportName }));
           if (snippets) {
-            for (const snippet of snippets) {
-              result.push({ snippet, exportName });
-            }
+            result.push(...snippets);
           }
         }
         return result;
@@ -134,7 +131,7 @@ export class CssModuleInformation extends CssGlobalInformation {
     localName,
   }: LocalOrExport): readonly Location[] | undefined {
     if (exportName) {
-      const locations = this.exports.get(exportName)?.location;
+      const locations = this.exports.get(exportName)?.map(({ location }) => location);
       if (locations) {
         return locations;
       }
@@ -146,7 +143,7 @@ export class CssModuleInformation extends CssGlobalInformation {
         const result: Location[] = [];
 
         for (const exportName of exportNames) {
-          const locations = this.exports.get(exportName)?.location;
+          const locations = this.exports.get(exportName)?.map(({ location }) => location);
           if (locations) {
             result.push(...locations);
           }

@@ -39,7 +39,7 @@ export class CodeDefinitionProvider implements DefinitionProvider {
           if (cssInfo && !cssInfo.hasDts) {
             const exportNames = cssInfo.aliases({ localName });
             for (const exportName of exportNames) {
-              const extracted = cssInfo.exports.get(exportName)?.location;
+              const extracted = cssInfo.exports.get(exportName)?.map(({ location }) => location);
               if (extracted) {
                 const [location] = extracted;
                 return location;

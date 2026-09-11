@@ -22,8 +22,8 @@ import {
 import { transformer } from '../transformers/index.ts';
 
 import { extractLocationsOfAnimation } from './extract-locations-of-animation.ts';
-import { extractLocationsOfClassName } from './extract-locations-of-class-name.ts';
-import { extractLocationsOfKeyframe } from './extract-locations-of-keyframe.ts';
+import { extractLocationsOfExports } from './extract-locations-of-exports.ts';
+// import { extractLocationsOfKeyframe } from './extract-locations-of-keyframe.ts';
 import { extractInformationOfValues } from './values/index.ts';
 
 export type ExtractorArguments = {
@@ -117,36 +117,33 @@ export async function generateCssGlobalInfo(
           diagnostics,
         };
 
-        const locationsOfClassName = await extractLocationsOfClassName(extractorArguments);
+        const locationsOfExports = await extractLocationsOfExports(extractorArguments);
         const locationsOfAnimation = await extractLocationsOfAnimation(extractorArguments);
-        const locationsOfKeyframe = await extractLocationsOfKeyframe(extractorArguments);
+        // const locationsOfKeyframe = await extractLocationsOfKeyframe(extractorArguments);
         const informationOfValues = await extractInformationOfValues(extractorArguments);
 
-        const exports: Map<string, Export> = new Map();
-        for (const [key, value] of locationsOfClassName) {
-          exports.set(key, {
-            type: 'class',
-            location: value.flatMap((v) => v.location),
-            snippet: value.flatMap((v) => v.snippet),
-          });
-        }
+        const exports: Map<string, Export[]> = new Map(locationsOfExports);
         for (const [key, value] of informationOfValues) {
-          exports.set(key, { type: 'value', location: value.location, snippet: value.snippet });
-          if (value.usages.some((u) => u.type === 'class')) {
-            exports.set(value.value, {
-              type: 'value-class',
-              location: value.location,
-              snippet: value.snippet,
-            });
+          const exps: Export[] = [];
+          for (let i = 0; i < value.location.length; ++i) {
+            exps[i] = {
+              type: 'value',
+              location: value.location[i],
+              snippet: value.snippet[i],
+              scope: 'local',
+            };
+          }
+          exports.set(key, exps);
+          if (value.usages.some((u) => u.type === 'class' || u.type === 'id')) {
+            exports.set(
+              value.value,
+              exps.map(({ type, ...e }) => ({ type: 'value-class', ...e })),
+            );
           }
         }
-        for (const [key, value] of locationsOfKeyframe) {
-          exports.set(key, {
-            type: 'keyframe',
-            location: value.map((v) => v.location),
-            snippet: value.map((v) => v.snippet),
-          });
-        }
+        // for (const [key, value] of locationsOfKeyframe) {
+        // exports.set(key, value);
+        // }
 
         const localNamesOfExport: Map<string, Set<string>> = new Map();
         for (const exportName of exports.keys()) {
@@ -196,7 +193,7 @@ export async function generateCssGlobalInfo(
           sourceMap,
           info: {
             locationsOfAnimation,
-            locationsOfKeyframe,
+            locationsOfKeyframe: new Map(),
             informationOfValues,
             localNamesOfExport,
             exportNamesOfLocalName,
