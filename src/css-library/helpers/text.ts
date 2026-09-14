@@ -69,7 +69,7 @@ export class Text {
   }
 
   public get size(): Position {
-    return this.positionAt(-1).add({ column: 1 });
+    return this.positionAt(-1).add(1);
   }
 
   public increment(position: Position, amount: number): Position {

@@ -46,6 +46,7 @@ export interface Options {
   readonly unusedExportsDiagnostics: SeverityLevel;
   readonly multipleTypeExportsDiagnostics: SeverityLevel;
   readonly localAndGlobalExportsDiagnostics: SeverityLevel;
+  readonly valueUsagesDiagnostics: SeverityLevel;
 
   readonly css: {
     readonly preprocessor: {
@@ -81,6 +82,7 @@ export type PartialOptions = CMTDOptions & {
   readonly unusedExportsDiagnostics?: Options['unusedExportsDiagnostics'];
   readonly multipleTypeExportsDiagnostics?: Options['multipleTypeExportsDiagnostics'];
   readonly localAndGlobalExportsDiagnostics?: Options['localAndGlobalExportsDiagnostics'];
+  readonly valueUsagesDiagnostics?: Options['valueUsagesDiagnostics'];
 };
 
 export const defaultOptions = Object.freeze<Options>({
@@ -88,6 +90,7 @@ export const defaultOptions = Object.freeze<Options>({
   unusedExportsDiagnostics: 'warning',
   multipleTypeExportsDiagnostics: 'warning',
   localAndGlobalExportsDiagnostics: 'error',
+  valueUsagesDiagnostics: 'information',
   css: {
     preprocessor: {
       less: {},

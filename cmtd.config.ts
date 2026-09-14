@@ -6,7 +6,8 @@ export default defineConfig({
     classesConvention: 'kebabCase',
     modules: {
       localsConvention: 'camelCase',
-      exportGlobals: true,
+      exportGlobals: false,
+      scopeBehaviour: 'local',
     },
   },
 });

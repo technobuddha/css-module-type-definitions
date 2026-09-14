@@ -22,6 +22,7 @@ export { importEqualsModule } from './import-equals-module.ts';
 export { importModuleFromDeclaration } from './import-module-from-declaration.ts';
 export { isExtendedIdentifier } from './is-extended-identifier.ts';
 export { isWithin } from './is-within.ts';
+export { loadSource } from './load-source.ts';
 export { normalizeLocations } from './normalize-locations.ts';
 export { propertyNameRange } from './property-name-range.ts';
 export { replacementName } from './replacement-name.ts';

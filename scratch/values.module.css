@@ -1,7 +1,39 @@
-.local {
-  content: 'local';
+.c0 {
+  animation: ani1 2s linear infinite;
 }
 
-:global(.global) {
-  content: 'global';
+.c1 {
+  animation-name: ani2;
+}
+
+.c2 {
+  animation: x-animation1 2s linear infinite;
+}
+
+.c3 {
+  animation-name: x-animation2;
+}
+
+@keyframes ani1 {
+  /* */
+}
+
+@keyframes ani2 {
+  /* */
+}
+
+@keyframes ani3 {
+  /* */
+}
+
+@keyframes ani4 {
+  /* */
+}
+
+@keyframes ani5 {
+  /* */
+}
+
+@keyframes ani5 {
+  /* */
 }

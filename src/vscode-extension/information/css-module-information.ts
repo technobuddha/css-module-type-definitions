@@ -12,6 +12,7 @@ import {
 import { type CssModuleInfo, generateCssModuleInfo } from '../../css-library/index.ts';
 
 import { cssImporter } from '../css-importer/index.ts';
+import { loadSource } from '../helpers/index.ts';
 
 import { type ClassUsage } from './class-usage.ts';
 import { CssGlobalInformation, type Snippet } from './css-global-information.ts';
@@ -39,11 +40,14 @@ export class CssModuleInformation extends CssGlobalInformation {
         cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
         relativeTo: os.homedir(),
         root: root.fsPath,
+        loadSource,
       });
 
       return new CssModuleInformation(cssInfo);
     } catch (error) {
-      logger.error(fileOperation(uri, 'error', error), '<== css-module-information:47');
+      // eslint-disable-next-line no-console
+      console.log(error);
+      logger.error(fileOperation(uri, 'error', error), '<== css-module-information:48');
     }
     return undefined;
   }

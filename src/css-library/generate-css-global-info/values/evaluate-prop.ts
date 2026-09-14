@@ -10,9 +10,9 @@ export function evaluateProp({
   informationOfValues: Map<string, ValueInformation>;
 }): string {
   const info = informationOfValues.get(prop);
-  if (info) {
-    const range = new Range(position, position.add({ column: prop.length }));
-    info.used('prop', range);
+  if (info?.isReady) {
+    const range = new Range(position, position.add(prop.length));
+    info.used('prop', range, info.value);
     return info.value;
   }
   return prop;

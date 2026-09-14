@@ -17,12 +17,12 @@ export function evaluateValue({
     switch (node.type) {
       case 'word': {
         const valueInfo = informationOfValues.get(node.value);
-        if (valueInfo) {
+        if (valueInfo?.isReady) {
           const start = position.add(text.positionAt(node.sourceIndex));
           const end = position.add(text.positionAt(node.sourceEndIndex));
           const range = new Range(start, end);
 
-          valueInfo.used('word', range);
+          valueInfo.used('word', range, valueInfo.value);
           node.value = valueInfo.value;
         }
         break;
@@ -30,12 +30,12 @@ export function evaluateValue({
 
       case 'function': {
         const valueInfo = informationOfValues.get(node.value);
-        if (valueInfo) {
+        if (valueInfo?.isReady) {
           const start = position.add(text.positionAt(node.sourceIndex));
-          const end = start.add({ column: node.value.length });
+          const end = start.add(node.value.length);
           const range = new Range(start, end);
 
-          valueInfo.used('function', range);
+          valueInfo.used('function', range, valueInfo.value);
           node.value = valueInfo.value;
         }
         break;

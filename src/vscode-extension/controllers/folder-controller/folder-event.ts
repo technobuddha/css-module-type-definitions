@@ -38,9 +38,6 @@ export abstract class FolderEvent extends FolderFiles implements Disposable {
     this.on('ignored', async () => {
       await this.handleIgnored();
     });
-    // this.on('openTab', async (uri) => {
-    //   await this.handleOpenTab(uri);
-    // });
     this.on('editTab', async (uri) => {
       await this.handleEditTab(uri);
     });

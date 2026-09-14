@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { Diagnostic } from './diagnostic.ts';
 import { DiagnosticSeverity } from './diagnostic-severity.ts';
 import { type Location } from './location.ts';
@@ -9,13 +11,14 @@ export type UsageType =
 type Usage = {
   type: UsageType;
   range: Range;
+  value: string;
 };
 
 type Import = { from: string; name: string };
 
 export class ValueInformation {
-  readonly #name: string;
   #value: string | undefined = undefined;
+  readonly #name: string;
   readonly #location: Location[] = [];
   readonly #snippet: string[] = [];
   readonly #imports: Import[] = [];
@@ -26,17 +29,9 @@ export class ValueInformation {
     this.#name = name;
   }
 
-  private get isReady(): boolean {
-    return this.#value !== undefined;
-  }
-
   private overridden(location: Location, importName: string): void {
     if (this.isReady) {
       this.#diagnostics.push(
-        // new Diagnostic(
-        //   this.#location.at(-1)!.range,
-        //   `${importName} value overridden in subsequent @value declaration`,
-        // ),
         new Diagnostic(
           location.range,
           `${importName} is already defined.`,
@@ -50,11 +45,19 @@ export class ValueInformation {
     return this.#name;
   }
 
+  public get isReady(): boolean {
+    return this.#value !== undefined;
+  }
+
   public get value(): string {
     if (this.isReady) {
       return this.#value!;
     }
     throw new Error('not ready');
+  }
+
+  public get valueOrUndefined(): string | undefined {
+    return this.#value;
   }
 
   public get location(): Location[] {
@@ -97,12 +100,14 @@ export class ValueInformation {
     parent,
     snippet,
     location,
+    declaration,
     importedFrom,
     importName,
   }: {
     parent: ValueInformation | undefined;
     snippet: string;
     location: Location;
+    declaration: Location;
     importedFrom: string;
     importName: string;
   }): void {
@@ -111,12 +116,11 @@ export class ValueInformation {
       this.#value = parent.value;
       this.#snippet.push(...parent.snippet, snippet);
     } else {
-      this.#value = 'undefined';
       this.#snippet.push(snippet);
       this.#diagnostics.push(
         new Diagnostic(
-          location.range,
-          `import ${importName} not defined in ${importedFrom}`,
+          declaration.range,
+          `import ${importName} not defined in ${path.basename(importedFrom)}`,
           DiagnosticSeverity.Error,
         ),
       );
@@ -126,7 +130,7 @@ export class ValueInformation {
     this.#imports.push({ from: importedFrom, name: importName });
   }
 
-  public used(type: UsageType, range: Range): void {
-    this.#usages.push({ type, range });
+  public used(type: UsageType, range: Range, value: string): void {
+    this.#usages.push({ type, range, value });
   }
 }

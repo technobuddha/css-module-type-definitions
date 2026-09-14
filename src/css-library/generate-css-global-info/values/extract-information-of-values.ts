@@ -6,7 +6,6 @@ import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
 import {
   Diagnostic,
   DiagnosticSeverity,
-  loadSource,
   Location,
   Position,
   Range,
@@ -29,7 +28,7 @@ export async function extractInformationOfValues(
   args: ExtractorArguments,
   full = true,
 ): Promise<Map<string, ValueInformation>> {
-  const { root, smc, directory, sources, importedFiles, diagnostics, logger } = args;
+  const { root, smc, directory, importedFiles, diagnostics, loadSource, logger } = args;
   const informationOfValues: Map<string, ValueInformation> = new Map();
 
   const atRules: AtRule[] = [];
@@ -39,7 +38,7 @@ export async function extractInformationOfValues(
 
   for (const atRule of atRules) {
     const { source, position } = smc.node(atRule);
-    const column = position.column + atRule.name.length + 1 + (atRule.raws.afterName?.length ?? 0);
+    const column = position.column + atRule.name.length + (atRule.raws.afterName?.length ?? 0) + 1;
 
     const importMatch = reImport.exec(atRule.params);
     const varMatch = reVar.exec(atRule.params);
@@ -48,12 +47,15 @@ export async function extractInformationOfValues(
       const [, variables, from, origin] = importMatch;
       const pos = new Position(position.line, column + variables.length + from.length);
 
+      const infoOfValues = new Map(
+        informationOfValues.entries().filter(([, value]) => value.isReady),
+      );
       const importedFrom = path.resolve(
         directory,
-        unquote(evaluateValue({ value: origin, position: pos, informationOfValues })),
+        unquote(evaluateValue({ value: origin, position: pos, informationOfValues: infoOfValues })),
       );
 
-      await loadSource(sources, importedFrom)
+      await loadSource(importedFrom)
         .then(async (css) => {
           importedFiles.add(importedFrom);
 
@@ -82,7 +84,7 @@ export async function extractInformationOfValues(
               const [, importName, as, rename] = nameMatch;
               const finalName = rename ?? importName;
 
-              await loadSource(sources, path.resolve(directory, source))
+              await loadSource(path.resolve(directory, source))
                 .then((text) => {
                   const snippet = [
                     `###### ${path.basename(source)}:${position.line + 1}`,
@@ -94,12 +96,7 @@ export async function extractInformationOfValues(
 
                   const parent = importedValues.get(importName);
 
-                  const col =
-                    column +
-                    offset +
-                    nameMatch.index +
-                    (as?.length ?? 0) +
-                    (rename ? importName.length : 0);
+                  const col = column + offset + nameMatch.index;
 
                   informationOfValues
                     .getOrInsertComputed(finalName, () => new ValueInformation(finalName))
@@ -107,11 +104,21 @@ export async function extractInformationOfValues(
                       parent,
                       snippet,
                       location: new Location(
-                        source,
+                        path.resolve(directory, source),
+                        position.line,
+                        col + (as?.length ?? 0) + (rename ? importName.length : 0),
+                        position.line,
+                        col +
+                          finalName.length +
+                          (as?.length ?? 0) +
+                          (rename ? importName.length : 0),
+                      ),
+                      declaration: new Location(
+                        path.resolve(directory, source),
                         position.line,
                         col,
                         position.line,
-                        col + finalName.length,
+                        col + importName.length + (as?.length ?? 0) + (rename?.length ?? 0),
                       ),
                       importedFrom,
                       importName,
@@ -141,39 +148,27 @@ export async function extractInformationOfValues(
     } else if (varMatch) {
       const [, varName, colon, value] = varMatch;
 
-      await loadSource(sources, path.resolve(directory, source))
-        .then((text) => {
-          const snippet = [
-            `###### ${path.basename(source)}:${position.line + 1}`,
-            '```css',
-            text.lines(position.line),
-            '```',
-            empty,
-          ].join('\n');
+      const snippet = [
+        `###### ${path.basename(source)}:${position.line + 1}`,
+        '```css',
+        atRule.toString(),
+        '```',
+        empty,
+      ].join('\n');
 
-          const pos = new Position(position.line, column + varName.length + colon.length);
-          informationOfValues
-            .getOrInsertComputed(varName, () => new ValueInformation(varName))
-            .define({
-              value: evaluateValue({ value, position: pos, informationOfValues }),
-              snippet,
-              location: new Location(
-                source,
-                position.line,
-                column,
-                position.line,
-                column + varName.length,
-              ),
-            });
-        })
-        .catch((error) => {
-          diagnostics.push(
-            new Diagnostic(
-              new Range(position, position.add(new Text(atRule.toString()).size)),
-              toError(error).message,
-              DiagnosticSeverity.Error,
-            ),
-          );
+      const pos = new Position(position.line, column + varName.length + colon.length);
+      informationOfValues
+        .getOrInsertComputed(varName, () => new ValueInformation(varName))
+        .define({
+          value: evaluateValue({ value, position: pos, informationOfValues }),
+          snippet,
+          location: new Location(
+            path.resolve(directory, source),
+            position.line,
+            column,
+            position.line,
+            column + varName.length,
+          ),
         });
     } else {
       diagnostics.push(
@@ -187,6 +182,8 @@ export async function extractInformationOfValues(
   }
 
   if (full && informationOfValues.size > 0) {
+    const infoOfValues = new Map(informationOfValues.entries().filter(([, info]) => info.isReady));
+
     const decls: Declaration[] = [];
     root.walkDecls((decl) => {
       decls.push(decl);
@@ -200,11 +197,11 @@ export async function extractInformationOfValues(
       evaluateProp({
         prop: decl.prop,
         position: new Position(line, column),
-        informationOfValues,
+        informationOfValues: infoOfValues,
       });
 
       const position = new Position(line, column).add(new Text(decl.prop + decl.raws.between).size);
-      evaluateValue({ value: decl.value, position, informationOfValues });
+      evaluateValue({ value: decl.value, position, informationOfValues: infoOfValues });
     }
 
     const rules: Rule[] = [];
@@ -213,16 +210,25 @@ export async function extractInformationOfValues(
     });
 
     for (const rule of rules) {
-      const {
-        position: { line, column },
-      } = smc.node(rule);
-      const position = new Position(line, column);
+      const { position } = smc.node(rule);
 
       evaluateSelectors({
         selectors: rule.selector,
         position,
-        informationOfValues,
+        informationOfValues: infoOfValues,
       });
+    }
+
+    const atRules: AtRule[] = [];
+    root.walkAtRules('keyframes', (atRule) => {
+      atRules.push(atRule);
+    });
+
+    for (const atRule of atRules) {
+      let { position } = smc.node(atRule);
+      position = position.add(atRule.name.length + (atRule.raws.after?.length ?? 0) + 1);
+
+      evaluateValue({ value: atRule.params, position, informationOfValues: infoOfValues });
     }
   }
 

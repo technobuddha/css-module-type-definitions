@@ -16,7 +16,7 @@ import {
 } from '../../css-library/index.ts';
 
 import { cssImporter } from '../css-importer/index.ts';
-import { ReadonlyUriSet, toDiagnostic, toLocation } from '../helpers/index.ts';
+import { loadSource, ReadonlyUriSet, toDiagnostic, toLocation } from '../helpers/index.ts';
 
 import { ValueInformation } from './value-information.ts';
 
@@ -51,6 +51,7 @@ export class CssGlobalInformation {
         logger,
         cssImporter: cssImporter({ root: Utils.dirname(uri), logger }),
         relativeTo: os.homedir(),
+        loadSource,
       });
 
       return new CssGlobalInformation(info);

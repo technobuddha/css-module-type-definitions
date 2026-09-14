@@ -14,7 +14,6 @@ type Options = {
   readonly 'a3': 'options-module_a3_gd3aB';
   readonly 'abmigigous': 'options-module_abmigigous_lRyl-';
   readonly 'camelCase': 'options-module_camelCase_8IpK9';
-  readonly 'global': 'global';
   readonly 'kebab-case': 'options-module_kebab-case_cFBuN';
   readonly 'kebabCase': 'options-module_kebab-case_cFBuN';
   readonly 'local': 'options-module_local_ye3I6';
@@ -33,4 +32,4 @@ declare const options: Options;
 
 export default options;
 
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvb3B0aW9ucy5tb2R1bGUuY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7O1dBQUM7V0FDQTtXQUNBO1dBSUE7V0FZQTtXQUpRO1dBWVI7V0FBQTtXQWhCTztXQTRCUDtXQWhCQTtXQUFBO1dBb0JBO1dBQUE7V0FaQTtXQUFBO1dBSUE7V0FBQSIsImZpbGUiOiJvcHRpb25zLm1vZHVsZS5kLmNzcy50cyIsInNvdXJjZVJvb3QiOiIifQ==
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9ob21lL3BoaWwvZGV2ZWxvcG1lbnQvY3NzLW1vZHVsZS10eXBlLWRlZmluaXRpb25zL3NjcmF0Y2gvb3B0aW9ucy5tb2R1bGUuY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7O1dBQUM7V0FDQTtXQUNBO1dBSUE7V0FZQTtXQVFBO1dBQUE7V0FoQk87V0E0QlA7V0FoQkE7V0FBQTtXQW9CQTtXQUFBO1dBWkE7V0FBQTtXQUlBO1dBQUEiLCJmaWxlIjoib3B0aW9ucy5tb2R1bGUuZC5jc3MudHMiLCJzb3VyY2VSb290IjoiIn0=

@@ -11,11 +11,15 @@ export class Position {
     this.column = column;
   }
 
-  public add(increment: Position | LC): Position;
+  public add(increment: Position | LC | number): Position;
   public add(increment: Range): Range;
-  public add(increment: Position | LC | Range): Position | Range {
+  public add(increment: Position | LC | Range | number): Position | Range {
     if (increment instanceof Range) {
       return new Range(this.add(increment.start), this.add(increment.end));
+    }
+
+    if (typeof increment === 'number') {
+      return new Position(this.line, this.column + increment);
     }
 
     const { line, column } = increment;

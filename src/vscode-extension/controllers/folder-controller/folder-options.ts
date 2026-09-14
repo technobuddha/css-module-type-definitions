@@ -72,6 +72,9 @@ export abstract class FolderOptions extends FolderIgnorer implements Disposable 
       localAndGlobalExportsDiagnostics:
         this.#vscodeSettings?.get<SeverityLevel>('localAndGlobalExportsDiagnostics') ??
         defaultOptions.localAndGlobalExportsDiagnostics,
+      valueUsagesDiagnostics:
+        this.#vscodeSettings?.get<SeverityLevel>('valueUsagesDiagnostics') ??
+        defaultOptions.valueUsagesDiagnostics,
       css: {
         preprocessor: {
           less: {

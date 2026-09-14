@@ -107,6 +107,8 @@ export class Optionator implements LoggerController, AsyncDisposable {
       localAndGlobalExportsDiagnostics:
         this.#top?.localAndGlobalExportsDiagnostics ??
         defaultOptions.localAndGlobalExportsDiagnostics,
+      valueUsagesDiagnostics:
+        this.#top?.valueUsagesDiagnostics ?? defaultOptions.valueUsagesDiagnostics,
       css: {
         preprocessor: {
           less:

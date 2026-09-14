@@ -13,6 +13,7 @@ export default defineConfig({
       exportGlobals: true,
       localsConvention: 'camelCase',
       generateScopedName: '[name]_[local]_[hash:base64:5]',
+      scopeBehaviour: 'global',
     },
   },
 });

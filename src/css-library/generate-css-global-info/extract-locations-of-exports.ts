@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { conjoin, empty, unindent } from '@technobuddha/library';
-import postcss from 'postcss';
+import postcss, { type AtRule, type Rule } from 'postcss';
 import postcssModulesLocalByDefault from 'postcss-modules-local-by-default';
 import selectorParser from 'postcss-selector-parser';
 
@@ -16,6 +16,7 @@ import {
 } from '../helpers/index.ts';
 
 import { type ExtractorArguments } from './generate-css-global-info.ts';
+import { parseKeyframes } from './parse-animation.ts';
 
 export async function extractLocationsOfExports({
   root,
@@ -51,7 +52,7 @@ export async function extractLocationsOfExports({
   };
 
   await postcss()
-    .use(postcssModulesLocalByDefault({ mode: 'local' }))
+    .use(postcssModulesLocalByDefault({ mode: options.css.modules.scopeBehaviour ?? 'local' }))
     .process(text.source, { map: false })
     .then(({ root, css }) => {
       void css;
@@ -71,64 +72,98 @@ export async function extractLocationsOfExports({
       );
     });
 
-  const exportWalker = (node: postcss.Node, selector: string, keyframes: boolean): void => {
-    let { source, position } = smc.node(node);
-    let extend = 0;
-    if (node instanceof postcss.AtRule) {
-      position = position.add({ column: node.name.length + (node.raws.afterName?.length ?? 0) });
-      extend = 1;
-    }
+  const exportWalker = (node: Rule): void => {
+    const { source, position } = smc.node(node);
 
     selectorParser((selectors) => {
       selectors.walk((selNode) => {
-        const name = selNode.value!;
+        const { value, type } = selNode;
 
-        if ((keyframes ? ['tag'] : ['class', 'id']).includes(selNode.type)) {
-          const snippet = [
+        if (value) {
+          if (type === 'class' || type === 'id') {
+            const snippet = [
+              `###### ${path.basename(source)}:${position.line + 1}`,
+              '```css',
+              unindent(node.toString()),
+              '```',
+              empty,
+            ].join('\n');
+
+            const range = toRange(selNode);
+            const location = new Location(path.resolve(directory, source), position.add(range));
+
+            let scope = globals.get(value) ?? 'local';
+            if (scope === 'both') {
+              scope = 'global';
+
+              if (options.localAndGlobalExportsDiagnostics !== 'none') {
+                diagnostics.push(
+                  new Diagnostic(
+                    location.range,
+                    `"${value}" defined as both global and local.`,
+                    toDiagnosticSeverity(options.localAndGlobalExportsDiagnostics),
+                  ),
+                );
+              }
+              globals.set(value, scope);
+            }
+
+            locationsOfExport.getOrInsert(value, []).push({
+              type,
+              snippet,
+              location,
+              scope,
+            });
+          }
+        }
+      });
+    }).transformSync(node.selector);
+  };
+
+  const keyframeWalker = (node: AtRule): void => {
+    let { source, position } = smc.node(node);
+    position = position.add(node.name.length + (node.raws.afterName?.length ?? 0) + 1);
+
+    const name = parseKeyframes(node.params, position, diagnostics);
+    if (name) {
+      const prev = locationsOfExport.get(name.value);
+      if (prev) {
+        if (prev.some((p) => p.type === 'keyframe')) {
+          diagnostics.push(
+            new Diagnostic(
+              new Range(position.add(name.sourceIndex), position.add(name.sourceEndIndex)),
+              `"${name.value}" is already defined as a keyframe.`,
+              DiagnosticSeverity.Error,
+            ),
+          );
+        }
+      } else {
+        const location = new Location(
+          path.resolve(directory, source),
+          position.add(name.sourceIndex),
+          position.add(name.sourceEndIndex),
+        );
+        locationsOfExport.getOrInsert(name.value, []).push({
+          type: 'keyframe',
+          snippet: [
             `###### ${path.basename(source)}:${position.line + 1}`,
             '```css',
             unindent(node.toString()),
             '```',
             empty,
-          ].join('\n');
-
-          const range = toRange(selNode).extend(extend);
-          const type =
-            selNode.type === 'class' || selNode.type === 'id' ? selNode.type : 'keyframe';
-          const location = new Location(path.resolve(directory, source), position.add(range));
-
-          let scope = globals.get(name) ?? 'local';
-          if (scope === 'both') {
-            scope = 'global';
-
-            if (options.localAndGlobalExportsDiagnostics !== 'none') {
-              diagnostics.push(
-                new Diagnostic(
-                  location.range,
-                  `"${name}" defined as both global and local.`,
-                  toDiagnosticSeverity(options.localAndGlobalExportsDiagnostics),
-                ),
-              );
-            }
-            globals.set(name, scope);
-          }
-
-          locationsOfExport.getOrInsert(name, []).push({
-            type,
-            snippet,
-            location,
-            scope,
-          });
-        }
-      });
-    }).transformSync(selector);
+          ].join('\n'),
+          location,
+          scope: 'local',
+        });
+      }
+    }
   };
 
   root.walk((node) => {
     if (node.type === 'rule') {
-      exportWalker(node, node.selector, false);
+      exportWalker(node);
     } else if (node.type === 'atrule' && node.name === 'keyframes') {
-      exportWalker(node, node.params, true);
+      keyframeWalker(node);
     }
   });
 

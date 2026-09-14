@@ -17,6 +17,7 @@ import {
   type Location,
   Range,
   removeInlineSourceMap,
+  type Text,
 } from './helpers/index.ts';
 
 type Arguments = {
@@ -25,12 +26,13 @@ type Arguments = {
   readonly relativeTo: string;
   readonly root: string;
   readonly cssImporter?: CssImporter;
+  readonly loadSource?: ((file: string) => Promise<Text>) | undefined;
 };
 
 export async function generateCssModuleInfo(
   css: string,
   filepath: string,
-  { options, logger, cssImporter, relativeTo, root }: Arguments,
+  { options, logger, cssImporter, relativeTo, root, loadSource }: Arguments,
 ): Promise<CssModuleInfo> {
   const file = path.resolve(filepath);
 
@@ -51,7 +53,7 @@ export async function generateCssModuleInfo(
   const dtsFilename = `${name}.d${ext}.ts`;
   const hasDts = await fileExists(path.join(dir, dtsFilename));
 
-  return generateCssGlobalInfo(css, { file, options, logger, cssImporter, relativeTo })
+  return generateCssGlobalInfo(css, { file, options, logger, cssImporter, relativeTo, loadSource })
     .then(
       async ({
         css,
@@ -68,7 +70,12 @@ export async function generateCssModuleInfo(
         const locationsOfLocalNames: Map<string, Location> = new Map();
         for (const [exportName, localNames] of localNamesOfExport) {
           for (const localName of localNames) {
-            locationsOfLocalNames.set(localName, exports.get(exportName)!.at(0)!.location);
+            const exportInfo = exports.get(exportName);
+            if (exportInfo) {
+              if (exportInfo.length > 0) {
+                locationsOfLocalNames.set(localName, exportInfo.at(0)!.location);
+              }
+            }
           }
         }
 
@@ -83,17 +90,28 @@ export async function generateCssModuleInfo(
               getJSON: (_cssFilename, json, _outputFilename) => {
                 scopeNameOfExportName = new Map(Object.entries(json));
 
+                let eligible = exports
+                  .entries()
+                  .filter(([, exports]) => exports && exports.length > 0);
+
+                if (!options.css.modules.exportGlobals) {
+                  eligible = eligible.filter(([, exports]) =>
+                    exports.some((e) => e.scope === 'local'),
+                  );
+                }
+
+                if (options.css.modules.scopeBehaviour === 'global') {
+                  eligible = eligible.filter(([, exports]) =>
+                    exports.some((e) => e.type !== 'keyframe'),
+                  );
+                }
+
                 const localLocations = Array.from(
-                  localNamesOfExport
-                    .entries()
-                    .flatMap(([exportName, localNames]) =>
-                      localNames
-                        .values()
-                        .map(
-                          (localName) =>
-                            [localName, exports.get(exportName)!.at(0)!.location] as const,
-                        ),
+                  eligible.flatMap(([exportName, exports]) =>
+                    (localNamesOfExport.get(exportName)?.values() ?? []).map(
+                      (localName) => [localName, exports.at(0)!.location] as const,
                     ),
+                  ),
                 ).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
                 for (const [localName, location] of localLocations) {
@@ -138,7 +156,7 @@ export async function generateCssModuleInfo(
       },
     )
     .catch((error) => {
-      logger.error(fileOperation(filepath, 'error', error), '<== generate-css-module-info: 222');
+      logger.error(fileOperation(filepath, 'error', error), '<== generate-css-module-info: 145');
       throw error;
     });
 }

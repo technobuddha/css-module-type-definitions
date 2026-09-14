@@ -23,7 +23,6 @@ import { transformer } from '../transformers/index.ts';
 
 import { extractLocationsOfAnimation } from './extract-locations-of-animation.ts';
 import { extractLocationsOfExports } from './extract-locations-of-exports.ts';
-// import { extractLocationsOfKeyframe } from './extract-locations-of-keyframe.ts';
 import { extractInformationOfValues } from './values/index.ts';
 
 export type ExtractorArguments = {
@@ -32,9 +31,9 @@ export type ExtractorArguments = {
   readonly file: string;
   readonly directory: string;
   readonly smc: SourceMapConsumer;
-  readonly sources: Map<string, Text>;
   readonly options: Options;
   readonly cssImporter?: CssImporter | undefined;
+  readonly loadSource: (file: string) => Promise<Text>;
   readonly relativeTo: string;
   readonly importedFiles: Set<string>;
   readonly diagnostics: Diagnostic[];
@@ -46,6 +45,7 @@ type Arguments = {
   readonly file: string;
   readonly logger: Logger;
   readonly cssImporter?: CssImporter | undefined;
+  readonly loadSource?: ((file: string) => Promise<Text>) | undefined;
   readonly relativeTo: string;
 };
 
@@ -57,7 +57,7 @@ type Return = {
 
 export async function generateCssGlobalInfo(
   css: string,
-  { file, options, logger, cssImporter, relativeTo }: Arguments,
+  { file, options, logger, cssImporter, relativeTo, loadSource }: Arguments,
 ): Promise<Return> {
   const filename = path.resolve(file);
   const directory = path.dirname(filename);
@@ -108,8 +108,17 @@ export async function generateCssGlobalInfo(
           file,
           directory,
           smc,
-          sources,
           logger,
+          loadSource:
+            loadSource ??
+            (async (filename: string): Promise<Text> => {
+              let text = sources.get(filename);
+              if (!text) {
+                text = new Text(await fs.readFile(filename, 'utf-8'));
+                sources.set(filename, text);
+              }
+              return text;
+            }),
           options,
           cssImporter,
           relativeTo,
@@ -119,27 +128,26 @@ export async function generateCssGlobalInfo(
 
         const locationsOfExports = await extractLocationsOfExports(extractorArguments);
         const locationsOfAnimation = await extractLocationsOfAnimation(extractorArguments);
-        // const locationsOfKeyframe = await extractLocationsOfKeyframe(extractorArguments);
         const informationOfValues = await extractInformationOfValues(extractorArguments);
 
         const exports: Map<string, Export[]> = new Map(locationsOfExports);
-        for (const [key, value] of informationOfValues) {
+        for (const [key, info] of informationOfValues) {
           const exps: Export[] = [];
-          for (let i = 0; i < value.location.length; ++i) {
+          for (let i = 0; i < info.location.length; ++i) {
             exps[i] = {
               type: 'value',
-              location: value.location[i],
-              snippet: value.snippet[i],
+              location: info.location[i],
+              snippet: info.snippet[i],
               scope: 'local',
             };
           }
           exports.set(key, exps);
-          if (value.usages.some((u) => u.type === 'class' || u.type === 'id')) {
-            exports.set(
-              value.value,
-              exps.map(({ type, ...e }) => ({ type: 'value-class', ...e })),
-            );
-          }
+          // if (value.usages.some((u) => u.type === 'class' || u.type === 'id')) {
+          //   exports.set(
+          //     value.value,
+          //     exps.map(({ type, ...e }) => ({ type: 'value-class', ...e })),
+          //   );
+          // }
         }
         // for (const [key, value] of locationsOfKeyframe) {
         // exports.set(key, value);

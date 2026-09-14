@@ -5,7 +5,6 @@ export { Diagnostic } from './diagnostic.ts';
 export { DiagnosticSeverity } from './diagnostic-severity.ts';
 export { DtsBuilder } from './dts-builder.ts';
 export { type Export } from './export.ts';
-export { loadSource } from './load-source.ts';
 export { Location } from './location.ts';
 export { MappedPosition } from './mapped-position.ts';
 export { Position } from './position.ts';
