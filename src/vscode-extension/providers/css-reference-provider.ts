@@ -49,7 +49,7 @@ export class CssReferenceProvider implements ReferenceProvider {
                   return [];
                 }
 
-                if (isCssModule(importUri) && codeInfo.importedFiles.has(importUri)) {
+                if (isCssModule(importUri) && codeInfo.boundCssImports.has(importUri)) {
                   const classUsages = await cssInfo.classUsage({ exportName, file, importUri });
                   if (classUsages) {
                     for (const usage of classUsages.usages) {

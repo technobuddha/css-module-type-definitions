@@ -45,11 +45,9 @@ export class CssModuleInformation extends CssGlobalInformation {
 
       return new CssModuleInformation(cssInfo);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log(error);
       logger.error(fileOperation(uri, 'error', error), '<== css-module-information:48');
+      return undefined;
     }
-    return undefined;
   }
 
   public readonly scopeNameOfExportName: ReadonlyMap<string, string>;
@@ -102,32 +100,37 @@ export class CssModuleInformation extends CssGlobalInformation {
     }
   }
 
-  public override cssSnippets({
-    exportName,
-    localName,
-  }: LocalOrExport): readonly Snippet[] | undefined {
-    if (exportName) {
-      return this.exports.get(exportName)?.map(({ snippet }) => ({ snippet, exportName }));
-    }
+  public override cssSnippets({ exportName, localName }: LocalOrExport): Snippet[] | undefined {
+    let snippets: Snippet[] | undefined = undefined;
 
-    if (localName) {
+    if (exportName) {
+      snippets = this.exports
+        .get(exportName)
+        ?.map(({ snippet, location }) => ({ snippet, exportName, location }));
+    } else if (localName) {
       const exportNames = this.exportNamesOfLocalName.get(localName);
       if (exportNames) {
-        const result: Snippet[] = [];
+        snippets = [];
 
         for (const exportName of exportNames) {
-          const snippets = this.exports
+          const snippet = this.exports
             .get(exportName)
-            ?.map(({ snippet }) => ({ snippet, exportName }));
-          if (snippets) {
-            result.push(...snippets);
+            ?.map(({ snippet, location }) => ({ snippet, exportName, location }));
+          if (snippet) {
+            snippets.push(...snippet);
           }
         }
-        return result;
       }
     }
 
-    return undefined;
+    return snippets === undefined || snippets.length === 0 ?
+        undefined
+      : snippets.sort(
+          (a, b) =>
+            a.location.uri.fsPath.localeCompare(b.location.uri.fsPath, undefined, {
+              sensitivity: 'base',
+            }) || a.location.range.start.compareTo(b.location.range.start),
+        );
   }
 
   public override cssLocations({

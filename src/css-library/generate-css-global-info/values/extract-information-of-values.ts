@@ -169,6 +169,13 @@ export async function extractInformationOfValues(
             position.line,
             column + varName.length,
           ),
+          definition: new Location(
+            path.resolve(directory, source),
+            pos.line,
+            pos.column,
+            pos.line,
+            pos.column + value.length,
+          ),
         });
     } else {
       diagnostics.push(

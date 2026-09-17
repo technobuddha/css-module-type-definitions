@@ -128,34 +128,33 @@ export async function extractLocationsOfExports({
     if (name) {
       const prev = locationsOfExport.get(name.value);
       if (prev) {
-        if (prev.some((p) => p.type === 'keyframe')) {
+        if (prev.some((p) => p.type === 'keyframes')) {
           diagnostics.push(
             new Diagnostic(
               new Range(position.add(name.sourceIndex), position.add(name.sourceEndIndex)),
-              `"${name.value}" is already defined as a keyframe.`,
+              `"${name.value}" is already defined as a keyframes.`,
               DiagnosticSeverity.Error,
             ),
           );
         }
-      } else {
-        const location = new Location(
-          path.resolve(directory, source),
-          position.add(name.sourceIndex),
-          position.add(name.sourceEndIndex),
-        );
-        locationsOfExport.getOrInsert(name.value, []).push({
-          type: 'keyframe',
-          snippet: [
-            `###### ${path.basename(source)}:${position.line + 1}`,
-            '```css',
-            unindent(node.toString()),
-            '```',
-            empty,
-          ].join('\n'),
-          location,
-          scope: 'local',
-        });
       }
+      const location = new Location(
+        path.resolve(directory, source),
+        position.add(name.sourceIndex),
+        position.add(name.sourceEndIndex),
+      );
+      locationsOfExport.getOrInsert(name.value, []).push({
+        type: 'keyframes',
+        snippet: [
+          `###### ${path.basename(source)}:${position.line + 1}`,
+          '```css',
+          unindent(node.toString()),
+          '```',
+          empty,
+        ].join('\n'),
+        location,
+        scope: 'local',
+      });
     }
   };
 

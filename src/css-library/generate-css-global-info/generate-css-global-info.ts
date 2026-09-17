@@ -132,26 +132,27 @@ export async function generateCssGlobalInfo(
 
         const exports: Map<string, Export[]> = new Map(locationsOfExports);
         for (const [key, info] of informationOfValues) {
-          const exps: Export[] = [];
-          for (let i = 0; i < info.location.length; ++i) {
-            exps[i] = {
-              type: 'value',
-              location: info.location[i],
-              snippet: info.snippet[i],
-              scope: 'local',
-            };
+          for (const { location, snippet } of info.locationAndSnippet) {
+            exports
+              .getOrInsertComputed(key, () => [])
+              .push({
+                type: 'value',
+                location,
+                snippet,
+                scope: 'local',
+              });
           }
-          exports.set(key, exps);
-          // if (value.usages.some((u) => u.type === 'class' || u.type === 'id')) {
-          //   exports.set(
-          //     value.value,
-          //     exps.map(({ type, ...e }) => ({ type: 'value-class', ...e })),
-          //   );
-          // }
+          if (info.usages.some((u) => u.type === 'class' || u.type === 'id')) {
+            exports
+              .getOrInsertComputed(info.value, () => [])
+              .push({
+                type: 'variable',
+                location: info.definition,
+                snippet: info.locationAndSnippet[0].snippet,
+                scope: 'local',
+              });
+          }
         }
-        // for (const [key, value] of locationsOfKeyframe) {
-        // exports.set(key, value);
-        // }
 
         const localNamesOfExport: Map<string, Set<string>> = new Map();
         for (const exportName of exports.keys()) {
@@ -201,7 +202,6 @@ export async function generateCssGlobalInfo(
           sourceMap,
           info: {
             locationsOfAnimation,
-            locationsOfKeyframe: new Map(),
             informationOfValues,
             localNamesOfExport,
             exportNamesOfLocalName,

@@ -38,7 +38,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       if (codeInfo) {
         const errors: Diagnostic[] = [];
 
-        for (const importUri of codeInfo.importedFiles) {
+        for (const importUri of codeInfo.boundCssImports) {
           if (isCssModule(importUri)) {
             const cssInfo = this.cssInformation<CssModuleInformation>(importUri);
             if (cssInfo && !cssInfo.hasDts) {
@@ -46,6 +46,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
               if (usages) {
                 for (const usage of usages) {
                   if (!cssInfo.exportNamesOfLocalName.has(usage.localName)) {
+                    // TODO find the type of the usage.
                     const error = new Diagnostic(
                       usage.range,
                       `Class "${usage.localName}" is not defined in "${Utils.basename(importUri)}"`,
@@ -147,7 +148,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       const affected = (): void => {
         const codeInfo = this.codeInformation(uri);
         if (codeInfo) {
-          for (const importUri of codeInfo.importedFiles) {
+          for (const importUri of codeInfo.boundCssImports) {
             uris.add(importUri);
 
             const info = this.cssInformation(importUri);
@@ -196,7 +197,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new ReadonlyUriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.importedFiles.has(uri))
+        .filter(([, info]) => info.boundCssImports.has(uri))
         .map(([importer]) => importer),
     );
   }
@@ -205,7 +206,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new UriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.importedFiles.has(uri))
+        .filter(([, info]) => info.boundCssImports.has(uri))
         .map(([importer]) => importer),
       super.filesImporting(uri),
     );

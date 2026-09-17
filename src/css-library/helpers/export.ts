@@ -1,6 +1,6 @@
 import { type Location } from './location.ts';
 
-export type ExportType = 'class' | 'id' | 'keyframe' | 'value' | 'value-class';
+export type ExportType = 'class' | 'id' | 'keyframes' | 'value' | 'variable';
 export type ExportScope = 'global' | 'local';
 
 export type Export = {

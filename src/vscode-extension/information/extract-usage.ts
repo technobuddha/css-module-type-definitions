@@ -44,7 +44,7 @@ type ImportBinding = {
 
 type Return = {
   readonly usages: ReadonlyUriMap<Usage[]>;
-  readonly unbound: ReadonlyUriSet;
+  readonly unboundCssImports: ReadonlyUriSet;
 };
 
 export async function extractUsage(document: TextDocument, importUri: Uri): Promise<Usage[]>;
@@ -61,7 +61,7 @@ export async function extractUsage(
 
   return {
     usages: parser.usages,
-    unbound: parser.unbound,
+    unboundCssImports: parser.unbound,
   };
 }
 
@@ -69,7 +69,7 @@ class UsageParser {
   public static async create(document: TextDocument): Promise<UsageParser> {
     const sourceFile = getSourceFile(document);
     const moduleBindings: UriMap<Set<string>> = new UriMap();
-    const unboundModules: UriSet = new UriSet();
+    const unboundModules = new UriSet();
 
     for (const binding of this.extractImportBindings(sourceFile)) {
       const moduleUri = await resolveImportPath(document.uri.fsPath, binding.importModule);

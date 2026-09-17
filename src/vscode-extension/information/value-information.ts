@@ -10,12 +10,15 @@ import { toDiagnostic, toLocation, toRange } from '../helpers/index.ts';
 
 type Import = { from: string; name: string };
 type Usage = { type: UsageType; range: Range; value: string };
+type LocationAndSnippet = {
+  location: Location;
+  snippet: string;
+};
 
 export class ValueInformation {
   readonly #name: string;
   readonly #value: string | undefined;
-  readonly #location: Location[];
-  readonly #snippet: string[];
+  readonly #locationAndSnippet: LocationAndSnippet[];
   readonly #imports: Import[];
   readonly #usages: Usage[];
   readonly #diagnostics: Diagnostic[];
@@ -23,8 +26,10 @@ export class ValueInformation {
   public constructor(vi: CssValueInformation) {
     this.#name = vi.name;
     this.#value = vi.valueOrUndefined;
-    this.#location = vi.location.map(toLocation);
-    this.#snippet = vi.snippet;
+    this.#locationAndSnippet = vi.locationAndSnippet.map(({ location, snippet }) => ({
+      location: toLocation(location),
+      snippet,
+    }));
     this.#imports = vi.imports;
     this.#usages = vi.usages.map((u) => ({
       type: u.type,
@@ -46,12 +51,8 @@ export class ValueInformation {
     return this.#value ?? empty;
   }
 
-  public get location(): Location[] {
-    return this.#location;
-  }
-
-  public get snippet(): string[] {
-    return this.#snippet;
+  public get locationAndSnippet(): LocationAndSnippet[] {
+    return this.#locationAndSnippet;
   }
 
   public get imports(): Import[] {

@@ -113,12 +113,12 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
 
         for (const [animation, [location]] of cssInfo.locationsOfAnimation) {
           const exports = cssInfo.exports.get(animation);
-          if (exports?.some((e) => e.type === 'keyframe')) {
+          if (exports?.some((e) => e.type === 'keyframes')) {
             exportNames.delete(animation);
           } else {
             const diagnostic = new Diagnostic(
               location.range,
-              `Keyframe "${animation}" is not defined.`,
+              `Keyframes "${animation}" is not defined.`,
               toDiagnosticSeverity(this.options.unusedExportsDiagnostics),
             );
             diagnostic.source = 'cmtd';
@@ -126,9 +126,6 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           }
         }
 
-        // for (const value of cssInfo.usagesOfValue.keys()) {
-        //   exports.delete(value);
-        // }
         for (const info of cssInfo.informationOfValues.values()) {
           for (const d of info.diagnostics) {
             diagnostics.push(d);
@@ -171,11 +168,12 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             cssImporters.flatMap((importer) =>
               this.filesImporting(importer).filter(
                 (uri) =>
-                  isCode(uri) && (this.codeInformation(uri)?.unboundImports.has(importer) ?? false),
+                  isCode(uri) &&
+                  (this.codeInformation(uri)?.unboundCssImports.has(importer) ?? false),
               ),
             ),
             codeImporters.filter(
-              (importer) => this.codeInformation(importer)?.unboundImports.has(uri) ?? false,
+              (importer) => this.codeInformation(importer)?.unboundCssImports.has(uri) ?? false,
             ),
           );
           const moduleImporters = new UriSet(
@@ -261,7 +259,10 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             const exportInfo = exportInfos.find((e) => uri.fsPath === e.location.uri.fsPath);
             if (exportInfo) {
               const type = new Set(exportInfos.values().map((e) => e.type));
-              if (!type.has('value') || cssInfo.informationOfValues.get(exportName)?.isReady) {
+              if (
+                !type.has('variable') &&
+                (!type.has('value') || cssInfo.informationOfValues.get(exportName)?.isReady)
+              ) {
                 const message = `${capitalize(conjoin(type))} "${exportName}" is not used.`;
 
                 const diagnostic = new Diagnostic(
@@ -314,8 +315,8 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
         ) {
           await newCssInformation.writeTypeDefinition(this.logger);
         }
-      } else {
-        this.#cssInformation.delete(uri);
+        // } else {
+        // this.#cssInformation.delete(uri);
       }
     }
   }

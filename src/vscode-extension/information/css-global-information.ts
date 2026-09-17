@@ -29,6 +29,7 @@ export type Export = {
 export type Snippet = {
   readonly snippet: string;
   readonly exportName: string;
+  readonly location: Location;
 };
 
 type Arguments = {
@@ -56,10 +57,9 @@ export class CssGlobalInformation {
 
       return new CssGlobalInformation(info);
     } catch (error) {
-      logger.error(fileOperation(uri, 'error', error), '<== css-global-information:40');
+      logger.error(fileOperation(uri, 'error', error), '<== css-global-information:60');
+      return undefined;
     }
-
-    return undefined;
   }
 
   public readonly exportNames: ReadonlySet<string>;
@@ -127,7 +127,15 @@ export class CssGlobalInformation {
 
   public cssSnippets({ exportName }: LocalOrExport): readonly Snippet[] | undefined {
     if (exportName) {
-      return this.exports.get(exportName)?.map(({ snippet }) => ({ snippet, exportName }));
+      return this.exports
+        .get(exportName)
+        ?.map(({ snippet, location }) => ({ snippet, exportName, location }))
+        .sort(
+          (a, b) =>
+            a.location.uri.fsPath.localeCompare(b.location.uri.fsPath, undefined, {
+              sensitivity: 'base',
+            }) || a.location.range.start.compareTo(b.location.range.start),
+        );
     }
     return undefined;
   }

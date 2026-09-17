@@ -5,7 +5,7 @@ import genericNames from 'generic-names';
 import postcss from 'postcss';
 import postcssModules from 'postcss-modules';
 
-import { fileOperation, type Logger, type Options } from '../common/index.ts';
+import { type Logger, type Options } from '../common/index.ts';
 
 import { generateCssGlobalInfo } from './generate-css-global-info/index.ts';
 import {
@@ -53,110 +53,108 @@ export async function generateCssModuleInfo(
   const dtsFilename = `${name}.d${ext}.ts`;
   const hasDts = await fileExists(path.join(dir, dtsFilename));
 
-  return generateCssGlobalInfo(css, { file, options, logger, cssImporter, relativeTo, loadSource })
-    .then(
-      async ({
-        css,
-        info: {
-          locationsOfAnimation,
-          informationOfValues,
-          exports,
-          importedFiles,
-          diagnostics,
-          localNamesOfExport,
-          exportNamesOfLocalName,
-        },
-      }) => {
-        const locationsOfLocalNames: Map<string, Location> = new Map();
-        for (const [exportName, localNames] of localNamesOfExport) {
-          for (const localName of localNames) {
-            const exportInfo = exports.get(exportName);
-            if (exportInfo) {
-              if (exportInfo.length > 0) {
-                locationsOfLocalNames.set(localName, exportInfo.at(0)!.location);
-              }
+  return generateCssGlobalInfo(css, {
+    file,
+    options,
+    logger,
+    cssImporter,
+    relativeTo,
+    loadSource,
+  }).then(
+    async ({
+      css,
+      info: {
+        locationsOfAnimation,
+        informationOfValues,
+        exports,
+        importedFiles,
+        diagnostics,
+        localNamesOfExport,
+        exportNamesOfLocalName,
+      },
+    }) => {
+      const locationsOfLocalNames: Map<string, Location> = new Map();
+      for (const [exportName, localNames] of localNamesOfExport) {
+        for (const localName of localNames) {
+          const exportInfo = exports.get(exportName);
+          if (exportInfo) {
+            if (exportInfo.length > 0) {
+              locationsOfLocalNames.set(localName, exportInfo.at(0)!.location);
             }
           }
         }
+      }
 
-        const dts = new DtsBuilder(file, dtsFilename, options, logger);
-        let scopeNameOfExportName: Map<string, string> = new Map();
+      const dts = new DtsBuilder(file, dtsFilename, options, logger);
+      let scopeNameOfExportName: Map<string, string> = new Map();
 
-        await postcss()
-          .use(
-            postcssModules({
-              ...omitProperties(options.css.modules, 'generateScopedName'),
-              ...(generateScopedName && { generateScopedName }),
-              getJSON: (_cssFilename, json, _outputFilename) => {
-                scopeNameOfExportName = new Map(Object.entries(json));
+      await postcss()
+        .use(
+          postcssModules({
+            ...omitProperties(options.css.modules, 'generateScopedName'),
+            ...(generateScopedName && { generateScopedName }),
+            getJSON: (_cssFilename, json, _outputFilename) => {
+              scopeNameOfExportName = new Map(Object.entries(json));
 
-                let eligible = exports
-                  .entries()
-                  .filter(([, exports]) => exports && exports.length > 0);
+              let eligible = exports
+                .entries()
+                .filter(([, exports]) => exports && exports.length > 0);
 
-                if (!options.css.modules.exportGlobals) {
-                  eligible = eligible.filter(([, exports]) =>
-                    exports.some((e) => e.scope === 'local'),
-                  );
-                }
+              if (!options.css.modules.exportGlobals) {
+                eligible = eligible.filter(([, exports]) =>
+                  exports.some((e) => e.scope === 'local'),
+                );
+              }
 
-                if (options.css.modules.scopeBehaviour === 'global') {
-                  eligible = eligible.filter(([, exports]) =>
-                    exports.some((e) => e.type !== 'keyframe'),
-                  );
-                }
+              if (options.css.modules.scopeBehaviour === 'global') {
+                eligible = eligible.filter(([, exports]) =>
+                  exports.some((e) => e.type !== 'keyframes'),
+                );
+              }
 
-                const localLocations = Array.from(
-                  eligible.flatMap(([exportName, exports]) =>
-                    (localNamesOfExport.get(exportName)?.values() ?? []).map(
-                      (localName) => [localName, exports.at(0)!.location] as const,
-                    ),
+              const localLocations = Array.from(
+                eligible.flatMap(([exportName, exports]) =>
+                  (localNamesOfExport.get(exportName)?.values() ?? []).map(
+                    (localName) => [localName, exports.at(0)!.location] as const,
                   ),
-                ).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+                ),
+              ).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-                for (const [localName, location] of localLocations) {
-                  dts.add(
-                    location.source,
-                    location.range.start,
-                    localName,
-                    scopeNameOfExportName.get(localName)!,
-                  );
-                }
-              },
-            }),
-          )
-          .process(removeInlineSourceMap(css), {
-            from: file,
-            map: { inline: false },
-          })
-          .then(async () => {})
-          .catch((error) => {
-            diagnostics.push(
-              new Diagnostic(
-                new Range(0, 0, 0, 0),
-                toError(error).message,
-                DiagnosticSeverity.Error,
-              ),
-            );
-          });
+              for (const [localName, location] of localLocations) {
+                dts.add(
+                  location.source,
+                  location.range.start,
+                  localName,
+                  scopeNameOfExportName.get(localName)!,
+                );
+              }
+            },
+          }),
+        )
+        .process(removeInlineSourceMap(css), {
+          from: file,
+          map: { inline: false },
+        })
+        .then(async () => {})
+        .catch((error) => {
+          diagnostics.push(
+            new Diagnostic(new Range(0, 0, 0, 0), toError(error).message, DiagnosticSeverity.Error),
+          );
+        });
 
-        return {
-          dtsContents: dts.finalize(),
-          dtsFilename: path.resolve(dir, dtsFilename),
-          hasDts,
-          locationsOfAnimation,
-          informationOfValues,
-          exports,
-          diagnostics,
-          importedFiles,
-          localNamesOfExport,
-          exportNamesOfLocalName,
-          scopeNameOfExportName,
-        };
-      },
-    )
-    .catch((error) => {
-      logger.error(fileOperation(filepath, 'error', error), '<== generate-css-module-info: 145');
-      throw error;
-    });
+      return {
+        dtsContents: dts.finalize(),
+        dtsFilename: path.resolve(dir, dtsFilename),
+        hasDts,
+        locationsOfAnimation,
+        informationOfValues,
+        exports,
+        diagnostics,
+        importedFiles,
+        localNamesOfExport,
+        exportNamesOfLocalName,
+        scopeNameOfExportName,
+      };
+    },
+  );
 }

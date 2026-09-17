@@ -66,7 +66,7 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
               importUris.map((uri) => ({
                 uri,
                 label: path.relative(cssUri.fsPath, uri.fsPath),
-                detail: path.relative(root.fsPath, uri.fsPath),
+                description: path.relative(root.fsPath, uri.fsPath),
               })),
               {
                 placeHolder: 'Select a file to open',

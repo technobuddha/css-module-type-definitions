@@ -8,27 +8,27 @@ import { type Usage } from './usage.ts';
 export class CodeInformation {
   public static async create(file: Uri): Promise<CodeInformation> {
     const document = await workspace.openTextDocument(file);
-    const { usages, unbound } = await extractUsage(document);
-    const importedFiles = new ReadonlyUriSet(usages.keys(), unbound);
+    const { usages, unboundCssImports } = await extractUsage(document);
+    const importedFiles = new ReadonlyUriSet(usages.keys(), unboundCssImports);
 
-    return new CodeInformation(file, importedFiles, usages, unbound);
+    return new CodeInformation(file, importedFiles, usages, unboundCssImports);
   }
 
   public readonly file: Uri;
-  public readonly importedFiles: ReadonlyUriSet;
   public readonly usages: ReadonlyUriMap<readonly Usage[]>;
-  public readonly unboundImports: ReadonlyUriSet;
+  public readonly boundCssImports: ReadonlyUriSet;
+  public readonly unboundCssImports: ReadonlyUriSet;
 
   protected constructor(
     file: Uri,
-    importedFiles: ReadonlyUriSet,
+    boundCssImports: ReadonlyUriSet,
     usages: ReadonlyUriMap<readonly Usage[]>,
-    unbound: ReadonlyUriSet,
+    unboundCssImports: ReadonlyUriSet,
   ) {
     this.file = file;
     this.usages = usages;
-    this.importedFiles = importedFiles;
-    this.unboundImports = unbound;
+    this.boundCssImports = boundCssImports;
+    this.unboundCssImports = unboundCssImports;
   }
 
   public async localUsage({

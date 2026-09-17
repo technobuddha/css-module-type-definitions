@@ -1,5 +1,4 @@
 import {
-  type CancellationToken,
   Hover,
   type HoverProvider,
   MarkdownString,
@@ -24,11 +23,7 @@ export class CodeHoverProvider implements HoverProvider {
     this.#workspaceController = workspaceController;
   }
 
-  public async provideHover(
-    document: TextDocument,
-    position: Position,
-    _token: CancellationToken,
-  ): Promise<Hover | null> {
+  public async provideHover(document: TextDocument, position: Position): Promise<Hover | null> {
     const folderController = this.#workspaceController.folderController(document.uri);
     if (folderController) {
       const localInfo = await getLocalInfo(document, position);
@@ -39,14 +34,13 @@ export class CodeHoverProvider implements HoverProvider {
           const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
           if (cssInfo) {
             const { hasDts } = cssInfo;
-            const locations = cssInfo.cssSnippets({ localName });
+            const snippets = cssInfo.cssSnippets({ localName });
 
-            if (locations) {
+            if (snippets) {
               const md = new MarkdownString();
               const scopes: Set<string> = new Set();
 
-              for (const { snippet, exportName } of locations) {
-                // md.appendCodeblock(unindent(snippet), `css`);
+              for (const { snippet, exportName } of snippets) {
                 md.appendMarkdown(snippet);
 
                 const scope = cssInfo.scopeNameOfExportName.get(exportName);

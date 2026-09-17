@@ -212,7 +212,7 @@ export function parseKeyframes(
     diagnostics.push(
       new Diagnostic(
         new Range(position.add(node.sourceIndex), position.add(node.sourceEndIndex)),
-        `Invalid keyframe syntax.`,
+        `Invalid keyframes syntax.`,
         DiagnosticSeverity.Error,
       ),
     );
@@ -226,7 +226,7 @@ export function parseKeyframes(
           diagnostics.push(
             new Diagnostic(
               new Range(position.add(node.sourceIndex), position.add(node.sourceEndIndex)),
-              `Illegal keyframe name: ${quote(node.value)}`,
+              `Illegal keyframes name: ${quote(node.value)}`,
               DiagnosticSeverity.Error,
             ),
           );
@@ -241,7 +241,7 @@ export function parseKeyframes(
           diagnostics.push(
             new Diagnostic(
               new Range(position.add(node.sourceIndex), position.add(node.sourceEndIndex)),
-              `Keyframe name: ${quote(node.value)} is not recommended`,
+              `Keyframes name: ${quote(node.value)} is not recommended`,
               DiagnosticSeverity.Warning,
             ),
           );

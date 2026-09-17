@@ -1,8 +1,10 @@
 import path from 'node:path';
 
+import { empty } from '@technobuddha/library';
+
 import { Diagnostic } from './diagnostic.ts';
 import { DiagnosticSeverity } from './diagnostic-severity.ts';
-import { type Location } from './location.ts';
+import { Location } from './location.ts';
 import { type Range } from './range.ts';
 
 export type UsageType =
@@ -16,11 +18,16 @@ type Usage = {
 
 type Import = { from: string; name: string };
 
+type LocationAndSnippet = {
+  location: Location;
+  snippet: string;
+};
+
 export class ValueInformation {
   #value: string | undefined = undefined;
+  #definition: Location = new Location(empty, 0, 0, 0, 0);
   readonly #name: string;
-  readonly #location: Location[] = [];
-  readonly #snippet: string[] = [];
+  readonly #locationAndSnippet: LocationAndSnippet[] = [];
   readonly #imports: Import[] = [];
   readonly #diagnostics: Diagnostic[] = [];
   readonly #usages: Usage[] = [];
@@ -60,12 +67,8 @@ export class ValueInformation {
     return this.#value;
   }
 
-  public get location(): Location[] {
-    return this.#location;
-  }
-
-  public get snippet(): string[] {
-    return this.#snippet;
+  public get locationAndSnippet(): LocationAndSnippet[] {
+    return this.#locationAndSnippet;
   }
 
   public get imports(): Import[] {
@@ -80,20 +83,26 @@ export class ValueInformation {
     return this.#diagnostics;
   }
 
+  public get definition(): Location {
+    return this.#definition;
+  }
+
   public define({
     value,
     snippet,
     location,
+    definition,
   }: {
     value: string;
     snippet: string;
     location: Location;
+    definition: Location;
   }): void {
     this.overridden(location, this.#name);
 
     this.#value = value;
-    this.#snippet.push(snippet);
-    this.#location.push(location);
+    this.#locationAndSnippet.push({ location, snippet });
+    this.#definition = definition;
   }
 
   public import({
@@ -114,9 +123,7 @@ export class ValueInformation {
     if (parent) {
       this.overridden(location, importName);
       this.#value = parent.value;
-      this.#snippet.push(...parent.snippet, snippet);
     } else {
-      this.#snippet.push(snippet);
       this.#diagnostics.push(
         new Diagnostic(
           declaration.range,
@@ -126,7 +133,7 @@ export class ValueInformation {
       );
     }
 
-    this.#location.push(location);
+    this.#locationAndSnippet.push({ location, snippet });
     this.#imports.push({ from: importedFrom, name: importName });
   }
 
