@@ -1,34 +1,44 @@
 import { type Uri, workspace } from 'vscode';
 
-import { type ReadonlyUriMap, ReadonlyUriSet } from '../helpers/index.ts';
+import { getSourceFile, type ReadonlyUriMap, ReadonlyUriSet } from '../helpers/index.ts';
 
 import { extractUsage } from './extract-usage.ts';
+import { scanImports } from './scan-imports.ts';
 import { type Usage } from './usage.ts';
 
 export class CodeInformation {
-  public static async create(file: Uri): Promise<CodeInformation> {
+  public static async create(file: Uri, root: Uri): Promise<CodeInformation> {
     const document = await workspace.openTextDocument(file);
-    const { usages, unboundCssImports } = await extractUsage(document);
-    const importedFiles = new ReadonlyUriSet(usages.keys(), unboundCssImports);
+    const sourceFile = getSourceFile(document);
+    const { usages, importedCssUnbound } = await extractUsage(sourceFile, file);
+    const importedFiles = new ReadonlyUriSet(usages.keys(), importedCssUnbound);
 
-    return new CodeInformation(file, importedFiles, usages, unboundCssImports);
+    const { modules, packages } = scanImports(sourceFile, root);
+
+    return new CodeInformation(file, importedFiles, usages, importedCssUnbound, modules, packages);
   }
 
   public readonly file: Uri;
   public readonly usages: ReadonlyUriMap<readonly Usage[]>;
-  public readonly boundCssImports: ReadonlyUriSet;
-  public readonly unboundCssImports: ReadonlyUriSet;
+  public readonly importedCssBound: ReadonlyUriSet;
+  public readonly importedCssUnbound: ReadonlyUriSet;
+  public readonly importedPackages: ReadonlySet<string>;
+  public readonly importedModules: ReadonlyUriSet;
 
   protected constructor(
     file: Uri,
-    boundCssImports: ReadonlyUriSet,
+    importedCssBound: ReadonlyUriSet,
     usages: ReadonlyUriMap<readonly Usage[]>,
-    unboundCssImports: ReadonlyUriSet,
+    importedCssUnbound: ReadonlyUriSet,
+    modules: ReadonlyUriSet,
+    packages: ReadonlySet<string>,
   ) {
     this.file = file;
     this.usages = usages;
-    this.boundCssImports = boundCssImports;
-    this.unboundCssImports = unboundCssImports;
+    this.importedCssBound = importedCssBound;
+    this.importedCssUnbound = importedCssUnbound;
+    this.importedPackages = packages;
+    this.importedModules = modules;
   }
 
   public async localUsage({

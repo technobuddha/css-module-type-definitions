@@ -64,6 +64,7 @@ export async function generateCssModuleInfo(
     async ({
       css,
       info: {
+        filename,
         locationsOfAnimation,
         informationOfValues,
         exports,
@@ -146,6 +147,7 @@ export async function generateCssModuleInfo(
         dtsContents: dts.finalize(),
         dtsFilename: path.resolve(dir, dtsFilename),
         hasDts,
+        filename,
         locationsOfAnimation,
         informationOfValues,
         exports,

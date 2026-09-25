@@ -201,6 +201,7 @@ export async function generateCssGlobalInfo(
           css,
           sourceMap,
           info: {
+            filename,
             locationsOfAnimation,
             informationOfValues,
             localNamesOfExport,

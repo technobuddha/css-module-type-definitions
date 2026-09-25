@@ -4,6 +4,7 @@ import { type Location } from './location.ts';
 import { type ValueInformation } from './value-information.ts';
 
 export type CssGlobalInfo = {
+  readonly filename: string;
   readonly locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
   readonly informationOfValues: ReadonlyMap<string, ValueInformation>;
   readonly exports: ReadonlyMap<string, Export[]>;

@@ -1,5 +1,7 @@
 import { CustomEventBase } from '@technobuddha/library';
+import { type SetOptional } from 'type-fest';
 import {
+  type Command,
   type DiagnosticCollection,
   type Disposable,
   languages,
@@ -9,7 +11,7 @@ import {
 
 import { type Logger, type LoggerController, type Options } from '../../../common/index.ts';
 
-import { UriSet } from '../../helpers/index.ts';
+import { UriMap, UriSet } from '../../helpers/index.ts';
 
 import { type WorkspaceController } from '../workspace-controller.ts';
 
@@ -17,6 +19,8 @@ export type FolderBaseArguments = {
   readonly workspaceController: WorkspaceController;
   readonly folder: WorkspaceFolder;
 };
+
+type FleCommand = SetOptional<Omit<Command, 'command'>, 'tooltip'> & { icon?: string };
 
 type CustomEvents = {
   readonly options: {
@@ -38,6 +42,8 @@ export abstract class FolderBase
   protected readonly openTabs: UriSet = new UriSet();
   protected readonly passTabs: UriSet = new UriSet();
   protected readonly diagnostics: DiagnosticCollection;
+  protected readonly commands: UriMap<FleCommand> = new UriMap();
+
   protected readonly disposables: Disposable[] = [];
 
   public readonly folder: WorkspaceFolder;
@@ -52,10 +58,16 @@ export abstract class FolderBase
 
   protected abstract init(): Promise<void>[];
 
+  public abstract prepare(): Promise<void>;
+
   public abstract close(): Promise<void>;
   public abstract get logger(): Logger;
 
   public abstract isIgnored(uri: Uri): boolean;
+
+  public command(uri: Uri): FleCommand | undefined {
+    return this.commands.get(uri);
+  }
 
   public async dispose(): Promise<void> {
     this.diagnostics.clear();

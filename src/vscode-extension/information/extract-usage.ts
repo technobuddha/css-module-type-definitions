@@ -18,13 +18,12 @@ import {
   type StringLiteralLike,
   SyntaxKind,
 } from 'typescript';
-import { type TextDocument, type Uri } from 'vscode';
+import { type Uri } from 'vscode';
 
 import { isCss } from '../../common/index.ts';
 
 import {
   createRange,
-  getSourceFile,
   isElementAccessExpressionLike,
   isPropertyAccessExpressionLike,
   type ReadonlyUriMap,
@@ -44,35 +43,25 @@ type ImportBinding = {
 
 type Return = {
   readonly usages: ReadonlyUriMap<Usage[]>;
-  readonly unboundCssImports: ReadonlyUriSet;
+  readonly importedCssUnbound: ReadonlyUriSet;
 };
 
-export async function extractUsage(document: TextDocument, importUri: Uri): Promise<Usage[]>;
-export async function extractUsage(document: TextDocument): Promise<Return>;
-export async function extractUsage(
-  document: TextDocument,
-  importUri?: Uri,
-): Promise<Usage[] | Return> {
-  const parser = await UsageParser.create(document);
-
-  if (importUri) {
-    return parser.usages.get(importUri) ?? [];
-  }
+export async function extractUsage(sourceFile: SourceFile, uri: Uri): Promise<Return> {
+  const parser = await UsageParser.create(sourceFile, uri);
 
   return {
     usages: parser.usages,
-    unboundCssImports: parser.unbound,
+    importedCssUnbound: parser.unbound,
   };
 }
 
 class UsageParser {
-  public static async create(document: TextDocument): Promise<UsageParser> {
-    const sourceFile = getSourceFile(document);
+  public static async create(sourceFile: SourceFile, uri: Uri): Promise<UsageParser> {
     const moduleBindings: UriMap<Set<string>> = new UriMap();
     const unboundModules = new UriSet();
 
     for (const binding of this.extractImportBindings(sourceFile)) {
-      const moduleUri = await resolveImportPath(document.uri.fsPath, binding.importModule);
+      const moduleUri = await resolveImportPath(uri.fsPath, binding.importModule);
       if (moduleUri) {
         if (binding.variableName) {
           moduleBindings.getOrInsertComputed(moduleUri, () => new Set()).add(binding.variableName);

@@ -39,21 +39,25 @@ export class CssReferenceProvider implements ReferenceProvider {
         const { exportName } = classInfo;
 
         for (const importUri of folderController.filesImporting(document.uri)) {
-          const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
-          if (cssInfo) {
-            const { localNamesOfExport } = cssInfo;
+          if (isCssModule(importUri)) {
+            const cssInfo = folderController.cssInformation<CssModuleInformation>(importUri);
+            if (cssInfo) {
+              const { localNamesOfExport } = cssInfo;
 
-            if (localNamesOfExport.has(exportName)) {
-              for (const [file, codeInfo] of await folderController.allCodeInformation()) {
-                if (token.isCancellationRequested) {
-                  return [];
-                }
+              if (localNamesOfExport.has(exportName)) {
+                for (const [file, codeInfo] of await folderController.allCodeInformation()) {
+                  if (token.isCancellationRequested) {
+                    return [];
+                  }
 
-                if (isCssModule(importUri) && codeInfo.boundCssImports.has(importUri)) {
-                  const classUsages = await cssInfo.classUsage({ exportName, file, importUri });
-                  if (classUsages) {
-                    for (const usage of classUsages.usages) {
-                      locations.push(new Location(file, usage.range));
+                  if (codeInfo.importedCssBound.has(importUri)) {
+                    const localNames = cssInfo.localNames({ exportName });
+                    for (const usages of codeInfo.usages.values()) {
+                      for (const usage of usages) {
+                        if (localNames.has(usage.localName)) {
+                          locations.push(new Location(file, usage.range));
+                        }
+                      }
                     }
                   }
                 }

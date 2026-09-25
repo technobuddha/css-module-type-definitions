@@ -23,7 +23,7 @@ import { type WorkspaceController } from '../controllers/index.ts';
 
 const COMMAND_NAME = 'cmtd.cssCodeLens';
 
-class CssCodeLens extends CodeLens {
+class CMTDCodeLens extends CodeLens {
   public uri: Uri;
   public constructor(range: Range, uri: Uri) {
     super(range);
@@ -31,7 +31,7 @@ class CssCodeLens extends CodeLens {
   }
 }
 
-export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Disposable {
+export class CMTDCodeLensProvider implements CodeLensProvider<CMTDCodeLens>, Disposable {
   readonly #onDidChangeCodeLenses: EventEmitter<void> = new EventEmitter<void>();
 
   protected readonly disposables: Disposable[] = [];
@@ -87,11 +87,11 @@ export class CssCodeLensProvider implements CodeLensProvider<CssCodeLens>, Dispo
     return this.workspaceController.logger;
   }
 
-  public provideCodeLenses(document: TextDocument, _token: CancellationToken): CssCodeLens[] {
-    return [new CssCodeLens(new Range(0, 0, 0, 0), document.uri)];
+  public provideCodeLenses(document: TextDocument, _token: CancellationToken): CMTDCodeLens[] {
+    return [new CMTDCodeLens(new Range(0, 0, 0, 0), document.uri)];
   }
 
-  public resolveCodeLens(codeLens: CssCodeLens, _token: CancellationToken): CssCodeLens | null {
+  public resolveCodeLens(codeLens: CMTDCodeLens, _token: CancellationToken): CMTDCodeLens | null {
     const fc = this.workspaceController.folderController(codeLens.uri);
     if (fc) {
       const command = fc.command(codeLens.uri);

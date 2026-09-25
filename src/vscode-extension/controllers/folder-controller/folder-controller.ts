@@ -1,6 +1,7 @@
+import { noop } from '@technobuddha/library';
 import { type Disposable, type Uri } from 'vscode';
 
-import { fileOperation, isCode, isCss, operation } from '../../../common/index.ts';
+import { fileOperation, globIsCssOrCode, isCode, isCss, operation } from '../../../common/index.ts';
 
 import { UriSet } from '../../helpers/uri-set.ts';
 
@@ -73,7 +74,11 @@ export class FolderController extends FolderCode implements Disposable {
 
     this.logger.info(operation(this.folder.name, 'start'));
     this.#prepare = Promise.all(this.init())
-      .then(async () => this.refreshAllInformation())
+      .then(async () => {
+        await this.findUnignoredFiles(`**/${globIsCssOrCode()}`).then(async (uris) =>
+          Promise.all(uris.map(async (uri) => this.refreshInformation(uri))).then(noop),
+        );
+      })
       .then(() => this.logger.info(operation(this.folder.name, 'ready')))
       .finally(() => this.workspaceController.spin(false));
     return this.#prepare;

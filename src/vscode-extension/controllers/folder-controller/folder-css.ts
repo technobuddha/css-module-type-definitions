@@ -1,9 +1,7 @@
 import path from 'node:path';
 
-import { capitalize, conjoin, deepEquals, empty, noop, toArray } from '@technobuddha/library';
-import { type SetOptional } from 'type-fest';
-import { type Command, Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
-import { Utils } from 'vscode-uri';
+import { capitalize, conjoin, deepEquals, empty, noop } from '@technobuddha/library';
+import { Diagnostic, type Disposable, Range, Uri, workspace } from 'vscode';
 
 import {
   type Action,
@@ -25,6 +23,7 @@ import {
   UriMap,
   UriSet,
 } from '../../helpers/index.ts';
+import { uriList } from '../../helpers/uri-list.ts';
 import {
   type CodeInformation,
   CssGlobalInformation,
@@ -35,11 +34,8 @@ import { FolderEvent, type FolderEventArguments } from './folder-event.ts';
 
 export type FolderCssArguments = FolderEventArguments;
 
-type CssCommand = SetOptional<Omit<Command, 'command'>, 'tooltip'> & { icon?: string };
-
 export abstract class FolderCss extends FolderEvent implements Disposable {
   readonly #cssInformation: UriMap<CssGlobalInformation> = new UriMap();
-  readonly #commands: UriMap<CssCommand> = new UriMap();
 
   protected async updateDiagnostics(uri: Uri): Promise<void> {
     if (isCss(uri)) {
@@ -161,7 +157,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           title = `Not imported.`;
           tooltip = `This ${isCssModule(uri) ? 'Module' : 'Global'} CSS file is not imported.`;
 
-          diagnose(`${uriName(uri)} is not imported.`);
+          diagnose(`${uriList(uri)} is not imported.`);
           exportNames.clear();
         } else {
           const globalImporters = new UriSet(
@@ -169,11 +165,11 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
               this.filesImporting(importer).filter(
                 (uri) =>
                   isCode(uri) &&
-                  (this.codeInformation(uri)?.unboundCssImports.has(importer) ?? false),
+                  (this.codeInformation(uri)?.importedCssUnbound.has(importer) ?? false),
               ),
             ),
             codeImporters.filter(
-              (importer) => this.codeInformation(importer)?.unboundCssImports.has(uri) ?? false,
+              (importer) => this.codeInformation(importer)?.importedCssUnbound.has(uri) ?? false,
             ),
           );
           const moduleImporters = new UriSet(
@@ -204,7 +200,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
             exportNames.clear();
           }
 
-          title = `Imported by ${uriName(cssImporters, moduleImporters, globalImporters)}`;
+          title = `Imported by ${uriList(cssImporters, moduleImporters, globalImporters)}`;
           args = [...cssImporters, ...moduleImporters, ...globalImporters];
 
           if (isCssGlobal(uri)) {
@@ -246,7 +242,7 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
           }
         }
 
-        this.#commands.set(uri, {
+        this.commands.set(uri, {
           icon,
           title,
           tooltip,
@@ -466,10 +462,6 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
     }
   }
 
-  public command(uri: Uri): CssCommand | undefined {
-    return this.#commands.get(uri);
-  }
-
   public cssInformation<T extends CssGlobalInformation = CssGlobalInformation>(
     uri: Uri,
   ): T | undefined {
@@ -527,10 +519,4 @@ export abstract class FolderCss extends FolderEvent implements Disposable {
       }
     });
   }
-}
-
-function uriName(...uri: (Uri | Iterable<Uri>)[]): string {
-  const set = new UriSet(uri.flatMap((u) => toArray(u)));
-
-  return conjoin(set.map((u) => `⟨${Utils.basename(u)}⟩`));
 }

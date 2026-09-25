@@ -62,6 +62,7 @@ export class CssGlobalInformation {
     }
   }
 
+  public readonly filename: Uri;
   public readonly exportNames: ReadonlySet<string>;
   public readonly locationsOfAnimation: ReadonlyMap<string, readonly Location[]>;
   public readonly informationOfValues: ReadonlyMap<string, ValueInformation>;
@@ -74,6 +75,7 @@ export class CssGlobalInformation {
   public hasDts: boolean;
 
   protected constructor({
+    filename,
     locationsOfAnimation,
     informationOfValues,
     localNamesOfExport,
@@ -82,6 +84,7 @@ export class CssGlobalInformation {
     diagnostics,
     importedFiles,
   }: CssGlobalInfo) {
+    this.filename = Uri.file(filename);
     this.locationsOfAnimation = new Map(
       locationsOfAnimation.entries().map(([key, value]) => [key, value.map(toLocation)]),
     );

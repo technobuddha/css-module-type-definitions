@@ -16,9 +16,9 @@ import {
 
 import { type LoggerController, operation } from '../../common/index.ts';
 
-import { cssSelector } from '../document-selectors.ts';
+import { cssAndCodeSelector } from '../document-selectors.ts';
 import { createLogger, UriMap } from '../helpers/index.ts';
-import { CssCodeLensProvider } from '../providers/css-code-lens-provider.ts';
+import { CMTDCodeLensProvider } from '../providers/code-lens-provider.ts';
 
 import { FolderController } from './folder-controller/index.ts';
 
@@ -39,7 +39,7 @@ export class WorkspaceController implements Disposable, LoggerController {
     StatusBarAlignment.Right,
     99,
   );
-  private readonly cssCodeLensProvider: CssCodeLensProvider;
+  private readonly codeLensProvider: CMTDCodeLensProvider;
 
   protected readonly disposables: Disposable[] = [];
   protected readonly folders: Map<WorkspaceFolder, FolderController> = new Map();
@@ -53,11 +53,11 @@ export class WorkspaceController implements Disposable, LoggerController {
 
     this.spin(true);
 
-    this.cssCodeLensProvider = new CssCodeLensProvider(this);
+    this.codeLensProvider = new CMTDCodeLensProvider(this);
 
     this.disposables.push(
-      this.cssCodeLensProvider,
-      languages.registerCodeLensProvider(cssSelector, this.cssCodeLensProvider),
+      this.codeLensProvider,
+      languages.registerCodeLensProvider(cssAndCodeSelector, this.codeLensProvider),
       this.statusBar,
       commands.registerCommand('cmtd.showOutput', () => {
         this.logger.outputChannel.show(true);
@@ -203,7 +203,7 @@ export class WorkspaceController implements Disposable, LoggerController {
   }
 
   public refreshCodeLenses(): void {
-    this.cssCodeLensProvider.refreshCodeLenses();
+    this.codeLensProvider.refreshCodeLenses();
   }
 
   public spin(status: boolean): void {

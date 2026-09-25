@@ -43,16 +43,19 @@ export class CodeReferenceProvider implements ReferenceProvider {
               locations.push(...cssLocations);
             }
 
-            await folderController.allCodeInformation();
+            await folderController.prepare();
             const importers = folderController.codeFilesImporting(importUri);
             for (const importer of importers) {
               const codeInfo = folderController.codeInformation(importer);
               if (codeInfo) {
                 const { file } = codeInfo;
-                const localUsages = await cssInfo.classUsage({ localName, file, importUri });
-                if (localUsages) {
-                  for (const usage of localUsages.usages) {
-                    if (accessorType === 'property' || usage.accessorType !== accessorType) {
+                const localNames = cssInfo.localNames({ localName });
+                for (const usages of codeInfo.usages.values()) {
+                  for (const usage of usages) {
+                    if (
+                      localNames.has(usage.localName) &&
+                      (accessorType === 'property' || usage.accessorType !== accessorType)
+                    ) {
                       locations.push(new Location(file, usage.range));
                     }
                   }

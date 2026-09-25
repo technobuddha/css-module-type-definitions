@@ -52,7 +52,7 @@ export abstract class FolderEvent extends FolderFiles implements Disposable {
     this.openTabs.add(uri);
     if (isCss(uri) || isCode(uri)) {
       this.logger.debug(fileOperation(uri, 'opened'));
-      await this.refreshAllInformation();
+      await this.prepare();
       return this.updateDiagnostics(uri);
     }
   }

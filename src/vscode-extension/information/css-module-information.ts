@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { type Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
+import { Location, Position, Range, Uri, workspace, WorkspaceEdit } from 'vscode';
 import { Utils } from 'vscode-uri';
 
 import {
@@ -14,9 +14,7 @@ import { type CssModuleInfo, generateCssModuleInfo } from '../../css-library/ind
 import { cssImporter } from '../css-importer/index.ts';
 import { loadSource } from '../helpers/index.ts';
 
-import { type ClassUsage } from './class-usage.ts';
 import { CssGlobalInformation, type Snippet } from './css-global-information.ts';
-import { extractUsage } from './extract-usage.ts';
 
 type Arguments = {
   readonly uri: Uri;
@@ -150,9 +148,19 @@ export class CssModuleInformation extends CssGlobalInformation {
         const result: Location[] = [];
 
         for (const exportName of exportNames) {
-          const locations = this.exports.get(exportName)?.map(({ location }) => location);
-          if (locations) {
-            result.push(...locations);
+          const infos = this.exports.get(exportName);
+          if (infos) {
+            for (const info of infos) {
+              result.push(info.location);
+              if (info.type === 'value') {
+                const vInfo = this.informationOfValues.get(exportName);
+                if (vInfo) {
+                  for (const usage of vInfo.usages) {
+                    result.push(new Location(this.filename, usage.range));
+                  }
+                }
+              }
+            }
           }
         }
         return result;
@@ -194,39 +202,5 @@ export class CssModuleInformation extends CssGlobalInformation {
       : exportName ? this.localNamesOfExport.get(exportName)
       : [],
     );
-  }
-
-  public async classUsage({
-    localName,
-    exportName,
-    file,
-    importUri,
-  }: LocalOrExport & { file: Uri; importUri: Uri }): Promise<ClassUsage | null> {
-    let localNames: ReadonlySet<string> | undefined;
-
-    if (localName) {
-      const exportNames = this.exportNamesOfLocalName.get(localName);
-      if (exportNames) {
-        localNames = new Set(
-          Array.from(exportNames).flatMap((en) =>
-            Array.from(this.localNamesOfExport.get(en) ?? []),
-          ),
-        );
-      }
-    }
-
-    if (exportName) {
-      localNames = this.localNamesOfExport.get(exportName);
-    }
-
-    if (localNames) {
-      const document = await workspace.openTextDocument(file);
-      const usages = (await extractUsage(document, importUri)).filter((usage) =>
-        localNames.has(usage.localName),
-      );
-
-      return { document, usages };
-    }
-    return null;
   }
 }

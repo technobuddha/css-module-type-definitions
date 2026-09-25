@@ -15,13 +15,13 @@ import { Utils } from 'vscode-uri';
 import {
   type Action,
   fileOperation,
-  globIsCode,
   isCode,
   isCssModule,
   type LocalOrExport,
 } from '../../../common/index.ts';
 
 import { type ReadonlyUriMap, ReadonlyUriSet, UriMap, UriSet } from '../../helpers/index.ts';
+import { uriList } from '../../helpers/uri-list.ts';
 import { CodeInformation, type CssModuleInformation } from '../../information/index.ts';
 
 import { FolderCss, type FolderCssArguments } from './folder-css.ts';
@@ -38,7 +38,23 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       if (codeInfo) {
         const errors: Diagnostic[] = [];
 
-        for (const importUri of codeInfo.boundCssImports) {
+        const importers = new UriSet(
+          this.#codeInformation
+            .entries()
+            .filter(([, info]) => info.importedModules.has(uri))
+            .map(([uri]) => uri),
+        );
+
+        const icon = importers.size > 0 ? '🧩' : '⏸️';
+        const title = importers.size > 0 ? `Imported by ${uriList(importers)}.` : 'Not imported.';
+
+        this.commands.set(uri, {
+          icon,
+          title,
+          arguments: [uri, [...importers]],
+        });
+
+        for (const importUri of codeInfo.importedCssBound) {
           if (isCssModule(importUri)) {
             const cssInfo = this.cssInformation<CssModuleInformation>(importUri);
             if (cssInfo && !cssInfo.hasDts) {
@@ -76,7 +92,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   protected override async updateInformation(uri: Uri, override = false): Promise<void> {
     if (isCode(uri)) {
       const oldCodeInformation = this.#codeInformation.get(uri);
-      const newCodeInformation = await CodeInformation.create(uri).catch(noop);
+      const newCodeInformation = await CodeInformation.create(uri, this.folder.uri).catch(noop);
 
       if (newCodeInformation) {
         if (!deepEquals(newCodeInformation, oldCodeInformation)) {
@@ -148,7 +164,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
       const affected = (): void => {
         const codeInfo = this.codeInformation(uri);
         if (codeInfo) {
-          for (const importUri of codeInfo.boundCssImports) {
+          for (const importUri of codeInfo.importedCssBound) {
             uris.add(importUri);
 
             const info = this.cssInformation(importUri);
@@ -183,13 +199,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
   }
 
   public async allCodeInformation(): Promise<ReadonlyUriMap<CodeInformation>> {
-    await this.findUnignoredFiles(`**/${globIsCode()}`).then(async (uris) => {
-      for (const uri of uris) {
-        if (isCode(uri)) {
-          await this.updateInformation(uri);
-        }
-      }
-    });
+    await this.prepare();
     return this.#codeInformation;
   }
 
@@ -197,7 +207,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new ReadonlyUriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.boundCssImports.has(uri))
+        .filter(([, info]) => info.importedCssBound.has(uri))
         .map(([importer]) => importer),
     );
   }
@@ -206,7 +216,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     return new UriSet(
       this.#codeInformation
         .entries()
-        .filter(([, info]) => info.boundCssImports.has(uri))
+        .filter(([, info]) => info.importedCssBound.has(uri))
         .map(([importer]) => importer),
       super.filesImporting(uri),
     );
@@ -221,7 +231,7 @@ export abstract class FolderCode extends FolderCss implements Disposable {
     localName,
     token,
   }: EditCodeArguments): Promise<void> {
-    await this.refreshAllInformation();
+    await this.prepare();
 
     if (isCssModule(importUri)) {
       const cssInfo = this.cssInformation<CssModuleInformation>(importUri)!;
@@ -232,6 +242,12 @@ export abstract class FolderCode extends FolderCss implements Disposable {
           : undefined;
         if (locations) {
           for (const location of locations) {
+            this.logger.debug(
+              '>>>',
+              Utils.basename(location.uri),
+              ' > ',
+              `${location.range.start.line}:${location.range.start.character} - ${location.range.end.line}:${location.range.end.character}`,
+            );
             this.passTabs.add(location.uri);
             we.replace(location.uri, location.range, cssReplacement);
           }
